@@ -6,9 +6,5 @@ namespace ProjectThalia::Core
 	{
 		public:
 			void Open();
-
-		private:
-			int _test = 0;
 	};
 }
-
