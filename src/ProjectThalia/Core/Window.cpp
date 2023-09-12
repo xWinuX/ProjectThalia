@@ -1,67 +1,84 @@
 #include "ProjectThalia/Core/Window.hpp"
 
-#include "SDL2/SDL.h"
-#include <cstdio>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_vulkan.h>
+#include <stdexcept>
+#include <vector>
+#include <vulkan/vulkan_core.h>
 
 namespace ProjectThalia::Core
 {
-	// TODO: write real implementation and open with vulkan context
-	// Source: https://lazyfoo.net/tutorials/SDL/01_hello_SDL/index2.php
 	void Window::Open()
 	{
 		const int SCREEN_WIDTH  = 500;
 		const int SCREEN_HEIGHT = 500;
 
-		//The window we'll be rendering to
-		SDL_Window* window = nullptr;
+		// The window we'll be rendering to
+		SDL_Window*  window         = nullptr;
+		VkInstance   vulkanInstance = nullptr;
+		VkSurfaceKHR vulkanSurface  = nullptr;
 
-		//The surface contained by the window
-		SDL_Surface* screenSurface = nullptr;
-
-		//Initialize SDL
-		if (SDL_Init(SDL_INIT_VIDEO) < 0)
-		{
-			printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
-		}
+		// Initialize SDL
+		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) { printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError()); }
 		else
 		{
-			//Create window
-			window = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-			if (window == nullptr)
-			{
-				printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
-			}
+			// Create window
+			window = SDL_CreateWindow("Project Thalia", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN);
+			if (window == nullptr) { printf("Window could not be created! SDL_Error: %s\n", SDL_GetError()); }
 			else
 			{
-				//Get window surface
-				screenSurface = SDL_GetWindowSurface(window);
+				// Get vulkan instance extensions
+				uint32_t extensionCount;
+				SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, nullptr);
 
-				//Fill the surface white
-				SDL_FillRect(screenSurface, nullptr, SDL_MapRGB(screenSurface->format, 0x88, 0x88, 0x88));
+				std::vector<const char*> extensionNames(extensionCount);
+				SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, extensionNames.data());
 
-				//Update the surface
-				SDL_UpdateWindowSurface(window);
+				// Set vulkan validation layers
+				const char* validationLayers[] = {"VK_LAYER_KHRONOS_validation"};
 
-				//Hack to get window to stay up
+				// Create application info
+				VkApplicationInfo applicationInfo = {.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+													 .pApplicationName   = "Project Thalia",
+													 .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
+													 .pEngineName        = "No Engine",
+													 .engineVersion      = VK_MAKE_VERSION(1, 0, 0),
+													 .apiVersion         = VK_API_VERSION_1_2};
+
+				// Create instance info
+				VkInstanceCreateInfo createInfo = {.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+												   .pApplicationInfo        = &applicationInfo,
+												   .enabledLayerCount       = sizeof(validationLayers) / sizeof(validationLayers[0]),
+												   .ppEnabledLayerNames     = validationLayers,
+												   .enabledExtensionCount   = extensionCount,
+												   .ppEnabledExtensionNames = extensionNames.data()};
+
+				// Create vulkan instance
+				VkResult instanceCreationResult = vkCreateInstance(&createInfo, nullptr, &vulkanInstance);
+				if (instanceCreationResult != VK_SUCCESS) { throw std::runtime_error("failed to create Vulkan instance!"); }
+
+				// Create vulkan surface
+				SDL_bool surfaceCreationResult = SDL_Vulkan_CreateSurface(window, vulkanInstance, &vulkanSurface);
+				if (surfaceCreationResult == SDL_FALSE) { throw std::runtime_error("failed to create SDL Vulkan vulkanSurface!"); }
+
+				// Main Loop
 				SDL_Event e;
-				bool      quit = false;
+
+				bool quit = false;
 				while (!quit)
 				{
 					while (SDL_PollEvent(&e))
 					{
-						if (e.type == SDL_QUIT)
-						{
-							quit = true;
-						}
+						if (e.type == SDL_QUIT) { quit = true; }
 					}
 				}
 			}
 		}
 
-		//Destroy window
+		// Cleanup
+		vkDestroySurfaceKHR(vulkanInstance, vulkanSurface, nullptr);
+		vkDestroyInstance(vulkanInstance, nullptr);
 		SDL_DestroyWindow(window);
-
-		//Quit SDL subsystems
 		SDL_Quit();
 	}
 }
