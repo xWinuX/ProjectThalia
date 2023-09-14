@@ -1,8 +1,8 @@
-#include "ProjectThalia/Core/Application.hpp"
+#include "ProjectThalia/Application.hpp"
 
 int main()
 {
-	ProjectThalia::Core::Application application;
+	ProjectThalia::Application application;
 
 	application.Run();
 

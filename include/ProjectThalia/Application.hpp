@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ProjectThalia::Core
+namespace ProjectThalia
 {
 	class Application
 	{

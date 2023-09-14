@@ -9,10 +9,14 @@ project(ProjectThalia)
 
 add_executable(${PROJECT_NAME}
         main.cpp
-        include/ProjectThalia/Core/Window.hpp
-        src/ProjectThalia/Core/Window.cpp
-        src/ProjectThalia/Core/Application.cpp
-        include/ProjectThalia/Core/Application.hpp
+        include/ProjectThalia/Window.hpp
+        src/ProjectThalia/Window.cpp
+        src/ProjectThalia/Application.cpp
+        include/ProjectThalia/Application.hpp
+        src/ProjectThalia/Debug/Log.cpp
+        include/ProjectThalia/Debug/Log.hpp
+        src/ProjectThalia/ErrorHandler.cpp
+        include/ProjectThalia/ErrorHandler.hpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE include)
