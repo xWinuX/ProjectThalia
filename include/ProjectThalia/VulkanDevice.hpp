@@ -8,7 +8,8 @@ namespace ProjectThalia
 	class VulkanDevice
 	{
 		public:
-			struct QueueFamilyIndices {
+			struct QueueFamilyIndices
+			{
 					std::optional<uint32_t> graphicsFamily;
 					std::optional<uint32_t> presentFamily;
 
@@ -20,8 +21,8 @@ namespace ProjectThalia
 
 			static VulkanDevice FindAndSetupBestDevice(const VkInstance&               vulkanInstance,
 													   const VkSurfaceKHR&             surfaceKhr,
-											   const std::vector<const char*>& validationLayers,
-											   const std::vector<const char*>& deviceExtensions);
+													   const std::vector<const char*>& validationLayers,
+													   const std::vector<const char*>& deviceExtensions);
 
 			[[nodiscard]] const VkPhysicalDevice&   GetPhysicalDevice() const;
 			[[nodiscard]] const VkDevice&           GetDevice() const;
@@ -32,9 +33,10 @@ namespace ProjectThalia
 			VkDevice           _device         = VK_NULL_HANDLE;
 			QueueFamilyIndices _queueFamilyIndices;
 
-			static bool CheckDeviceExtensionSupport(const VkPhysicalDevice& device, const std::vector<const char*>& deviceExtensions);
-			static bool IsDeviceSuitable(const VkPhysicalDevice& physicalDevice, const std::vector<const char*>& extensions);
-			static QueueFamilyIndices
-			FindQueueFamilies(const VkPhysicalDevice& physicalDevice, const VkSurfaceKHR& surface, const std::vector<VkQueueFamilyProperties>& queueFamilies);
+			static bool               CheckDeviceExtensionSupport(const VkPhysicalDevice& device, const std::vector<const char*>& deviceExtensions);
+			static bool               IsDeviceSuitable(const VkPhysicalDevice& physicalDevice, const std::vector<const char*>& extensions);
+			static QueueFamilyIndices FindQueueFamilies(const VkPhysicalDevice&                     physicalDevice,
+														const VkSurfaceKHR&                         surface,
+														const std::vector<VkQueueFamilyProperties>& queueFamilies);
 	};
 }

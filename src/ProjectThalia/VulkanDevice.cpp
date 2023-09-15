@@ -1,6 +1,7 @@
 #include "ProjectThalia/VulkanDevice.hpp"
 #include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
+#include <format>
 #include <set>
 
 namespace ProjectThalia
@@ -14,11 +15,12 @@ namespace ProjectThalia
 		VkDevice           device              = VK_NULL_HANDLE;
 		QueueFamilyIndices queueFamilyIndices;
 
+		// Check if we even have devices to use
 		uint32_t deviceCount = 0;
 		vkEnumeratePhysicalDevices(vulkanInstance, &deviceCount, nullptr);
+		if (deviceCount == 0) { ErrorHandler::ThrowRuntimeError("Failed to find any gpus"); }
 
-		if (deviceCount == 0) { ErrorHandler::ThrowRuntimeError("Failed to find GPUS that are compatible with vulkan"); }
-
+		// Get list of devices
 		std::vector<VkPhysicalDevice> devices(deviceCount);
 		vkEnumeratePhysicalDevices(vulkanInstance, &deviceCount, devices.data());
 
@@ -43,11 +45,12 @@ namespace ProjectThalia
 			if (!queueFamilyIndices.isComplete()) { continue; }
 
 			finalPhysicalDevice = physicalDevice;
+			Debug::Log::Info(std::format("Selected physical device: {}", deviceProperties.deviceName));
 			break;
 		}
 
 		// Check if we found a compatible GPU
-		if (finalPhysicalDevice == VK_NULL_HANDLE) { ErrorHandler::ThrowRuntimeError("This Device does not have any GPU meeting the applications requirements"); }
+		if (finalPhysicalDevice == VK_NULL_HANDLE) { ErrorHandler::ThrowRuntimeError("This Device does not have any gpu meeting the applications requirements"); }
 
 		// Get queue info
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -75,7 +78,6 @@ namespace ProjectThalia
 											   .enabledExtensionCount   = static_cast<uint32_t>(deviceExtensions.size()),
 											   .ppEnabledExtensionNames = deviceExtensions.data(),
 											   .pEnabledFeatures        = &deviceFeatures};
-
 		VkResult vulkanDeviceCreateResult = vkCreateDevice(finalPhysicalDevice, &deviceCreateInfo, nullptr, &device);
 		if (vulkanDeviceCreateResult != VK_SUCCESS) { ErrorHandler::ThrowRuntimeError("Failed to create logical device!"); }
 
@@ -147,5 +149,4 @@ namespace ProjectThalia
 	const VkPhysicalDevice&                 VulkanDevice::GetPhysicalDevice() const { return _physicalDevice; }
 	const VkDevice&                         VulkanDevice::GetDevice() const { return _device; }
 	const VulkanDevice::QueueFamilyIndices& VulkanDevice::GetQueueFamilyIndices() const { return _queueFamilyIndices; }
-
 }

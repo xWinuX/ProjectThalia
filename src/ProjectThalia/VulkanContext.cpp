@@ -14,8 +14,6 @@ namespace ProjectThalia
 		std::vector<const char*> extensionNames(extensionCount);
 		SDL_Vulkan_GetInstanceExtensions(sdlWindow, &extensionCount, extensionNames.data());
 
-		// Set vulkan validation layers
-
 
 		// Create application info
 		VkApplicationInfo applicationInfo = {.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -23,7 +21,7 @@ namespace ProjectThalia
 											 .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
 											 .pEngineName        = "No Engine",
 											 .engineVersion      = VK_MAKE_VERSION(1, 0, 0),
-											 .apiVersion         = VK_API_VERSION_1_2};
+											 .apiVersion         = VK_API_VERSION_1_3};
 
 		// Create instance info
 		VkInstanceCreateInfo createInfo = {.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
@@ -35,13 +33,13 @@ namespace ProjectThalia
 
 		// Create vulkan instance
 		VkResult instanceCreationResult = vkCreateInstance(&createInfo, nullptr, &_instance);
-		if (instanceCreationResult != VK_SUCCESS) { ErrorHandler::ThrowRuntimeError("failed to create Vulkan instance!"); }
+		if (instanceCreationResult != VK_SUCCESS) { ErrorHandler::ThrowRuntimeError("Failed to create Vulkan instance!"); }
 	}
 
 	void VulkanContext::CreateSurface(SDL_Window* sdlWindow)
 	{
 		SDL_bool surfaceCreationResult = SDL_Vulkan_CreateSurface(sdlWindow, _instance, &_surface);
-		if (surfaceCreationResult == SDL_FALSE) { ErrorHandler::ThrowRuntimeError("failed to create SDL Vulkan _surface!"); }
+		if (surfaceCreationResult == SDL_FALSE) { ErrorHandler::ThrowRuntimeError("Failed to create SDL Vulkan surface!"); }
 	}
 
 	void VulkanContext::Initialize(SDL_Window* sdlWindow)
