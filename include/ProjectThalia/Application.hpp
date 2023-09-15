@@ -1,4 +1,7 @@
 #pragma once
+#define SDL_MAIN_HANDLED
+
+#include "Window.hpp"
 
 namespace ProjectThalia
 {
@@ -6,5 +9,8 @@ namespace ProjectThalia
 	{
 		public:
 			void Run();
+
+		private:
+			Window _window;
 	};
 }

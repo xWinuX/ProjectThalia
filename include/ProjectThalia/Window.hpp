@@ -2,6 +2,7 @@
 
 #include "SDL2/SDL.h"
 #include "SDL2/SDL_vulkan.h"
+#include "VulkanContext.hpp"
 #include "vulkan/vulkan.h"
 
 namespace ProjectThalia
@@ -10,10 +11,10 @@ namespace ProjectThalia
 	{
 		public:
 			void Open();
+			void Close();
 
 		private:
 			SDL_Window*  _window;
-			VkInstance   _vulkanInstance;
-			VkSurfaceKHR _vulkanSurface;
+			VulkanContext _vulkanContext;
 	};
 }

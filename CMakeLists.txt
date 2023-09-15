@@ -9,14 +9,18 @@ project(ProjectThalia)
 
 add_executable(${PROJECT_NAME}
         main.cpp
-        include/ProjectThalia/Window.hpp
-        src/ProjectThalia/Window.cpp
         src/ProjectThalia/Application.cpp
         include/ProjectThalia/Application.hpp
+        include/ProjectThalia/Window.hpp
+        src/ProjectThalia/Window.cpp
         src/ProjectThalia/Debug/Log.cpp
         include/ProjectThalia/Debug/Log.hpp
         src/ProjectThalia/ErrorHandler.cpp
         include/ProjectThalia/ErrorHandler.hpp
+        src/ProjectThalia/VulkanContext.cpp
+        include/ProjectThalia/VulkanContext.hpp
+        src/ProjectThalia/VulkanDevice.cpp
+        include/ProjectThalia/VulkanDevice.hpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE include)
