@@ -1,9 +1,9 @@
 #pragma once
 
-#include "SDL2/SDL.h"
-#include "vulkan/vulkan.hpp"
+#include <SDL2/SDL.h>
 #include <optional>
 #include <vector>
+#include <vulkan/vulkan.hpp>
 
 namespace ProjectThalia::Vulkan
 {
@@ -40,10 +40,10 @@ namespace ProjectThalia::Vulkan
 			vk::SurfaceKHR     _surface        = VK_NULL_HANDLE;
 			vk::SwapchainKHR   _swapChain      = VK_NULL_HANDLE;
 
-			vk::SurfaceFormatKHR   _swapChainImageFormat;
-			vk::Extent2D           _swapChainExtend;
-			std::vector<vk::Image> _swapChainImages;
-
+			vk::SurfaceFormatKHR       _swapChainImageFormat;
+			vk::Extent2D               _swapChainExtent;
+			std::vector<vk::Image>     _swapChainImages;
+			std::vector<vk::ImageView> _swapChainImageViews;
 
 			QueueFamilyIndices      _queueFamilyIndices;
 			SwapChainSupportDetails _swapChainSupportDetails;
@@ -53,5 +53,6 @@ namespace ProjectThalia::Vulkan
 			void SelectPhysicalDevice();
 			void CreateLogicalDevice();
 			void CreateSwapChain(SDL_Window* sdlWindow);
+			void CreateImageViews();
 	};
 }

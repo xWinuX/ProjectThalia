@@ -1,7 +1,8 @@
 #include "ProjectThalia/VulkanContext.hpp"
 #include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
-#include "SDL2/SDL_vulkan.h"
+
+#include <SDL2/SDL_vulkan.h>
 #include <format>
 #include <set>
 #include <vector>
@@ -19,8 +20,29 @@ namespace ProjectThalia::Vulkan
 		CreateLogicalDevice();
 
 		CreateSwapChain(sdlWindow);
+
+		CreateImageViews();
 	}
-	
+	void VulkanContext::CreateImageViews()
+	{
+		_swapChainImageViews.resize(_swapChainImages.size());
+
+		for (int i = 0; i < _swapChainImages.size(); ++i)
+		{
+			vk::ImageViewCreateInfo imageViewCreateInfo = vk::ImageViewCreateInfo({},
+																				  _swapChainImages[i],
+																				  vk::ImageViewType::e2D,
+																				  _swapChainImageFormat.format,
+																				  {vk::ComponentSwizzle::eIdentity,
+																				   vk::ComponentSwizzle::eIdentity,
+																				   vk::ComponentSwizzle::eIdentity,
+																				   vk::ComponentSwizzle::eIdentity},
+																				  {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
+
+			_swapChainImageViews[i] = _device.createImageView(imageViewCreateInfo);
+		}
+	}
+
 	void VulkanContext::CreateSwapChain(SDL_Window* sdlWindow)
 	{
 		// Select surface format
@@ -42,19 +64,18 @@ namespace ProjectThalia::Vulkan
 		}
 
 		// Select swap extend
-
 		const vk::SurfaceCapabilitiesKHR& capabilities = _swapChainSupportDetails.capabilities;
-		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) { _swapChainExtend = capabilities.currentExtent; }
+		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) { _swapChainExtent = capabilities.currentExtent; }
 		else
 		{
 			int width, height;
 
 			SDL_GetWindowSize(sdlWindow, &width, &height);
 
-			_swapChainExtend = vk::Extent2D(width, height);
+			_swapChainExtent = vk::Extent2D(width, height);
 
-			_swapChainExtend.width  = std::clamp(_swapChainExtend.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-			_swapChainExtend.height = std::clamp(_swapChainExtend.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+			_swapChainExtent.width  = std::clamp(_swapChainExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+			_swapChainExtent.height = std::clamp(_swapChainExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 		}
 
 		// Select image count
@@ -70,7 +91,7 @@ namespace ProjectThalia::Vulkan
 																					imageCount,
 																					_swapChainImageFormat.format,
 																					_swapChainImageFormat.colorSpace,
-																					_swapChainExtend,
+																					_swapChainExtent,
 																					1,
 																					vk::ImageUsageFlagBits::eColorAttachment);
 
@@ -89,6 +110,8 @@ namespace ProjectThalia::Vulkan
 		swapChainCreateInfo.setOldSwapchain(VK_NULL_HANDLE);
 
 		_swapChain = _device.createSwapchainKHR(swapChainCreateInfo);
+
+		_swapChainImages = _device.getSwapchainImagesKHR(_swapChain);
 	}
 
 	void VulkanContext::CreateInstance(SDL_Window* sdlWindow)
@@ -213,9 +236,13 @@ namespace ProjectThalia::Vulkan
 
 	void VulkanContext::Destroy()
 	{
-		vkDestroyDevice(_device, nullptr);
-		vkDestroySurfaceKHR(_instance, _surface, nullptr);
-		vkDestroyInstance(_instance, nullptr);
+		_device.destroy(_swapChain);
+		for (const vk::ImageView& imageView : _swapChainImageViews) {
+			_device.destroy(imageView);
+		}
+		_device.destroy();
+		_instance.destroy(_surface);
+		_instance.destroy();
 	}
 
 }
