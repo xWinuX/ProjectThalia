@@ -1,9 +1,8 @@
 #pragma once
 
-#include "SDL2/SDL.h"
-#include "SDL2/SDL_vulkan.h"
 #include "VulkanContext.hpp"
-#include "vulkan/vulkan.h"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_vulkan.h>
 
 namespace ProjectThalia
 {
@@ -14,7 +13,7 @@ namespace ProjectThalia
 			void Close();
 
 		private:
-			SDL_Window*  _window;
-			VulkanContext _vulkanContext;
+			SDL_Window*     _window = nullptr;
+			Vulkan::VulkanContext _vulkanContext;
 	};
 }

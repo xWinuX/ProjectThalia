@@ -5,7 +5,7 @@ AlignConsecutiveAssignments: Consecutive
 AlignConsecutiveDeclarations: Consecutive
 AlignOperands: Align
 AllowAllArgumentsOnNextLine: false
-AllowAllParametersOfDeclarationOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: Always
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: All
@@ -31,6 +31,7 @@ BraceWrapping:
   IndentBraces: false
   SplitEmptyFunction: true
   SplitEmptyRecord: true
+  AfterObjCDeclaration: true
 BreakBeforeBinaryOperators: None
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: AfterColon
@@ -51,6 +52,7 @@ ObjCSpaceBeforeProtocolList: true
 PointerAlignment: Left
 ReflowComments: false
 PackConstructorInitializers: Never
+ObjCBinPackProtocolList: Never
 SpaceAfterCStyleCast: true
 SpaceAfterLogicalNot: false
 SpaceAfterTemplateKeyword: false
@@ -73,4 +75,7 @@ SpacesInSquareBrackets: false
 SortIncludes: CaseSensitive
 TabWidth: 4
 UseTab: ForContinuationAndIndentation
+PenaltyBreakAssignment: 9000
 PenaltyReturnTypeOnItsOwnLine: 9000
+PenaltyBreakBeforeFirstCallParameter: 9999
+
