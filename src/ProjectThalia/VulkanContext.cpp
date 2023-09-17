@@ -18,9 +18,77 @@ namespace ProjectThalia::Vulkan
 
 		CreateLogicalDevice();
 
-		// Create Present Queue
-		VkQueue presentQueue;
-		vkGetDeviceQueue(_device, _queueFamilyIndices.presentFamily.value(), 0, &presentQueue);
+		CreateSwapChain(sdlWindow);
+	}
+	
+	void VulkanContext::CreateSwapChain(SDL_Window* sdlWindow)
+	{
+		// Select surface format
+		_swapChainImageFormat = _swapChainSupportDetails.formats[0];
+		for (const auto& availableFormat : _swapChainSupportDetails.formats)
+		{
+			if (availableFormat.format == vk::Format::eB8G8R8A8Srgb && availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) { _swapChainImageFormat = availableFormat; }
+		}
+
+		// Select present mode
+		vk::PresentModeKHR presentMode = vk::PresentModeKHR::eFifo;
+		for (const auto& availablePresentMode : _swapChainSupportDetails.presentModes)
+		{
+			if (availablePresentMode == vk::PresentModeKHR::eMailbox)
+			{
+				presentMode = vk::PresentModeKHR::eMailbox;
+				break;
+			}
+		}
+
+		// Select swap extend
+
+		const vk::SurfaceCapabilitiesKHR& capabilities = _swapChainSupportDetails.capabilities;
+		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) { _swapChainExtend = capabilities.currentExtent; }
+		else
+		{
+			int width, height;
+
+			SDL_GetWindowSize(sdlWindow, &width, &height);
+
+			_swapChainExtend = vk::Extent2D(width, height);
+
+			_swapChainExtend.width  = std::clamp(_swapChainExtend.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+			_swapChainExtend.height = std::clamp(_swapChainExtend.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+		}
+
+		// Select image count
+		uint32_t imageCount = _swapChainSupportDetails.capabilities.minImageCount + 1;
+		if (_swapChainSupportDetails.capabilities.maxImageCount > 0 && imageCount > _swapChainSupportDetails.capabilities.maxImageCount)
+		{
+			imageCount = _swapChainSupportDetails.capabilities.maxImageCount;
+		}
+
+		// Create swap chain
+		vk::SwapchainCreateInfoKHR swapChainCreateInfo = vk::SwapchainCreateInfoKHR({},
+																					_surface,
+																					imageCount,
+																					_swapChainImageFormat.format,
+																					_swapChainImageFormat.colorSpace,
+																					_swapChainExtend,
+																					1,
+																					vk::ImageUsageFlagBits::eColorAttachment);
+
+		if (_queueFamilyIndices.graphicsFamily != _queueFamilyIndices.presentFamily)
+		{
+			std::vector<uint32_t> queueFamilies = {_queueFamilyIndices.graphicsFamily.value(), _queueFamilyIndices.presentFamily.value()};
+			swapChainCreateInfo.setImageSharingMode(vk::SharingMode::eConcurrent);
+			swapChainCreateInfo.setQueueFamilyIndices(queueFamilies);
+		}
+		else { swapChainCreateInfo.setImageSharingMode(vk::SharingMode::eExclusive); }
+
+		swapChainCreateInfo.setPreTransform(_swapChainSupportDetails.capabilities.currentTransform);
+		swapChainCreateInfo.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque);
+		swapChainCreateInfo.setPresentMode(presentMode);
+		swapChainCreateInfo.setClipped(vk::True);
+		swapChainCreateInfo.setOldSwapchain(VK_NULL_HANDLE);
+
+		_swapChain = _device.createSwapchainKHR(swapChainCreateInfo);
 	}
 
 	void VulkanContext::CreateInstance(SDL_Window* sdlWindow)
@@ -98,6 +166,16 @@ namespace ProjectThalia::Vulkan
 
 			if (!_queueFamilyIndices.isComplete()) { continue; }
 
+
+			// Check swap chain support
+			_swapChainSupportDetails = SwapChainSupportDetails();
+
+			_swapChainSupportDetails.capabilities = physicalDevice.getSurfaceCapabilitiesKHR(_surface);
+			_swapChainSupportDetails.formats      = physicalDevice.getSurfaceFormatsKHR(_surface);
+			_swapChainSupportDetails.presentModes = physicalDevice.getSurfacePresentModesKHR(_surface);
+
+			if (_swapChainSupportDetails.formats.empty() || _swapChainSupportDetails.presentModes.empty()) { continue; }
+
 			// Select device
 			_physicalDevice = physicalDevice;
 			Debug::Log::Info(std::format("Selected physical device: {}", deviceProperties.deviceName));
@@ -139,4 +217,5 @@ namespace ProjectThalia::Vulkan
 		vkDestroySurfaceKHR(_instance, _surface, nullptr);
 		vkDestroyInstance(_instance, nullptr);
 	}
+
 }

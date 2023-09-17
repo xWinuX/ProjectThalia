@@ -38,11 +38,20 @@ namespace ProjectThalia::Vulkan
 			vk::Device         _device         = VK_NULL_HANDLE;
 			vk::Instance       _instance       = VK_NULL_HANDLE;
 			vk::SurfaceKHR     _surface        = VK_NULL_HANDLE;
-			QueueFamilyIndices _queueFamilyIndices;
+			vk::SwapchainKHR   _swapChain      = VK_NULL_HANDLE;
+
+			vk::SurfaceFormatKHR   _swapChainImageFormat;
+			vk::Extent2D           _swapChainExtend;
+			std::vector<vk::Image> _swapChainImages;
+
+
+			QueueFamilyIndices      _queueFamilyIndices;
+			SwapChainSupportDetails _swapChainSupportDetails;
 
 			void CreateInstance(SDL_Window* sdlWindow);
 			void CreateSurface(SDL_Window* sdlWindow);
 			void SelectPhysicalDevice();
 			void CreateLogicalDevice();
+			void CreateSwapChain(SDL_Window* sdlWindow);
 	};
 }
