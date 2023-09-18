@@ -12,5 +12,6 @@ namespace ProjectThalia
 
 		private:
 			Window _window;
+			Vulkan::VulkanContext _vulkanContext;
 	};
 }

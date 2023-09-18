@@ -8,13 +8,39 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 option(SKIP_AUTOMATE_VCPKG "When ON, you will need to built the packages required by MyProject on your own or supply your own vcpkg toolchain.")
-
 if (NOT SKIP_AUTOMATE_VCPKG)
     include(cmake/AutomateVCPKG.cmake)
 
     vcpkg_bootstrap()
     vcpkg_install_packages_in_manifest()
 endif()
+
+find_package(Vulkan COMPONENTS glslc)
+find_program(glslc_executable NAMES glslc HINTS Vulkan::glslc)
+
+function(compile_shader target)
+    cmake_parse_arguments(PARSE_ARGV 1 arg "" "ENV;FORMAT" "SOURCES")
+
+    # Determine the build configuration folder (Debug, Release, etc.)
+    set(config_folder "$<CONFIG>")
+
+    foreach(source ${arg_SOURCES})
+        add_custom_command(
+                OUTPUT ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT}  # Change output path
+                DEPENDS ${source}
+                DEPFILE ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.d
+                COMMAND
+                ${glslc_executable}
+                $<$<BOOL:${arg_ENV}>:--target-env=${arg_ENV}>
+                $<$<BOOL:${arg_FORMAT}>:-mfmt=${arg_FORMAT}>
+                -MD -MF ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.d
+                -o ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT}  # Change output path
+                ${CMAKE_CURRENT_SOURCE_DIR}/${source}
+        )
+
+        target_sources(${target} PRIVATE ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT})  # Change source path
+    endforeach()
+endfunction()
 
 project(ProjectThalia)
 
@@ -56,6 +82,15 @@ target_link_libraries(${PROJECT_NAME}
         PRIVATE
         $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
         $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+)
+
+
+compile_shader(${PROJECT_NAME}
+        ENV vulkan1.2
+        FORMAT bin
+        SOURCES
+        res/shaders/Debug.vert
+        res/shaders/Debug.frag
 )
 
 # Compile Shaders

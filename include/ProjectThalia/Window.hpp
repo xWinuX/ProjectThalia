@@ -12,8 +12,9 @@ namespace ProjectThalia
 			void Open();
 			void Close();
 
+			SDL_Window* GetSDLWindow();
+
 		private:
-			SDL_Window*     _window = nullptr;
-			Vulkan::VulkanContext _vulkanContext;
+			SDL_Window* _window = nullptr;
 	};
 }
