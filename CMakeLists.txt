@@ -32,7 +32,6 @@ function(compile_shader target)
                 COMMAND
                 ${glslc_executable}
                 $<$<BOOL:${arg_ENV}>:--target-env=${arg_ENV}>
-                $<$<BOOL:${arg_FORMAT}>:-mfmt=${arg_FORMAT}>
                 -MD -MF ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.d
                 -o ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT}  # Change output path
                 ${CMAKE_CURRENT_SOURCE_DIR}/${source}
@@ -84,13 +83,42 @@ target_link_libraries(${PROJECT_NAME}
         $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
 )
 
+function(compile_shader target)
+    cmake_parse_arguments(PARSE_ARGV 1 arg "" "ENV;FORMAT" "SOURCES")
+
+    # Determine the build configuration folder (Debug, Release, etc.)
+    set(config_folder "$<CONFIG>")
+
+    message(${arg_SOURCES})
+
+    foreach(source ${arg_SOURCES})
+        # Remove absolute path
+        string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}" "" source ${source})
+
+        add_custom_command(
+                OUTPUT ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT}  # Change output path
+                DEPENDS ${source}
+                DEPFILE ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.d
+                COMMAND
+                ${glslc_executable}
+                $<$<BOOL:${arg_ENV}>:--target-env=${arg_ENV}>
+                -MD -MF ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.d
+                -o ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT}  # Change output path
+                ${CMAKE_CURRENT_SOURCE_DIR}/${source}
+        )
+
+        target_sources(${target} PRIVATE ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT})  # Change source path
+    endforeach()
+endfunction()
+
+file(GLOB_RECURSE SHADERS res/shaders/*.vert res/shaders/*.frag)
+
+message(${SHADERS})
 
 compile_shader(${PROJECT_NAME}
         ENV vulkan1.2
-        FORMAT bin
-        SOURCES
-        res/shaders/Debug.vert
-        res/shaders/Debug.frag
+        FORMAT spv
+        SOURCES ${SHADERS}
 )
 
 # Compile Shaders

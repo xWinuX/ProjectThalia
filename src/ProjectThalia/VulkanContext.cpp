@@ -99,6 +99,7 @@ namespace ProjectThalia::Vulkan
 
 		commandBuffer.draw(3, 1, 0, 0);
 
+		commandBuffer.endRenderPass();
 		commandBuffer.end();
 	}
 
@@ -106,10 +107,12 @@ namespace ProjectThalia::Vulkan
 	{
 		vk::CommandPoolCreateInfo commandPoolCreateInfo = vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
 																					_queueFamilyIndices.graphicsFamily.value());
-		_commandPool                                    = _device.createCommandPool(commandPoolCreateInfo);
+
+		_commandPool = _device.createCommandPool(commandPoolCreateInfo);
 
 		vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vk::CommandBufferAllocateInfo(_commandPool, vk::CommandBufferLevel::ePrimary, 1);
-		_commandBuffer                                          = _device.allocateCommandBuffers(commandBufferAllocateInfo)[0];
+
+		_commandBuffer = _device.allocateCommandBuffers(commandBufferAllocateInfo)[0];
 	}
 
 	void VulkanContext::CreateFrameBuffers()
@@ -130,8 +133,8 @@ namespace ProjectThalia::Vulkan
 
 	void VulkanContext::CreateGraphicsPipeline()
 	{
-		auto vertShaderCode = readFile("res/shaders/Debug.vert.bin");
-		auto fragShaderCode = readFile("res/shaders/Debug.frag.bin");
+		auto vertShaderCode = readFile("res/shaders/Debug.vert.spv");
+		auto fragShaderCode = readFile("res/shaders/Debug.frag.spv");
 
 		vk::ShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
 		vk::ShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
@@ -482,6 +485,8 @@ namespace ProjectThalia::Vulkan
 
 	void VulkanContext::Destroy()
 	{
+		_device.waitIdle();
+
 		_device.destroy(_imageAvailableSemaphore);
 		_device.destroy(_renderFinishedSemaphore);
 		_device.destroy(_inFlightFence);
@@ -508,25 +513,22 @@ namespace ProjectThalia::Vulkan
 	void VulkanContext::DrawFrame()
 	{
 		Debug::Log::Info("Draw frame");
-		_device.waitForFences(1, &_inFlightFence, vk::True, UINT64_MAX);
-		_device.resetFences(1, &_inFlightFence);
+		vk::Result waitForFencesResult = _device.waitForFences(1, &_inFlightFence, vk::True, UINT64_MAX);
+		vk::Result resetFencesResult   = _device.resetFences(1, &_inFlightFence);
 
 		vk::ResultValue<uint32_t> imageIndex = _device.acquireNextImageKHR(_swapChain, UINT64_MAX, _imageAvailableSemaphore, VK_NULL_HANDLE);
 
-		_commandBuffer.reset();
+		_commandBuffer.reset({});
 		RecordCommandBuffer(_commandBuffer, imageIndex.value);
 
-		vk::Semaphore waitSemaphores[]   = {_imageAvailableSemaphore};
-		vk::Semaphore signalSemaphores[] = {_renderFinishedSemaphore};
-
 		vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
-		vk::SubmitInfo         submitInfo   = vk::SubmitInfo(waitSemaphores, waitStages, _commandBuffer, signalSemaphores);
+		vk::SubmitInfo         submitInfo   = vk::SubmitInfo(_imageAvailableSemaphore, waitStages, _commandBuffer, _renderFinishedSemaphore);
 
 		_graphicsQueue.submit(submitInfo, _inFlightFence);
 
-		vk::PresentInfoKHR presentInfo = vk::PresentInfoKHR(waitSemaphores, _swapChain, imageIndex.value, nullptr);
-		_presentQueue.presentKHR(presentInfo);
-		_device.waitIdle();
+		vk::PresentInfoKHR presentInfo = vk::PresentInfoKHR(_renderFinishedSemaphore, _swapChain, imageIndex.value, nullptr);
+
+		vk::Result presentResult = _presentQueue.presentKHR(presentInfo);
 	}
 
 }
