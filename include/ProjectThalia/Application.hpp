@@ -11,7 +11,7 @@ namespace ProjectThalia
 			void Run();
 
 		private:
-			Window _window;
-			Vulkan::VulkanContext _vulkanContext;
+			Window                   _window;
+			Rendering::VulkanContext _vulkanContext;
 	};
 }

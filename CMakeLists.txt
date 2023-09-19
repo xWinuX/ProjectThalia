@@ -15,31 +15,7 @@ if (NOT SKIP_AUTOMATE_VCPKG)
     vcpkg_install_packages_in_manifest()
 endif()
 
-find_package(Vulkan COMPONENTS glslc)
-find_program(glslc_executable NAMES glslc HINTS Vulkan::glslc)
-
-function(compile_shader target)
-    cmake_parse_arguments(PARSE_ARGV 1 arg "" "ENV;FORMAT" "SOURCES")
-
-    # Determine the build configuration folder (Debug, Release, etc.)
-    set(config_folder "$<CONFIG>")
-
-    foreach(source ${arg_SOURCES})
-        add_custom_command(
-                OUTPUT ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT}  # Change output path
-                DEPENDS ${source}
-                DEPFILE ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.d
-                COMMAND
-                ${glslc_executable}
-                $<$<BOOL:${arg_ENV}>:--target-env=${arg_ENV}>
-                -MD -MF ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.d
-                -o ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT}  # Change output path
-                ${CMAKE_CURRENT_SOURCE_DIR}/${source}
-        )
-
-        target_sources(${target} PRIVATE ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT})  # Change source path
-    endforeach()
-endfunction()
+include(cmake/Vulkan.cmake)
 
 project(ProjectThalia)
 
@@ -53,8 +29,12 @@ add_executable(${PROJECT_NAME}
         include/ProjectThalia/Debug/Log.hpp
         src/ProjectThalia/ErrorHandler.cpp
         include/ProjectThalia/ErrorHandler.hpp
-        src/ProjectThalia/VulkanContext.cpp
-        include/ProjectThalia/VulkanContext.hpp
+        src/ProjectThalia/Rendering/VulkanContext.cpp
+        include/ProjectThalia/Rendering/VulkanContext.hpp
+        src/ProjectThalia/Rendering/Pipeline.cpp
+        include/ProjectThalia/Rendering/Pipeline.hpp
+        include/ProjectThalia/IO/Stream.hpp
+        src/ProjectThalia/IO/Stream.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE include)
@@ -83,34 +63,6 @@ target_link_libraries(${PROJECT_NAME}
         $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
 )
 
-function(compile_shader target)
-    cmake_parse_arguments(PARSE_ARGV 1 arg "" "ENV;FORMAT" "SOURCES")
-
-    # Determine the build configuration folder (Debug, Release, etc.)
-    set(config_folder "$<CONFIG>")
-
-    message(${arg_SOURCES})
-
-    foreach(source ${arg_SOURCES})
-        # Remove absolute path
-        string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}" "" source ${source})
-
-        add_custom_command(
-                OUTPUT ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT}  # Change output path
-                DEPENDS ${source}
-                DEPFILE ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.d
-                COMMAND
-                ${glslc_executable}
-                $<$<BOOL:${arg_ENV}>:--target-env=${arg_ENV}>
-                -MD -MF ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.d
-                -o ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT}  # Change output path
-                ${CMAKE_CURRENT_SOURCE_DIR}/${source}
-        )
-
-        target_sources(${target} PRIVATE ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT})  # Change source path
-    endforeach()
-endfunction()
-
 file(GLOB_RECURSE SHADERS res/shaders/*.vert res/shaders/*.frag)
 
 message(${SHADERS})
@@ -120,36 +72,3 @@ compile_shader(${PROJECT_NAME}
         FORMAT spv
         SOURCES ${SHADERS}
 )
-
-# Compile Shaders
-#set(SHADER_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/res/shaders)
-#set(SHADER_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/res/shaders)
-#
-#
-#file(GLOB SHADERS
-#        ${SHADER_SOURCE_DIR}/*.vert
-#        ${SHADER_SOURCE_DIR}/*.frag)
-#
-#add_custom_command(
-#        COMMAND
-#        ${CMAKE_COMMAND} -E make_directory ${SHADER_BINARY_DIR}
-#        OUTPUT ${SHADER_BINARY_DIR}
-#        COMMENT "Creating ${SHADER_BINARY_DIR}"
-#)
-#
-#foreach(source IN LISTS SHADERS)
-#    get_filename_component(FILENAME ${source} NAME)
-#    add_custom_command(
-#            COMMAND
-#            ${glslc_executable}
-#            -MD -MF ${SHADER_BINARY_DIR}/${FILENAME}.d
-#            -o ${SHADER_BINARY_DIR}/${FILENAME}.spv
-#            ${source}
-#            OUTPUT ${SHADER_BINARY_DIR}/${FILENAME}.spv
-#            DEPENDS ${source} ${SHADER_BINARY_DIR}
-#            COMMENT "Compiling ${FILENAME}"
-#    )
-#    list(APPEND SPV_SHADERS ${SHADER_BINARY_DIR}/${FILENAME}.spv)
-#endforeach()
-#
-#add_custom_target(shaders ALL DEPENDS ${SPV_SHADERS})

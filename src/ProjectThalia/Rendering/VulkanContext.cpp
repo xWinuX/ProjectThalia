@@ -1,8 +1,8 @@
-#include "ProjectThalia/VulkanContext.hpp"
+#include "ProjectThalia/Rendering/VulkanContext.hpp"
 #include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
 
-#include <SDL2/SDL_vulkan.h>
+#include "SDL2/SDL_vulkan.h"
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-namespace ProjectThalia::Vulkan
+namespace ProjectThalia::Rendering
 {
 	static std::vector<char> readFile(const std::string& filename)
 	{

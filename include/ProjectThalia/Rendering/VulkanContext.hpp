@@ -1,11 +1,11 @@
 #pragma once
 
-#include <SDL2/SDL.h>
+#include "SDL2/SDL.h"
+#include "vulkan/vulkan.hpp"
 #include <optional>
 #include <vector>
-#include <vulkan/vulkan.hpp>
 
-namespace ProjectThalia::Vulkan
+namespace ProjectThalia::Rendering
 {
 	struct QueueFamilyIndices
 	{
@@ -31,12 +31,15 @@ namespace ProjectThalia::Vulkan
 			void Destroy();
 			void DrawFrame();
 
+			[[nodiscard]] static const vk::Device& GetDevice();
+
 		private:
 			const std::vector<const char*> _validationLayers = {"VK_LAYER_KHRONOS_validation"};
 			const std::vector<const char*> _deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
+			static vk::Device _device;
+
 			vk::PhysicalDevice _physicalDevice          = VK_NULL_HANDLE;
-			vk::Device         _device                  = VK_NULL_HANDLE;
 			vk::Queue          _graphicsQueue           = VK_NULL_HANDLE;
 			vk::Queue          _presentQueue            = VK_NULL_HANDLE;
 			vk::Instance       _instance                = VK_NULL_HANDLE;
@@ -74,4 +77,6 @@ namespace ProjectThalia::Vulkan
 			void             RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex);
 			void             CreateSyncObjects();
 	};
+
+	inline vk::Device VulkanContext::_device = VK_NULL_HANDLE;
 }

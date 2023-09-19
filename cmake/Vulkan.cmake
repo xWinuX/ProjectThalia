@@ -5,19 +5,28 @@ find_program(glslc_executable NAMES glslc HINTS Vulkan::glslc)
 
 function(compile_shader target)
     cmake_parse_arguments(PARSE_ARGV 1 arg "" "ENV;FORMAT" "SOURCES")
+
+    # Determine the build configuration folder (Debug, Release, etc.)
+    set(config_folder "$<CONFIG>")
+
+    message(${arg_SOURCES})
+
     foreach(source ${arg_SOURCES})
+        # Remove absolute path
+        string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}" "" source ${source})
+
         add_custom_command(
-                OUTPUT ${source}.${arg_FORMAT}
+                OUTPUT ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT}  # Change output path
                 DEPENDS ${source}
-                DEPFILE ${source}.d
+                DEPFILE ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.d
                 COMMAND
                 ${glslc_executable}
                 $<$<BOOL:${arg_ENV}>:--target-env=${arg_ENV}>
-                $<$<BOOL:${arg_FORMAT}>:-mfmt=${arg_FORMAT}>
-                -MD -MF ${source}.d
-                -o ${source}.${arg_FORMAT}
+                -MD -MF ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.d
+                -o ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT}  # Change output path
                 ${CMAKE_CURRENT_SOURCE_DIR}/${source}
         )
-        target_sources(${target} PRIVATE ${source}.${arg_FORMAT})
+
+        target_sources(${target} PRIVATE ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT})  # Change source path
     endforeach()
 endfunction()
