@@ -8,7 +8,7 @@
 void ProjectThalia::Application::Run()
 {
 	// Initialize SDL
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) { ErrorHandler::ThrowRuntimeError(std::format("SDL could not initialize! SDL_Error: {}\n", SDL_GetError())); }
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) { ErrorHandler::ThrowRuntimeError(std::format("SDL could not initialize! SDL_Error: {0}\n", SDL_GetError())); }
 
 	_window.Open();
 	_vulkanContext.Initialize(_window.GetSDLWindow());

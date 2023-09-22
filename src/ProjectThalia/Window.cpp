@@ -18,7 +18,7 @@ namespace ProjectThalia
 								   SCREEN_WIDTH,
 								   SCREEN_HEIGHT,
 								   SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN);
-		if (_window == nullptr) { ErrorHandler::ThrowRuntimeError(std::format("Window could not be created! SDL_Error: {}\n", SDL_GetError())); }
+		if (_window == nullptr) { ErrorHandler::ThrowRuntimeError(std::format("Window could not be created! SDL_Error: {0}\n", SDL_GetError())); }
 	}
 
 	void Window::Close()

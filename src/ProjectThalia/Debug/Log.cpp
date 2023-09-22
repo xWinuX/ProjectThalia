@@ -16,7 +16,7 @@ namespace ProjectThalia::Debug
 
 	void Log::Print(const std::string& message, LogLevel logLevel)
 	{
-		std::string formattedMessage = std::format("{} [{}] {}", GetDateTime(), LogLevelToString(logLevel), message);
+		std::string formattedMessage = std::format("{0} [{1}] {2}", GetDateTime(), LogLevelToString(logLevel), message);
 		if (logLevel < 2) { std::cout << formattedMessage << std::endl; }
 		else { std::cerr << formattedMessage << std::endl; }
 	}

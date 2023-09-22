@@ -1,6 +1,5 @@
 #include "ProjectThalia/Rendering/Pipeline.hpp"
 #include "ProjectThalia/Application.hpp"
-#include "ProjectThalia/IO/Stream.hpp"
 
 
 namespace ProjectThalia::Rendering
