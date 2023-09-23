@@ -1,35 +1,31 @@
 #pragma once
 
-#include <vector>
-#include <string>
-#include <iostream>
 #include <fstream>
-
+#include <iostream>
+#include <string>
+#include <vector>
 
 namespace ProjectThalia::IO
 {
-	struct StreamReadFormat {
-			int Format;
+	enum StreamReadFormat
+	{
+		Default = 0,
+		Binary  = std::ios::ate | std::ios::binary
 	};
+
 	class Stream
 	{
 		public:
-			explicit Stream(std::string filePath, StreamReadFormat readFormat);
+			explicit Stream(const std::string& filePath, StreamReadFormat readFormat = StreamReadFormat::Default);
 
-			class ReadFormat {
-					static StreamReadFormat Binary;
-			};
+			static std::vector<char> ReadRawAndClose(const std::string& filePath, StreamReadFormat format = StreamReadFormat::Default);
 
 			std::vector<char> ReadRaw();
-
-			static std::vector<char> ReadRawAndClose(const std::string& filePath, StreamReadFormat format);
 
 			void Close();
 
 		private:
 			std::ifstream _stream;
-			StreamReadFormat _readFormat;
+			StreamReadFormat _readFormat = StreamReadFormat::Default;
 	};
-
-	inline StreamReadFormat Stream::ReadFormat::Binary = {std::ios::ate | std::ios::binary};
 }

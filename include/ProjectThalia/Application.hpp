@@ -1,6 +1,7 @@
 #pragma once
 #define SDL_MAIN_HANDLED
 
+#include "ProjectThalia/Rendering/VulkanContext.hpp"
 #include "Window.hpp"
 
 namespace ProjectThalia

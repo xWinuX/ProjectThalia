@@ -3,7 +3,6 @@
 
 #include <format>
 
-
 namespace ProjectThalia
 {
 	void Window::Open()
@@ -26,5 +25,15 @@ namespace ProjectThalia
 		SDL_DestroyWindow(_window);
 		SDL_Quit();
 	}
+
 	SDL_Window* Window::GetSDLWindow() { return _window; }
+
+	glm::ivec2 Window::GetSize()
+	{
+		glm::ivec2 size;
+
+		SDL_GetWindowSize(_window, &size.x, &size.y);
+
+		return size;
+	}
 }

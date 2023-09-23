@@ -33,8 +33,14 @@ add_executable(${PROJECT_NAME}
         include/ProjectThalia/Rendering/VulkanContext.hpp
         src/ProjectThalia/Rendering/Pipeline.cpp
         include/ProjectThalia/Rendering/Pipeline.hpp
-        include/ProjectThalia/IO/Stream.cpp
+        src/ProjectThalia/IO/Stream.cpp
         include/ProjectThalia/IO/Stream.hpp
+        src/ProjectThalia/Rendering/Swapchain.cpp
+        include/ProjectThalia/Rendering/Swapchain.hpp
+        src/ProjectThalia/Rendering/PhysicalDevice.cpp
+        include/ProjectThalia/Rendering/PhysicalDevice.hpp
+        src/ProjectThalia/Rendering/Device.cpp
+        include/ProjectThalia/Rendering/Device.hpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE include)

@@ -1,9 +1,15 @@
-#include "Stream.hpp"
+#include "ProjectThalia/IO/Stream.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
 #include <filesystem>
 
 namespace ProjectThalia::IO
 {
+	Stream::Stream(const std::string& filePath, StreamReadFormat readFormat) :
+		_stream(std::ifstream(filePath, readFormat)),
+		_readFormat(readFormat)
+	{
+		if (!_stream.is_open()) { ErrorHandler::ThrowRuntimeError("failed to open file!"); }
+	}
 
 	std::vector<char> Stream::ReadRaw()
 	{
@@ -11,7 +17,7 @@ namespace ProjectThalia::IO
 		std::vector<char> buffer(fileSize);
 
 		_stream.seekg(0);
-		_stream.read(buffer.data(), static_cast<>fileSize);
+		_stream.read(buffer.data(), static_cast<std::streamsize>(fileSize));
 
 		_stream.close();
 
@@ -27,14 +33,6 @@ namespace ProjectThalia::IO
 		return buffer;
 	}
 
-	void Stream::Close() {
-		_stream.close();
-	}
+	void Stream::Close() { _stream.close(); }
 
-	Stream::Stream(std::string filePath, StreamReadFormat readFormat) :
-		_stream(std::ifstream(filePath, readFormat.Format)),
-		_readFormat(readFormat)
-	{
-		if (!_stream.is_open()) { ErrorHandler::ThrowRuntimeError("failed to open file!"); }
-	}
 }
