@@ -32,6 +32,6 @@ namespace ProjectThalia::Rendering
 			vk::PipelineLayout _layout;
 			vk::RenderPass     _renderPass;
 
-			std::vector<vk::ShaderModule> _shaderModules = std::vector<vk::ShaderModule>(2);
+			std::vector<vk::ShaderModule> _shaderModules;
 	};
 }

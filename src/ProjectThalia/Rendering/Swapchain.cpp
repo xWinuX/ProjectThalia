@@ -29,7 +29,7 @@ namespace ProjectThalia::Rendering
 
 		// Select swap extend
 		const vk::SurfaceCapabilitiesKHR& capabilities = swapchainSupportDetails.capabilities;
-		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) { size = capabilities.currentExtent; }
+		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) { _extend = capabilities.currentExtent; }
 		else
 		{
 			_extend.width  = std::clamp(size.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);

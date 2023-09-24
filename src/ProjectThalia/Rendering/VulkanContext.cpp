@@ -90,7 +90,7 @@ namespace ProjectThalia::Rendering
 	void VulkanContext::CreateCommandBuffers()
 	{
 		vk::CommandPoolCreateInfo commandPoolCreateInfo = vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-																					_queueFamilyIndices.graphicsFamily.value());
+																					_physicalDevice.GetQueueFamilyIndices().graphicsFamily.value());
 
 		_commandPool = _device->GetVkDevice().createCommandPool(commandPoolCreateInfo);
 

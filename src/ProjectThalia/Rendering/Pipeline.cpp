@@ -8,12 +8,12 @@ namespace ProjectThalia::Rendering
 {
 	Pipeline::Pipeline(const std::string& name, const std::vector<ShaderInfo>& shaderInfos, const Device& device, const Swapchain& swapchain)
 	{
-		std::vector<vk::PipelineShaderStageCreateInfo> _shaderStages = std::vector<vk::PipelineShaderStageCreateInfo>(2);
+		std::vector<vk::PipelineShaderStageCreateInfo> _shaderStages = std::vector<vk::PipelineShaderStageCreateInfo>(shaderInfos.size());
+		_shaderModules.reserve(shaderInfos.size());
 
-
-		for (const ShaderInfo& shaderInfo : shaderInfos)
+		for (int i = 0; i < shaderInfos.size(); ++i)
 		{
-			std::vector<char> shaderCode = IO::Stream::ReadRawAndClose(shaderInfo.path, IO::Binary);
+			std::vector<char> shaderCode = IO::Stream::ReadRawAndClose(shaderInfos[i].path, IO::Binary);
 
 			vk::ShaderModuleCreateInfo createInfo = vk::ShaderModuleCreateInfo({}, shaderCode.size(), reinterpret_cast<const uint32_t*>(shaderCode.data()));
 
@@ -21,10 +21,10 @@ namespace ProjectThalia::Rendering
 			_shaderModules.push_back(shaderModule);
 
 			vk::PipelineShaderStageCreateInfo shaderStageCreateInfo = vk::PipelineShaderStageCreateInfo({},
-																										shaderInfo.shaderStage,
-																										_shaderModules[_shaderModules.size()-1],
+																										shaderInfos[i].shaderStage,
+																										_shaderModules[i],
 																										"main");
-			_shaderStages.push_back(shaderStageCreateInfo);
+			_shaderStages[i] = shaderStageCreateInfo;
 		}
 
 		Debug::Log::Info("After shader compiling");
@@ -34,12 +34,11 @@ namespace ProjectThalia::Rendering
 				vk::DynamicState::eScissor,
 		};
 
-		vk::PipelineDynamicStateCreateInfo     dynamicStateCreateInfo     = vk::PipelineDynamicStateCreateInfo({}, dynamicStates);
-		vk::PipelineVertexInputStateCreateInfo vertexInputStateCreateInfo = vk::PipelineVertexInputStateCreateInfo({}, 0, nullptr, 0, nullptr);
-
-		vk::PipelineInputAssemblyStateCreateInfo assemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo({},
-																													vk::PrimitiveTopology::eTriangleList,
-																													vk::False);
+		vk::PipelineDynamicStateCreateInfo       dynamicStateCreateInfo     = vk::PipelineDynamicStateCreateInfo({}, dynamicStates);
+		vk::PipelineVertexInputStateCreateInfo   vertexInputStateCreateInfo = vk::PipelineVertexInputStateCreateInfo({}, 0, nullptr, 0, nullptr);
+		vk::PipelineInputAssemblyStateCreateInfo assemblyStateCreateInfo    = vk::PipelineInputAssemblyStateCreateInfo({},
+                                                                                                                    vk::PrimitiveTopology::eTriangleList,
+                                                                                                                    vk::False);
 
 		vk::Viewport viewport = vk::Viewport(0,
 											 0,
@@ -47,7 +46,8 @@ namespace ProjectThalia::Rendering
 											 static_cast<float>(swapchain.GetExtend().height),
 											 0.0f,
 											 1.0f);
-		vk::Rect2D   scissor  = vk::Rect2D({0, 0}, swapchain.GetExtend());
+
+		vk::Rect2D scissor = vk::Rect2D({0, 0}, swapchain.GetExtend());
 
 		vk::PipelineViewportStateCreateInfo viewportStateCreateInfo = vk::PipelineViewportStateCreateInfo({}, 1, &viewport, 1, &scissor);
 
@@ -137,8 +137,7 @@ namespace ProjectThalia::Rendering
 																								   0,
 																								   VK_NULL_HANDLE,
 																								   -1);
-
-
+		
 		vk::ResultValue<vk::Pipeline> graphicsPipelineResult = device.GetVkDevice().createGraphicsPipeline(VK_NULL_HANDLE, graphicsPipelineCreateInfo);
 		if (graphicsPipelineResult.result != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("Failed to create graphics pipeline!"); }
 

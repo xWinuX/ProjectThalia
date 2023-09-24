@@ -57,11 +57,7 @@ namespace ProjectThalia::Rendering
 			vk::Semaphore _renderFinishedSemaphore;
 			vk::Fence     _inFlightFence;
 
-
 			std::vector<VkFramebuffer> _swapChainFrameBuffers;
-
-			QueueFamilyIndices      _queueFamilyIndices;
-			SwapChainSupportDetails _swapChainSupportDetails;
 
 			void CreateInstance(SDL_Window* sdlWindow);
 			void CreateSurface(SDL_Window* sdlWindow);
