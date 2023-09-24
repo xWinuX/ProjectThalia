@@ -1,14 +1,16 @@
 #pragma once
 
-#include "glm/vec2.hpp"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
+#include <glm/vec2.hpp>
 
 namespace ProjectThalia
 {
 	class Window
 	{
 		public:
+			Window() = default;
+
 			void Open();
 			void Close();
 
@@ -18,6 +20,5 @@ namespace ProjectThalia
 
 		private:
 			SDL_Window* _window = nullptr;
-
 	};
 }

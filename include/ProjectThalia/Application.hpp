@@ -1,7 +1,7 @@
 #pragma once
 #define SDL_MAIN_HANDLED
 
-#include "ProjectThalia/Rendering/Vulkan/Context.hpp"
+#include "ProjectThalia/Rendering/Renderer.hpp"
 #include "Window.hpp"
 
 namespace ProjectThalia
@@ -9,10 +9,14 @@ namespace ProjectThalia
 	class Application
 	{
 		public:
+			Application() = default;
 			void Run();
 
 		private:
-			Window                     _window;
-			Rendering::Vulkan::Context _vulkanContext;
+			void Initialize();
+			void Destroy();
+
+			Window              _window;
+			Rendering::Renderer _renderer;
 	};
 }
