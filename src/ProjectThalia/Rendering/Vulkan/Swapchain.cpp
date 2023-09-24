@@ -1,8 +1,8 @@
-#include "ProjectThalia/Rendering/Swapchain.hpp"
+#include "ProjectThalia/Rendering/Vulkan/Swapchain.hpp"
 
-namespace ProjectThalia::Rendering
+namespace ProjectThalia::Rendering::Vulkan
 {
-	ProjectThalia::Rendering::Swapchain::Swapchain(const vk::Device&     device,
+	Swapchain::Swapchain(const vk::Device&     device,
 												   const PhysicalDevice& physicalDevice,
 												   const vk::RenderPass& renderPass,
 												   const vk::SurfaceKHR& surface,

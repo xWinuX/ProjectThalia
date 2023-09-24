@@ -7,9 +7,8 @@
 #include "glm/glm.hpp"
 #include "vulkan/vulkan.hpp"
 
-namespace ProjectThalia::Rendering
+namespace ProjectThalia::Rendering::Vulkan
 {
-
 	class Device
 	{
 		public:
@@ -41,5 +40,4 @@ namespace ProjectThalia::Rendering
 			vk::Queue _graphicsQueue;
 			vk::Queue _presentQueue;
 	};
-
 }

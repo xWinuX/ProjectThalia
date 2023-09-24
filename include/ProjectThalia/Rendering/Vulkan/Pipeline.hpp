@@ -4,7 +4,7 @@
 #include "Swapchain.hpp"
 #include "vulkan/vulkan.hpp"
 
-namespace ProjectThalia::Rendering
+namespace ProjectThalia::Rendering::Vulkan
 {
 	class Pipeline
 	{

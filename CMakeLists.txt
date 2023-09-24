@@ -29,22 +29,22 @@ add_executable(${PROJECT_NAME}
         include/ProjectThalia/Debug/Log.hpp
         src/ProjectThalia/ErrorHandler.cpp
         include/ProjectThalia/ErrorHandler.hpp
-        src/ProjectThalia/Rendering/VulkanContext.cpp
-        include/ProjectThalia/Rendering/VulkanContext.hpp
-        src/ProjectThalia/Rendering/Pipeline.cpp
-        include/ProjectThalia/Rendering/Pipeline.hpp
+        src/ProjectThalia/Rendering/Vulkan/Context.cpp
+        include/ProjectThalia/Rendering/Vulkan/Context.hpp
+        src/ProjectThalia/Rendering/Vulkan/Pipeline.cpp
+        include/ProjectThalia/Rendering/Vulkan/Pipeline.hpp
         src/ProjectThalia/IO/Stream.cpp
         include/ProjectThalia/IO/Stream.hpp
-        src/ProjectThalia/Rendering/Swapchain.cpp
-        include/ProjectThalia/Rendering/Swapchain.hpp
-        src/ProjectThalia/Rendering/PhysicalDevice.cpp
-        include/ProjectThalia/Rendering/PhysicalDevice.hpp
-        src/ProjectThalia/Rendering/Device.cpp
-        include/ProjectThalia/Rendering/Device.hpp
-        src/ProjectThalia/Rendering/RenderPass.cpp
-        include/ProjectThalia/Rendering/RenderPass.hpp
-        src/ProjectThalia/Rendering/Instance.cpp
-        include/ProjectThalia/Rendering/Instance.hpp
+        src/ProjectThalia/Rendering/Vulkan/Swapchain.cpp
+        include/ProjectThalia/Rendering/Vulkan/Swapchain.hpp
+        src/ProjectThalia/Rendering/Vulkan/PhysicalDevice.cpp
+        include/ProjectThalia/Rendering/Vulkan/PhysicalDevice.hpp
+        src/ProjectThalia/Rendering/Vulkan/Device.cpp
+        include/ProjectThalia/Rendering/Vulkan/Device.hpp
+        src/ProjectThalia/Rendering/Vulkan/RenderPass.cpp
+        include/ProjectThalia/Rendering/Vulkan/RenderPass.hpp
+        src/ProjectThalia/Rendering/Vulkan/Instance.cpp
+        include/ProjectThalia/Rendering/Vulkan/Instance.hpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE include)

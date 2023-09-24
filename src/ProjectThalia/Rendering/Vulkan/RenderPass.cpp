@@ -1,6 +1,6 @@
-#include "ProjectThalia/Rendering/RenderPass.hpp"
+#include "ProjectThalia/Rendering/Vulkan/RenderPass.hpp"
 
-namespace ProjectThalia::Rendering
+namespace ProjectThalia::Rendering::Vulkan
 {
 	RenderPass::RenderPass(const vk::Device& device, vk::Format format)
 	{
@@ -31,6 +31,6 @@ namespace ProjectThalia::Rendering
 	}
 
 	const vk::RenderPass& RenderPass::GetVkRenderPass() const { return _vkRenderPass; }
-}
 
-void ProjectThalia::Rendering::RenderPass::Destroy(vk::Device device) { device.destroy(_vkRenderPass); }
+	void RenderPass::Destroy(vk::Device device) { device.destroy(_vkRenderPass); }
+}

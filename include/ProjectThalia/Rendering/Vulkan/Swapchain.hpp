@@ -3,10 +3,10 @@
 #include "PhysicalDevice.hpp"
 #include "SDL_video.h"
 
+#include "vulkan/vulkan.hpp"
 #include <optional>
-#include <vulkan/vulkan.hpp>
 
-namespace ProjectThalia::Rendering
+namespace ProjectThalia::Rendering::Vulkan
 {
 	class Swapchain
 	{
@@ -35,5 +35,4 @@ namespace ProjectThalia::Rendering
 
 			vk::Extent2D _extend = {};
 	};
-
 }

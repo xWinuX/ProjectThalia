@@ -8,22 +8,20 @@
 #include <optional>
 #include <vector>
 
-namespace ProjectThalia::Rendering
+namespace ProjectThalia::Rendering::Vulkan
 {
-	class VulkanContext
+	class Context
 	{
 		public:
 			void Initialize(Window& sdlWindow);
 			void Destroy();
 			void DrawFrame();
 
-			static const vk::Device& GetDevice();
-
 		private:
 			const std::vector<const char*> _validationLayers = {"VK_LAYER_KHRONOS_validation"};
 			const std::vector<const char*> _deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
-			static std::unique_ptr<Device> _device;
+			std::unique_ptr<Device> _device;
 
 			Instance       _instance;
 			PhysicalDevice _physicalDevice;
@@ -40,6 +38,4 @@ namespace ProjectThalia::Rendering
 			void RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex);
 			void CreateSyncObjects();
 	};
-
-	inline std::unique_ptr<Device> VulkanContext::_device = nullptr;
 }

@@ -1,11 +1,10 @@
 #pragma once
 
+#include "vulkan/vulkan.hpp"
 #include <optional>
-#include <vulkan/vulkan.hpp>
 
-namespace ProjectThalia::Rendering
+namespace ProjectThalia::Rendering::Vulkan
 {
-
 	class PhysicalDevice
 	{
 		public:
@@ -49,5 +48,4 @@ namespace ProjectThalia::Rendering
 			std::vector<const char*> _extensions;
 			std::vector<const char*> _validationLayers;
 	};
-
 }

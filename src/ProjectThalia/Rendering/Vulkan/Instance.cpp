@@ -1,12 +1,11 @@
-#include "ProjectThalia/Rendering/Instance.hpp"
+#include "ProjectThalia/Rendering/Vulkan/Instance.hpp"
 
-namespace ProjectThalia::Rendering
+namespace ProjectThalia::Rendering::Vulkan
 {
 	Instance::Instance(std::vector<const char*> extensionNames, std::vector<const char*> validationLayers, vk::ApplicationInfo applicationInfo)
 	{
 		vk::InstanceCreateInfo instanceCreateInfo = vk::InstanceCreateInfo({}, &applicationInfo, validationLayers, extensionNames);
 
-		// Create vulkan instance
 		_vkInstance = vk::createInstance(instanceCreateInfo);
 	}
 

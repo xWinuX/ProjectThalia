@@ -1,10 +1,9 @@
-#include "ProjectThalia/Rendering/Pipeline.hpp"
-#include "ProjectThalia/Application.hpp"
+#include "ProjectThalia/Rendering/Vulkan/Pipeline.hpp"
 #include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
 #include "ProjectThalia/IO/Stream.hpp"
 
-namespace ProjectThalia::Rendering
+namespace ProjectThalia::Rendering::Vulkan
 {
 	Pipeline::Pipeline(const std::string&             name,
 					   const std::vector<ShaderInfo>& shaderInfos,
@@ -21,7 +20,7 @@ namespace ProjectThalia::Rendering
 
 			vk::ShaderModuleCreateInfo createInfo = vk::ShaderModuleCreateInfo({}, shaderCode.size(), reinterpret_cast<const uint32_t*>(shaderCode.data()));
 
-			vk::ShaderModule shaderModule = VulkanContext::GetDevice().createShaderModule(createInfo);
+			vk::ShaderModule shaderModule = device.createShaderModule(createInfo);
 			_shaderModules.push_back(shaderModule);
 
 			vk::PipelineShaderStageCreateInfo shaderStageCreateInfo = vk::PipelineShaderStageCreateInfo({},

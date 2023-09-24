@@ -1,8 +1,8 @@
-#include "ProjectThalia/Rendering/Device.hpp"
+#include "ProjectThalia/Rendering/Vulkan/Device.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
 #include <set>
 
-namespace ProjectThalia::Rendering
+namespace ProjectThalia::Rendering::Vulkan
 {
 	Device::Device(PhysicalDevice& physicalDevice) :
 		_physicalDevice(physicalDevice)

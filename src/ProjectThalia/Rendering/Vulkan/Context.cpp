@@ -1,4 +1,4 @@
-#include "ProjectThalia/Rendering/VulkanContext.hpp"
+#include "ProjectThalia/Rendering/Vulkan/Context.hpp"
 #include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
 
@@ -7,9 +7,9 @@
 #include <filesystem>
 #include <vector>
 
-namespace ProjectThalia::Rendering
+namespace ProjectThalia::Rendering::Vulkan
 {
-	void VulkanContext::Initialize(Window& window)
+	void Context::Initialize(Window& window)
 	{
 		Debug::Log::Info("Initalize");
 
@@ -30,7 +30,7 @@ namespace ProjectThalia::Rendering
 		CreateSyncObjects();
 	}
 
-	void VulkanContext::CreateSyncObjects()
+	void Context::CreateSyncObjects()
 	{
 		vk::SemaphoreCreateInfo semaphoreCreateInfo = vk::SemaphoreCreateInfo();
 		vk::FenceCreateInfo     fenceCreateInfo     = vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
@@ -40,7 +40,7 @@ namespace ProjectThalia::Rendering
 		_inFlightFence           = _device->GetVkDevice().createFence(fenceCreateInfo);
 	}
 
-	void VulkanContext::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex)
+	void Context::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex)
 	{
 		vk::CommandBufferBeginInfo commandBufferBeginInfo = vk::CommandBufferBeginInfo({}, nullptr);
 
@@ -73,7 +73,7 @@ namespace ProjectThalia::Rendering
 		commandBuffer.end();
 	}
 
-	void VulkanContext::CreateCommandBuffers()
+	void Context::CreateCommandBuffers()
 	{
 		vk::CommandPoolCreateInfo commandPoolCreateInfo = vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
 																					_physicalDevice.GetQueueFamilyIndices().graphicsFamily.value());
@@ -85,7 +85,7 @@ namespace ProjectThalia::Rendering
 		_commandBuffer = _device->GetVkDevice().allocateCommandBuffers(commandBufferAllocateInfo)[0];
 	}
 
-	void VulkanContext::Destroy()
+	void Context::Destroy()
 	{
 		_device->GetVkDevice().waitIdle();
 
@@ -98,7 +98,7 @@ namespace ProjectThalia::Rendering
 		_instance.Destroy();
 	}
 
-	void VulkanContext::DrawFrame()
+	void Context::DrawFrame()
 	{
 		Debug::Log::Info("Draw frame");
 		vk::Result waitForFencesResult = _device->GetVkDevice().waitForFences(1, &_inFlightFence, vk::True, UINT64_MAX);
@@ -123,9 +123,7 @@ namespace ProjectThalia::Rendering
 		vk::Result presentResult = _device->GetPresentQueue().presentKHR(presentInfo);
 	}
 
-	const vk::Device& VulkanContext::GetDevice() { return _device->GetVkDevice(); }
-
-	void VulkanContext::CreateInstance(SDL_Window* sdlWindow)
+	void Context::CreateInstance(SDL_Window* sdlWindow)
 	{
 		uint32_t extensionCount;
 		SDL_Vulkan_GetInstanceExtensions(sdlWindow, &extensionCount, nullptr);

@@ -1,10 +1,9 @@
 #pragma once
 
-#include <vulkan/vulkan.hpp>
+#include "vulkan/vulkan.hpp"
 
-namespace ProjectThalia::Rendering
+namespace ProjectThalia::Rendering::Vulkan
 {
-
 	class Instance
 	{
 		public:
@@ -22,5 +21,4 @@ namespace ProjectThalia::Rendering
 			vk::Instance   _vkInstance;
 			vk::SurfaceKHR _vkSurface;
 	};
-
 }

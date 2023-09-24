@@ -1,10 +1,10 @@
-#include "ProjectThalia/Rendering/PhysicalDevice.hpp"
+#include "ProjectThalia/Rendering/Vulkan/PhysicalDevice.hpp"
 #include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
 
 #include <set>
 
-namespace ProjectThalia::Rendering
+namespace ProjectThalia::Rendering::Vulkan
 {
 	PhysicalDevice::PhysicalDevice(const vk::Instance&      instance,
 								   const vk::SurfaceKHR&    surface,

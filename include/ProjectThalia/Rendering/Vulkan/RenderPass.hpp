@@ -1,10 +1,9 @@
 #pragma once
 
-#include <vulkan/vulkan.hpp>
+#include "vulkan/vulkan.hpp"
 
-namespace ProjectThalia::Rendering
+namespace ProjectThalia::Rendering::Vulkan
 {
-
 	class RenderPass
 	{
 		public:
@@ -18,5 +17,4 @@ namespace ProjectThalia::Rendering
 		private:
 			vk::RenderPass _vkRenderPass;
 	};
-
 }
