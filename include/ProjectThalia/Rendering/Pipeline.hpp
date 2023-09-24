@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Device.hpp"
 #include "RenderPass.hpp"
 #include "Swapchain.hpp"
 #include "vulkan/vulkan.hpp"
@@ -21,9 +20,11 @@ namespace ProjectThalia::Rendering
 			Pipeline() = default;
 			Pipeline(const std::string&             name,
 					 const std::vector<ShaderInfo>& shaderInfos,
-					 const Device&                  device,
+					 const vk::Device&              device,
 					 const RenderPass&              renderPass,
 					 const Swapchain&               swapchain);
+
+			void Destroy(vk::Device device);
 
 			[[nodiscard]] const vk::Pipeline&       GetVkPipeline() const;
 			[[nodiscard]] const vk::PipelineLayout& GetLayout() const;

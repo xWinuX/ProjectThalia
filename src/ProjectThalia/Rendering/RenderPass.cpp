@@ -1,9 +1,8 @@
 #include "ProjectThalia/Rendering/RenderPass.hpp"
-#include "ProjectThalia/Rendering/Device.hpp"
 
 namespace ProjectThalia::Rendering
 {
-	RenderPass::RenderPass(const Device& device, vk::Format format)
+	RenderPass::RenderPass(const vk::Device& device, vk::Format format)
 	{
 		vk::AttachmentDescription colorAttachment = vk::AttachmentDescription({},
 																			  format,
@@ -28,8 +27,10 @@ namespace ProjectThalia::Rendering
 
 		vk::RenderPassCreateInfo renderPassCreateInfo = vk::RenderPassCreateInfo({}, 1, &colorAttachment, 1, &subpass, 1, &subpassDependency);
 
-		_vkRenderPass = device.GetVkDevice().createRenderPass(renderPassCreateInfo);
+		_vkRenderPass = device.createRenderPass(renderPassCreateInfo);
 	}
 
 	const vk::RenderPass& RenderPass::GetVkRenderPass() const { return _vkRenderPass; }
 }
+
+void ProjectThalia::Rendering::RenderPass::Destroy(vk::Device device) { device.destroy(_vkRenderPass); }

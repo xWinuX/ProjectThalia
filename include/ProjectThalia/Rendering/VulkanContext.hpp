@@ -2,10 +2,8 @@
 #include "Device.hpp"
 #include "Instance.hpp"
 #include "PhysicalDevice.hpp"
-#include "Pipeline.hpp"
 #include "ProjectThalia/Window.hpp"
 #include "SDL2/SDL.h"
-#include "Swapchain.hpp"
 #include "vulkan/vulkan.hpp"
 #include <optional>
 #include <vector>
@@ -29,9 +27,6 @@ namespace ProjectThalia::Rendering
 
 			Instance       _instance;
 			PhysicalDevice _physicalDevice;
-			Swapchain      _swapchain;
-			Pipeline       _pipeline;
-			RenderPass     _renderPass;
 
 			vk::CommandPool   _commandPool;
 			vk::CommandBuffer _commandBuffer;

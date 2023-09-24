@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Device.hpp"
 #include <vulkan/vulkan.hpp>
 
 namespace ProjectThalia::Rendering
@@ -10,9 +9,11 @@ namespace ProjectThalia::Rendering
 	{
 		public:
 			RenderPass() = default;
-			RenderPass(const ProjectThalia::Rendering::Device& device, vk::Format format);
+			RenderPass(const vk::Device& device, vk::Format format);
 
 			[[nodiscard]] const vk::RenderPass& GetVkRenderPass() const;
+
+			void Destroy(vk::Device device);
 
 		private:
 			vk::RenderPass _vkRenderPass;

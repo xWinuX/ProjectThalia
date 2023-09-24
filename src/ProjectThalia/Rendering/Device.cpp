@@ -36,8 +36,6 @@ namespace ProjectThalia::Rendering
 
 		_graphicsQueue = _vkDevice.getQueue(queueFamilyIndices.graphicsFamily.value(), 0);
 		_presentQueue  = _vkDevice.getQueue(queueFamilyIndices.presentFamily.value(), 0);
-
-
 	}
 
 	const vk::Device& Device::GetVkDevice() const { return _vkDevice; }
@@ -47,4 +45,30 @@ namespace ProjectThalia::Rendering
 	const vk::Queue& Device::GetGraphicsQueue() const { return _graphicsQueue; }
 
 	const vk::Queue& Device::GetPresentQueue() const { return _presentQueue; }
+
+	void Device::CreateSwapchain(vk::SurfaceKHR surfaceKhr, glm::ivec2 size)
+	{
+		_swapchain = Swapchain(_vkDevice, _physicalDevice, surfaceKhr, {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y)});
+	}
+
+	const Swapchain& Device::GetSwapchain() const { return _swapchain; }
+
+	void Device::Destroy()
+	{
+		_swapchain.Destroy(_vkDevice);
+		_renderPass.Destroy(_vkDevice);
+		_pipeline.Destroy(_vkDevice);
+		_vkDevice.destroy();
+	}
+
+	void Device::CreateRenderPass() { _renderPass = RenderPass(_vkDevice, _swapchain.GetImageFormat().format); }
+
+	const RenderPass& Device::GetRenderPass() const { return _renderPass; }
+
+	void Device::CreatePipeline(const std::string& name, std::vector<Pipeline::ShaderInfo> shaderInfos)
+	{
+		_pipeline = Pipeline(name, shaderInfos, _vkDevice, _renderPass, _swapchain);
+	}
+
+	const Pipeline& Device::GetPipeline() const { return _pipeline; }
 }

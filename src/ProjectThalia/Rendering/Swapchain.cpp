@@ -2,10 +2,10 @@
 
 namespace ProjectThalia::Rendering
 {
-	ProjectThalia::Rendering::Swapchain::Swapchain(const Device& device, const vk::SurfaceKHR& surface, vk::Extent2D size)
+	ProjectThalia::Rendering::Swapchain::Swapchain(const vk::Device& device, const PhysicalDevice& physicalDevice, const vk::SurfaceKHR& surface, vk::Extent2D size)
 	{
 		// Select surface format
-		const PhysicalDevice::SwapchainSupportDetails& swapchainSupportDetails = device.GetPhysicalDevice().GetSwapchainSupportDetails();
+		const PhysicalDevice::SwapchainSupportDetails& swapchainSupportDetails = physicalDevice.GetSwapchainSupportDetails();
 
 		_imageFormat = swapchainSupportDetails.formats[0];
 		for (const auto& availableFormat : swapchainSupportDetails.formats)
@@ -53,7 +53,7 @@ namespace ProjectThalia::Rendering
 																					1,
 																					vk::ImageUsageFlagBits::eColorAttachment);
 
-		const PhysicalDevice::QueueFamilyIndices& queueFamilyIndices = device.GetPhysicalDevice().GetQueueFamilyIndices();
+		const PhysicalDevice::QueueFamilyIndices& queueFamilyIndices = physicalDevice.GetQueueFamilyIndices();
 		if (queueFamilyIndices.graphicsFamily != queueFamilyIndices.presentFamily)
 		{
 			std::vector<uint32_t> queueFamilies = {queueFamilyIndices.graphicsFamily.value(), queueFamilyIndices.presentFamily.value()};
@@ -68,8 +68,8 @@ namespace ProjectThalia::Rendering
 		swapChainCreateInfo.setClipped(vk::True);
 		swapChainCreateInfo.setOldSwapchain(VK_NULL_HANDLE);
 
-		_vkSwapchain = device.GetVkDevice().createSwapchainKHR(swapChainCreateInfo);
-		_images      = device.GetVkDevice().getSwapchainImagesKHR(_vkSwapchain);
+		_vkSwapchain = device.createSwapchainKHR(swapChainCreateInfo);
+		_images      = device.getSwapchainImagesKHR(_vkSwapchain);
 
 		// Create image views
 		_imageViews.resize(_images.size());
@@ -86,7 +86,7 @@ namespace ProjectThalia::Rendering
 																				   vk::ComponentSwizzle::eIdentity},
 																				  {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
 
-			_imageViews[i] = device.GetVkDevice().createImageView(imageViewCreateInfo);
+			_imageViews[i] = device.createImageView(imageViewCreateInfo);
 		}
 	}
 
@@ -99,4 +99,10 @@ namespace ProjectThalia::Rendering
 	const std::vector<vk::ImageView>& Swapchain::GetImageViews() const { return _imageViews; }
 
 	const vk::Extent2D& Swapchain::GetExtend() const { return _extend; }
+
+	void Swapchain::Destroy(vk::Device device)
+	{
+		device.destroy(_vkSwapchain);
+		for (const vk::ImageView& imageView : _imageViews) { device.destroy(imageView); }
+	}
 }

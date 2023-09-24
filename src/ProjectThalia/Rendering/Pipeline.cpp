@@ -8,7 +8,7 @@ namespace ProjectThalia::Rendering
 {
 	Pipeline::Pipeline(const std::string&             name,
 					   const std::vector<ShaderInfo>& shaderInfos,
-					   const Device&                  device,
+					   const vk::Device&              device,
 					   const RenderPass&              renderPass,
 					   const Swapchain&               swapchain)
 	{
@@ -97,7 +97,7 @@ namespace ProjectThalia::Rendering
 
 		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo({}, 0, nullptr, 0, nullptr);
 
-		_layout = device.GetVkDevice().createPipelineLayout(pipelineLayoutCreateInfo);
+		_layout = device.createPipelineLayout(pipelineLayoutCreateInfo);
 
 		vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo = vk::GraphicsPipelineCreateInfo({},
 																								   2,
@@ -117,7 +117,7 @@ namespace ProjectThalia::Rendering
 																								   VK_NULL_HANDLE,
 																								   -1);
 
-		vk::ResultValue<vk::Pipeline> graphicsPipelineResult = device.GetVkDevice().createGraphicsPipeline(VK_NULL_HANDLE, graphicsPipelineCreateInfo);
+		vk::ResultValue<vk::Pipeline> graphicsPipelineResult = device.createGraphicsPipeline(VK_NULL_HANDLE, graphicsPipelineCreateInfo);
 		if (graphicsPipelineResult.result != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("Failed to create graphics pipeline!"); }
 
 		_vkPipeline = graphicsPipelineResult.value;
@@ -126,4 +126,11 @@ namespace ProjectThalia::Rendering
 	const vk::Pipeline& Pipeline::GetVkPipeline() const { return _vkPipeline; }
 
 	const vk::PipelineLayout& Pipeline::GetLayout() const { return _layout; }
+
+	void Pipeline::Destroy(vk::Device device)
+	{
+		for (const vk::ShaderModule& item : _shaderModules) { device.destroy(item); }
+		device.destroy(_layout);
+		device.destroy(_vkPipeline);
+	}
 }

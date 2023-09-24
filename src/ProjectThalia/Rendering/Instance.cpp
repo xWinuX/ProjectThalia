@@ -15,4 +15,10 @@ namespace ProjectThalia::Rendering
 	const vk::SurfaceKHR& Instance::GetVkSurface() const { return _vkSurface; }
 
 	void Instance::SetVkSurface(const vk::SurfaceKHR& vkSurface) { _vkSurface = vkSurface; }
+
+	void Instance::Destroy()
+	{
+		_vkInstance.destroy(_vkSurface);
+		_vkInstance.destroy();
+	}
 }

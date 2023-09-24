@@ -20,16 +20,12 @@ namespace ProjectThalia::Rendering
 		_device = std::make_unique<Device>(Device(_physicalDevice));
 
 		glm::ivec2 size = window.GetSize();
-		_swapchain      = Swapchain(*_device, _instance.GetVkSurface(), {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y)});
 
-		_renderPass = RenderPass(*_device, _swapchain.GetImageFormat().format);
-
-		_pipeline = Pipeline("main",
-							 {{"res/shaders/Debug.vert.spv", vk::ShaderStageFlagBits::eVertex},
-							  {"res/shaders/Debug.frag.spv", vk::ShaderStageFlagBits::eFragment}},
-							 *_device,
-							 _renderPass,
-							 _swapchain);
+		_device->CreateSwapchain(_instance.GetVkSurface(), size);
+		_device->CreateRenderPass();
+		_device->CreatePipeline("main",
+								{{"res/shaders/Debug.vert.spv", vk::ShaderStageFlagBits::eVertex},
+								 {"res/shaders/Debug.frag.spv", vk::ShaderStageFlagBits::eFragment}});
 
 		CreateFrameBuffers();
 
@@ -55,24 +51,24 @@ namespace ProjectThalia::Rendering
 		commandBuffer.begin(commandBufferBeginInfo);
 
 		vk::ClearValue          clearColor          = vk::ClearValue({0.0f, 0.0f, 0.0f, 1.0f});
-		vk::RenderPassBeginInfo renderPassBeginInfo = vk::RenderPassBeginInfo(_renderPass.GetVkRenderPass(),
+		vk::RenderPassBeginInfo renderPassBeginInfo = vk::RenderPassBeginInfo(_device->GetRenderPass().GetVkRenderPass(),
 																			  _swapChainFrameBuffers[imageIndex],
-																			  {{0, 0}, _swapchain.GetExtend()},
+																			  {{0, 0}, _device->GetSwapchain().GetExtend()},
 																			  1,
 																			  &clearColor);
 
 		_commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
-		_commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, _pipeline.GetVkPipeline());
+		_commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, _device->GetPipeline().GetVkPipeline());
 
 		vk::Viewport viewport = vk::Viewport(0,
 											 0,
-											 static_cast<float>(_swapchain.GetExtend().width),
-											 static_cast<float>(_swapchain.GetExtend().height),
+											 static_cast<float>(_device->GetSwapchain().GetExtend().width),
+											 static_cast<float>(_device->GetSwapchain().GetExtend().height),
 											 0.0f,
 											 1.0f);
 		_commandBuffer.setViewport(0, 1, &viewport);
 
-		vk::Rect2D scissor = vk::Rect2D({0, 0}, _swapchain.GetExtend());
+		vk::Rect2D scissor = vk::Rect2D({0, 0}, _device->GetSwapchain().GetExtend());
 		_commandBuffer.setScissor(0, 1, &scissor);
 
 		commandBuffer.draw(3, 1, 0, 0);
@@ -95,18 +91,18 @@ namespace ProjectThalia::Rendering
 
 	void VulkanContext::CreateFrameBuffers()
 	{
-		_swapChainFrameBuffers.resize(_swapchain.GetImageViews().size());
+		_swapChainFrameBuffers.resize(_device->GetSwapchain().GetImageViews().size());
 
-		for (size_t i = 0; i < _swapchain.GetImageViews().size(); i++)
+		for (size_t i = 0; i < _device->GetSwapchain().GetImageViews().size(); i++)
 		{
-			vk::ImageView attachments[] = {_swapchain.GetImageViews()[i]};
+			vk::ImageView attachments[] = {_device->GetSwapchain().GetImageViews()[i]};
 
 			vk::FramebufferCreateInfo framebufferInfo = vk::FramebufferCreateInfo({},
-																				  _renderPass.GetVkRenderPass(),
+																				  _device->GetRenderPass().GetVkRenderPass(),
 																				  1,
 																				  attachments,
-																				  _swapchain.GetExtend().width,
-																				  _swapchain.GetExtend().height,
+																				  _device->GetSwapchain().GetExtend().width,
+																				  _device->GetSwapchain().GetExtend().height,
 																				  1);
 
 
@@ -122,17 +118,11 @@ namespace ProjectThalia::Rendering
 		_device->GetVkDevice().destroy(_renderFinishedSemaphore);
 		_device->GetVkDevice().destroy(_inFlightFence);
 		_device->GetVkDevice().destroy(_commandPool);
-		_device->GetVkDevice().destroy(_pipeline.GetVkPipeline());
-		_device->GetVkDevice().destroy(_pipeline.GetLayout());
-		_device->GetVkDevice().destroy(_swapchain.GetVkSwapchain());
-
-		for (const vk::ImageView& imageView : _swapchain.GetImageViews()) { _device->GetVkDevice().destroy(imageView); }
 
 		for (const vk::Framebuffer& frameBuffer : _swapChainFrameBuffers) { _device->GetVkDevice().destroy(frameBuffer); }
 
-		_device->GetVkDevice().destroy();
-		_instance.GetVkInstance().destroy(_instance.GetVkSurface());
-		_instance.GetVkInstance().destroy();
+		_device->Destroy();
+		_instance.Destroy();
 	}
 
 	void VulkanContext::DrawFrame()
@@ -141,7 +131,7 @@ namespace ProjectThalia::Rendering
 		vk::Result waitForFencesResult = _device->GetVkDevice().waitForFences(1, &_inFlightFence, vk::True, UINT64_MAX);
 		vk::Result resetFencesResult   = _device->GetVkDevice().resetFences(1, &_inFlightFence);
 
-		vk::ResultValue<uint32_t> imageIndex = _device->GetVkDevice().acquireNextImageKHR(_swapchain.GetVkSwapchain(),
+		vk::ResultValue<uint32_t> imageIndex = _device->GetVkDevice().acquireNextImageKHR(_device->GetSwapchain().GetVkSwapchain(),
 																						  UINT64_MAX,
 																						  _imageAvailableSemaphore,
 																						  VK_NULL_HANDLE);
@@ -155,7 +145,7 @@ namespace ProjectThalia::Rendering
 
 		_device->GetGraphicsQueue().submit(submitInfo, _inFlightFence);
 
-		vk::PresentInfoKHR presentInfo = vk::PresentInfoKHR(_renderFinishedSemaphore, _swapchain.GetVkSwapchain(), imageIndex.value, nullptr);
+		vk::PresentInfoKHR presentInfo = vk::PresentInfoKHR(_renderFinishedSemaphore, _device->GetSwapchain().GetVkSwapchain(), imageIndex.value, nullptr);
 
 		vk::Result presentResult = _device->GetPresentQueue().presentKHR(presentInfo);
 	}
