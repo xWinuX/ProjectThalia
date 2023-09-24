@@ -2,19 +2,14 @@
 
 namespace ProjectThalia::Rendering
 {
-	ProjectThalia::Rendering::Swapchain::Swapchain(const vk::Device& device, const PhysicalDevice& physicalDevice, const vk::SurfaceKHR& surface, vk::Extent2D size)
+	ProjectThalia::Rendering::Swapchain::Swapchain(const vk::Device&     device,
+												   const PhysicalDevice& physicalDevice,
+												   const vk::RenderPass& renderPass,
+												   const vk::SurfaceKHR& surface,
+												   vk::Extent2D          size)
 	{
 		// Select surface format
 		const PhysicalDevice::SwapchainSupportDetails& swapchainSupportDetails = physicalDevice.GetSwapchainSupportDetails();
-
-		_imageFormat = swapchainSupportDetails.formats[0];
-		for (const auto& availableFormat : swapchainSupportDetails.formats)
-		{
-			if (availableFormat.format == vk::Format::eB8G8R8A8Srgb && availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
-			{
-				_imageFormat = availableFormat;
-			}
-		}
 
 		// Select present mode
 		vk::PresentModeKHR presentMode = vk::PresentModeKHR::eFifo;
@@ -47,8 +42,8 @@ namespace ProjectThalia::Rendering
 		vk::SwapchainCreateInfoKHR swapChainCreateInfo = vk::SwapchainCreateInfoKHR({},
 																					surface,
 																					imageCount,
-																					_imageFormat.format,
-																					_imageFormat.colorSpace,
+																					physicalDevice.GetImageFormat().format,
+																					physicalDevice.GetImageFormat().colorSpace,
 																					size,
 																					1,
 																					vk::ImageUsageFlagBits::eColorAttachment);
@@ -79,7 +74,7 @@ namespace ProjectThalia::Rendering
 			vk::ImageViewCreateInfo imageViewCreateInfo = vk::ImageViewCreateInfo({},
 																				  _images[i],
 																				  vk::ImageViewType::e2D,
-																				  _imageFormat.format,
+																				  physicalDevice.GetImageFormat().format,
 																				  {vk::ComponentSwizzle::eIdentity,
 																				   vk::ComponentSwizzle::eIdentity,
 																				   vk::ComponentSwizzle::eIdentity,
@@ -88,11 +83,26 @@ namespace ProjectThalia::Rendering
 
 			_imageViews[i] = device.createImageView(imageViewCreateInfo);
 		}
+
+		// Create frame buffers
+		_frameBuffers.resize(_imageViews.size());
+
+		for (size_t i = 0; i < _imageViews.size(); i++)
+		{
+			vk::FramebufferCreateInfo framebufferInfo = vk::FramebufferCreateInfo({}, renderPass, 1, &_imageViews[i], _extend.width, _extend.height, 1);
+
+			_frameBuffers[i] = device.createFramebuffer(framebufferInfo);
+		}
+	}
+
+	void Swapchain::Destroy(vk::Device device)
+	{
+		device.destroy(_vkSwapchain);
+		for (const vk::ImageView& imageView : _imageViews) { device.destroy(imageView); }
+		for (const vk::Framebuffer& frameBuffer : _frameBuffers) { device.destroy(frameBuffer); }
 	}
 
 	const vk::SwapchainKHR& Swapchain::GetVkSwapchain() const { return _vkSwapchain; }
-
-	const vk::SurfaceFormatKHR& Swapchain::GetImageFormat() const { return _imageFormat; }
 
 	const std::vector<vk::Image>& Swapchain::GetImages() const { return _images; }
 
@@ -100,9 +110,5 @@ namespace ProjectThalia::Rendering
 
 	const vk::Extent2D& Swapchain::GetExtend() const { return _extend; }
 
-	void Swapchain::Destroy(vk::Device device)
-	{
-		device.destroy(_vkSwapchain);
-		for (const vk::ImageView& imageView : _imageViews) { device.destroy(imageView); }
-	}
+	const std::vector<vk::Framebuffer>& Swapchain::GetFrameBuffers() const { return _frameBuffers; }
 }

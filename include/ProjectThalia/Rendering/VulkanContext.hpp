@@ -35,10 +35,7 @@ namespace ProjectThalia::Rendering
 			vk::Semaphore _renderFinishedSemaphore;
 			vk::Fence     _inFlightFence;
 
-			std::vector<VkFramebuffer> _swapChainFrameBuffers;
-
 			void CreateInstance(SDL_Window* sdlWindow);
-			void CreateFrameBuffers();
 			void CreateCommandBuffers();
 			void RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex);
 			void CreateSyncObjects();

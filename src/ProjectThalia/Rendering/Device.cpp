@@ -48,7 +48,11 @@ namespace ProjectThalia::Rendering
 
 	void Device::CreateSwapchain(vk::SurfaceKHR surfaceKhr, glm::ivec2 size)
 	{
-		_swapchain = Swapchain(_vkDevice, _physicalDevice, surfaceKhr, {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y)});
+		_swapchain = Swapchain(_vkDevice,
+							   _physicalDevice,
+							   _renderPass.GetVkRenderPass(),
+							   surfaceKhr,
+							   {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y)});
 	}
 
 	const Swapchain& Device::GetSwapchain() const { return _swapchain; }
@@ -61,7 +65,7 @@ namespace ProjectThalia::Rendering
 		_vkDevice.destroy();
 	}
 
-	void Device::CreateRenderPass() { _renderPass = RenderPass(_vkDevice, _swapchain.GetImageFormat().format); }
+	void Device::CreateRenderPass() { _renderPass = RenderPass(_vkDevice, _physicalDevice.GetImageFormat().format); }
 
 	const RenderPass& Device::GetRenderPass() const { return _renderPass; }
 

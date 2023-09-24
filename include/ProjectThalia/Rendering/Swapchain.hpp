@@ -12,22 +12,28 @@ namespace ProjectThalia::Rendering
 	{
 		public:
 			Swapchain() = default;
-			explicit Swapchain(const vk::Device& device, const PhysicalDevice& physicalDevice, const vk::SurfaceKHR& surface, vk::Extent2D size);
 
-			[[nodiscard]] const vk::SwapchainKHR&           GetVkSwapchain() const;
-			[[nodiscard]] const vk::SurfaceFormatKHR&       GetImageFormat() const;
-			[[nodiscard]] const std::vector<vk::Image>&     GetImages() const;
-			[[nodiscard]] const std::vector<vk::ImageView>& GetImageViews() const;
-			[[nodiscard]] const vk::Extent2D&               GetExtend() const;
+			explicit Swapchain(const vk::Device&     device,
+							   const PhysicalDevice& physicalDevice,
+							   const vk::RenderPass& renderPass,
+							   const vk::SurfaceKHR& surface,
+							   vk::Extent2D          size);
 
 			void Destroy(vk::Device device);
 
+			[[nodiscard]] const vk::SwapchainKHR&             GetVkSwapchain() const;
+			[[nodiscard]] const std::vector<vk::Image>&       GetImages() const;
+			[[nodiscard]] const std::vector<vk::ImageView>&   GetImageViews() const;
+			[[nodiscard]] const vk::Extent2D&                 GetExtend() const;
+			[[nodiscard]] const std::vector<vk::Framebuffer>& GetFrameBuffers() const;
+
 		private:
-			vk::SwapchainKHR           _vkSwapchain;
-			vk::SurfaceFormatKHR       _imageFormat;
-			std::vector<vk::Image>     _images;
-			std::vector<vk::ImageView> _imageViews;
-			vk::Extent2D               _extend = {};
+			vk::SwapchainKHR             _vkSwapchain;
+			std::vector<vk::Image>       _images;
+			std::vector<vk::ImageView>   _imageViews;
+			std::vector<vk::Framebuffer> _frameBuffers;
+
+			vk::Extent2D _extend = {};
 	};
 
 }

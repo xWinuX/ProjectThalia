@@ -21,13 +21,11 @@ namespace ProjectThalia::Rendering
 
 		glm::ivec2 size = window.GetSize();
 
-		_device->CreateSwapchain(_instance.GetVkSurface(), size);
 		_device->CreateRenderPass();
+		_device->CreateSwapchain(_instance.GetVkSurface(), size);
 		_device->CreatePipeline("main",
 								{{"res/shaders/Debug.vert.spv", vk::ShaderStageFlagBits::eVertex},
 								 {"res/shaders/Debug.frag.spv", vk::ShaderStageFlagBits::eFragment}});
-
-		CreateFrameBuffers();
 
 		CreateCommandBuffers();
 
@@ -52,7 +50,7 @@ namespace ProjectThalia::Rendering
 
 		vk::ClearValue          clearColor          = vk::ClearValue({0.0f, 0.0f, 0.0f, 1.0f});
 		vk::RenderPassBeginInfo renderPassBeginInfo = vk::RenderPassBeginInfo(_device->GetRenderPass().GetVkRenderPass(),
-																			  _swapChainFrameBuffers[imageIndex],
+																			  _device->GetSwapchain().GetFrameBuffers()[imageIndex],
 																			  {{0, 0}, _device->GetSwapchain().GetExtend()},
 																			  1,
 																			  &clearColor);
@@ -89,27 +87,6 @@ namespace ProjectThalia::Rendering
 		_commandBuffer = _device->GetVkDevice().allocateCommandBuffers(commandBufferAllocateInfo)[0];
 	}
 
-	void VulkanContext::CreateFrameBuffers()
-	{
-		_swapChainFrameBuffers.resize(_device->GetSwapchain().GetImageViews().size());
-
-		for (size_t i = 0; i < _device->GetSwapchain().GetImageViews().size(); i++)
-		{
-			vk::ImageView attachments[] = {_device->GetSwapchain().GetImageViews()[i]};
-
-			vk::FramebufferCreateInfo framebufferInfo = vk::FramebufferCreateInfo({},
-																				  _device->GetRenderPass().GetVkRenderPass(),
-																				  1,
-																				  attachments,
-																				  _device->GetSwapchain().GetExtend().width,
-																				  _device->GetSwapchain().GetExtend().height,
-																				  1);
-
-
-			_swapChainFrameBuffers[i] = _device->GetVkDevice().createFramebuffer(framebufferInfo);
-		}
-	}
-
 	void VulkanContext::Destroy()
 	{
 		_device->GetVkDevice().waitIdle();
@@ -118,8 +95,6 @@ namespace ProjectThalia::Rendering
 		_device->GetVkDevice().destroy(_renderFinishedSemaphore);
 		_device->GetVkDevice().destroy(_inFlightFence);
 		_device->GetVkDevice().destroy(_commandPool);
-
-		for (const vk::Framebuffer& frameBuffer : _swapChainFrameBuffers) { _device->GetVkDevice().destroy(frameBuffer); }
 
 		_device->Destroy();
 		_instance.Destroy();

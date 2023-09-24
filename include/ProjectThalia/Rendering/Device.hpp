@@ -28,7 +28,7 @@ namespace ProjectThalia::Rendering
 
 			[[nodiscard]] const Swapchain&  GetSwapchain() const;
 			[[nodiscard]] const RenderPass& GetRenderPass() const;
-			const Pipeline&                 GetPipeline() const;
+			[[nodiscard]] const Pipeline&   GetPipeline() const;
 
 		private:
 			vk::Device      _vkDevice;
@@ -36,7 +36,7 @@ namespace ProjectThalia::Rendering
 
 			Swapchain  _swapchain;
 			RenderPass _renderPass;
-			Pipeline       _pipeline;
+			Pipeline   _pipeline;
 
 			vk::Queue _graphicsQueue;
 			vk::Queue _presentQueue;

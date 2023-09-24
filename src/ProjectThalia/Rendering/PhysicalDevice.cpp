@@ -74,7 +74,20 @@ namespace ProjectThalia::Rendering
 		}
 
 		// Check if we found a compatible GPU
-		if (_vkPhysicalDevice == VK_NULL_HANDLE) { ErrorHandler::ThrowRuntimeError("This device does not have any gpus meeting the applications requirements"); }
+		if (_vkPhysicalDevice == VK_NULL_HANDLE)
+		{
+			ErrorHandler::ThrowRuntimeError("This device does not have any gpus meeting the applications requirements");
+		}
+
+		// Select Image format
+		_imageFormat = _swapchainSupportDetails.formats[0];
+		for (const auto& availableFormat : _swapchainSupportDetails.formats)
+		{
+			if (availableFormat.format == vk::Format::eB8G8R8A8Srgb && availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+			{
+				_imageFormat = availableFormat;
+			}
+		}
 	}
 
 	const vk::PhysicalDevice& PhysicalDevice::GetVkPhysicalDevice() const { return _vkPhysicalDevice; }
@@ -86,4 +99,6 @@ namespace ProjectThalia::Rendering
 	const std::vector<const char*>& PhysicalDevice::GetExtensions() const { return _extensions; }
 
 	const std::vector<const char*>& PhysicalDevice::GetValidationLayers() const { return _validationLayers; }
+
+	const vk::SurfaceFormatKHR& PhysicalDevice::GetImageFormat() const { return _imageFormat; }
 }
