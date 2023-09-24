@@ -15,32 +15,26 @@ namespace ProjectThalia::Rendering
 
 		CreateInstance(window.GetSDLWindow());
 
-		CreateSurface(window.GetSDLWindow());
+		_physicalDevice = PhysicalDevice(_instance.GetVkInstance(), _instance.GetVkSurface(), _deviceExtensions, _validationLayers);
 
-		_physicalDevice = PhysicalDevice(_instance, _surface, _deviceExtensions, _validationLayers);
-
-		Debug::Log::Info("Before logical device ceration");
 		_device = std::make_unique<Device>(Device(_physicalDevice));
 
-		Debug::Log::Info("Before swapchain creation");
 		glm::ivec2 size = window.GetSize();
-		_swapchain      = Swapchain(*_device, _surface, {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y)});
+		_swapchain      = Swapchain(*_device, _instance.GetVkSurface(), {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y)});
 
+		_renderPass = RenderPass(*_device, _swapchain.GetImageFormat().format);
 
-		Debug::Log::Info("Before Pipeline creation");
+		_pipeline = Pipeline("main",
+							 {{"res/shaders/Debug.vert.spv", vk::ShaderStageFlagBits::eVertex},
+							  {"res/shaders/Debug.frag.spv", vk::ShaderStageFlagBits::eFragment}},
+							 *_device,
+							 _renderPass,
+							 _swapchain);
 
-		std::vector<Pipeline::ShaderInfo> shaderInfos = {{"res/shaders/Debug.vert.spv", vk::ShaderStageFlagBits::eVertex},
-														 {"res/shaders/Debug.frag.spv", vk::ShaderStageFlagBits::eFragment}};
-
-		_pipeline = Pipeline("main", shaderInfos, *_device, _swapchain);
-
-		Debug::Log::Info("Before Framebuffer Creation");
 		CreateFrameBuffers();
 
-		Debug::Log::Info("Before command buffer creation");
 		CreateCommandBuffers();
 
-		Debug::Log::Info("Before sync object creation");
 		CreateSyncObjects();
 	}
 
@@ -61,7 +55,7 @@ namespace ProjectThalia::Rendering
 		commandBuffer.begin(commandBufferBeginInfo);
 
 		vk::ClearValue          clearColor          = vk::ClearValue({0.0f, 0.0f, 0.0f, 1.0f});
-		vk::RenderPassBeginInfo renderPassBeginInfo = vk::RenderPassBeginInfo(_pipeline.GetRenderPass(),
+		vk::RenderPassBeginInfo renderPassBeginInfo = vk::RenderPassBeginInfo(_renderPass.GetVkRenderPass(),
 																			  _swapChainFrameBuffers[imageIndex],
 																			  {{0, 0}, _swapchain.GetExtend()},
 																			  1,
@@ -108,7 +102,7 @@ namespace ProjectThalia::Rendering
 			vk::ImageView attachments[] = {_swapchain.GetImageViews()[i]};
 
 			vk::FramebufferCreateInfo framebufferInfo = vk::FramebufferCreateInfo({},
-																				  _pipeline.GetRenderPass(),
+																				  _renderPass.GetVkRenderPass(),
 																				  1,
 																				  attachments,
 																				  _swapchain.GetExtend().width,
@@ -118,37 +112,6 @@ namespace ProjectThalia::Rendering
 
 			_swapChainFrameBuffers[i] = _device->GetVkDevice().createFramebuffer(framebufferInfo);
 		}
-	}
-
-	void VulkanContext::CreateInstance(SDL_Window* sdlWindow)
-	{
-		// Get vulkan instance extensions
-		uint32_t extensionCount;
-		SDL_Vulkan_GetInstanceExtensions(sdlWindow, &extensionCount, nullptr);
-
-		std::vector<const char*> extensionNames = std::vector<const char*>(extensionCount, nullptr);
-		SDL_Vulkan_GetInstanceExtensions(sdlWindow, &extensionCount, extensionNames.data());
-
-		// Create infos
-		vk::ApplicationInfo    applicationInfo    = vk::ApplicationInfo("Project Thalia",
-                                                                  VK_MAKE_VERSION(1, 0, 0),
-                                                                  "No Engine",
-                                                                  VK_MAKE_VERSION(1, 0, 0),
-                                                                  VK_API_VERSION_1_3);
-		vk::InstanceCreateInfo instanceCreateInfo = vk::InstanceCreateInfo({}, &applicationInfo, _validationLayers, extensionNames);
-
-		// Create vulkan instance
-		vk::Result instanceCreationResult = vk::createInstance(&instanceCreateInfo, nullptr, &_instance);
-		if (instanceCreationResult != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("Failed to create Vulkan instance!"); }
-	}
-
-	void VulkanContext::CreateSurface(SDL_Window* sdlWindow)
-	{
-		// Create surface from sdl
-		VkSurfaceKHR surfaceHandle         = VK_NULL_HANDLE;
-		SDL_bool     surfaceCreationResult = SDL_Vulkan_CreateSurface(sdlWindow, static_cast<VkInstance>(_instance), &surfaceHandle);
-		_surface                           = surfaceHandle;
-		if (surfaceCreationResult == SDL_FALSE) { ErrorHandler::ThrowRuntimeError("Failed to create SDL Vulkan surface!"); }
 	}
 
 	void VulkanContext::Destroy()
@@ -168,8 +131,8 @@ namespace ProjectThalia::Rendering
 		for (const vk::Framebuffer& frameBuffer : _swapChainFrameBuffers) { _device->GetVkDevice().destroy(frameBuffer); }
 
 		_device->GetVkDevice().destroy();
-		_instance.destroy(_surface);
-		_instance.destroy();
+		_instance.GetVkInstance().destroy(_instance.GetVkSurface());
+		_instance.GetVkInstance().destroy();
 	}
 
 	void VulkanContext::DrawFrame()
@@ -198,4 +161,28 @@ namespace ProjectThalia::Rendering
 	}
 
 	const vk::Device& VulkanContext::GetDevice() { return _device->GetVkDevice(); }
+
+	void VulkanContext::CreateInstance(SDL_Window* sdlWindow)
+	{
+		uint32_t extensionCount;
+		SDL_Vulkan_GetInstanceExtensions(sdlWindow, &extensionCount, nullptr);
+
+		std::vector<const char*> extensionNames = std::vector<const char*>(extensionCount, nullptr);
+		SDL_Vulkan_GetInstanceExtensions(sdlWindow, &extensionCount, extensionNames.data());
+
+		vk::ApplicationInfo applicationInfo = vk::ApplicationInfo("Project Thalia",
+																  VK_MAKE_VERSION(1, 0, 0),
+																  "No Engine",
+																  VK_MAKE_VERSION(1, 0, 0),
+																  VK_API_VERSION_1_3);
+
+		_instance = Instance(extensionNames, _validationLayers, applicationInfo);
+
+		// Create surface from sdl
+		VkSurfaceKHR surfaceHandle         = VK_NULL_HANDLE;
+		SDL_bool     surfaceCreationResult = SDL_Vulkan_CreateSurface(sdlWindow, static_cast<VkInstance>(_instance.GetVkInstance()), &surfaceHandle);
+		if (surfaceCreationResult == SDL_FALSE) { ErrorHandler::ThrowRuntimeError("Failed to create SDL Vulkan surface!"); }
+
+		_instance.SetVkSurface(surfaceHandle);
+	}
 }

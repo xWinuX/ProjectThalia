@@ -6,7 +6,11 @@
 
 namespace ProjectThalia::Rendering
 {
-	Pipeline::Pipeline(const std::string& name, const std::vector<ShaderInfo>& shaderInfos, const Device& device, const Swapchain& swapchain)
+	Pipeline::Pipeline(const std::string&             name,
+					   const std::vector<ShaderInfo>& shaderInfos,
+					   const Device&                  device,
+					   const RenderPass&              renderPass,
+					   const Swapchain&               swapchain)
 	{
 		std::vector<vk::PipelineShaderStageCreateInfo> _shaderStages = std::vector<vk::PipelineShaderStageCreateInfo>(shaderInfos.size());
 		_shaderModules.reserve(shaderInfos.size());
@@ -24,7 +28,7 @@ namespace ProjectThalia::Rendering
 																										shaderInfos[i].shaderStage,
 																										_shaderModules[i],
 																										"main");
-			_shaderStages[i] = shaderStageCreateInfo;
+			_shaderStages[i]                                        = shaderStageCreateInfo;
 		}
 
 		Debug::Log::Info("After shader compiling");
@@ -95,31 +99,6 @@ namespace ProjectThalia::Rendering
 
 		_layout = device.GetVkDevice().createPipelineLayout(pipelineLayoutCreateInfo);
 
-		vk::AttachmentDescription colorAttachment = vk::AttachmentDescription({},
-																			  swapchain.GetImageFormat().format,
-																			  vk::SampleCountFlagBits::e1,
-																			  vk::AttachmentLoadOp::eClear,
-																			  vk::AttachmentStoreOp::eStore,
-																			  vk::AttachmentLoadOp::eDontCare,
-																			  vk::AttachmentStoreOp::eDontCare,
-																			  vk::ImageLayout::eUndefined,
-																			  vk::ImageLayout::ePresentSrcKHR);
-
-		vk::AttachmentReference colorAttachmentReference = vk::AttachmentReference(0, vk::ImageLayout::eColorAttachmentOptimal);
-		vk::SubpassDescription  subpass                  = vk::SubpassDescription({}, vk::PipelineBindPoint::eGraphics, {}, {}, 1, &colorAttachmentReference);
-
-
-		vk::SubpassDependency subpassDependency = vk::SubpassDependency(vk::SubpassExternal,
-																		{},
-																		vk::PipelineStageFlagBits::eColorAttachmentOutput,
-																		vk::PipelineStageFlagBits::eColorAttachmentOutput,
-																		{},
-																		vk::AccessFlagBits::eColorAttachmentWrite);
-
-		vk::RenderPassCreateInfo renderPassCreateInfo = vk::RenderPassCreateInfo({}, 1, &colorAttachment, 1, &subpass, 1, &subpassDependency);
-
-		_renderPass = device.GetVkDevice().createRenderPass(renderPassCreateInfo);
-
 		vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo = vk::GraphicsPipelineCreateInfo({},
 																								   2,
 																								   _shaderStages.data(),
@@ -133,11 +112,11 @@ namespace ProjectThalia::Rendering
 																								   &colorBlendStateCreateInfo,
 																								   &dynamicStateCreateInfo,
 																								   _layout,
-																								   _renderPass,
+																								   renderPass.GetVkRenderPass(),
 																								   0,
 																								   VK_NULL_HANDLE,
 																								   -1);
-		
+
 		vk::ResultValue<vk::Pipeline> graphicsPipelineResult = device.GetVkDevice().createGraphicsPipeline(VK_NULL_HANDLE, graphicsPipelineCreateInfo);
 		if (graphicsPipelineResult.result != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("Failed to create graphics pipeline!"); }
 
@@ -147,6 +126,4 @@ namespace ProjectThalia::Rendering
 	const vk::Pipeline& Pipeline::GetVkPipeline() const { return _vkPipeline; }
 
 	const vk::PipelineLayout& Pipeline::GetLayout() const { return _layout; }
-
-	const vk::RenderPass& Pipeline::GetRenderPass() const { return _renderPass; }
 }

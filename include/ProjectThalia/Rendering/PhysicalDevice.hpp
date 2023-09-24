@@ -3,7 +3,6 @@
 #include <optional>
 #include <vulkan/vulkan.hpp>
 
-
 namespace ProjectThalia::Rendering
 {
 

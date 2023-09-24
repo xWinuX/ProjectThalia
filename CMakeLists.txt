@@ -41,6 +41,10 @@ add_executable(${PROJECT_NAME}
         include/ProjectThalia/Rendering/PhysicalDevice.hpp
         src/ProjectThalia/Rendering/Device.cpp
         include/ProjectThalia/Rendering/Device.hpp
+        src/ProjectThalia/Rendering/RenderPass.cpp
+        include/ProjectThalia/Rendering/RenderPass.hpp
+        src/ProjectThalia/Rendering/Instance.cpp
+        include/ProjectThalia/Rendering/Instance.hpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE include)

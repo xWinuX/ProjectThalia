@@ -36,6 +36,8 @@ namespace ProjectThalia::Rendering
 
 		_graphicsQueue = _vkDevice.getQueue(queueFamilyIndices.graphicsFamily.value(), 0);
 		_presentQueue  = _vkDevice.getQueue(queueFamilyIndices.presentFamily.value(), 0);
+
+
 	}
 
 	const vk::Device& Device::GetVkDevice() const { return _vkDevice; }

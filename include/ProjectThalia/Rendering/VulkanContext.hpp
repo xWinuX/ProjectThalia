@@ -1,5 +1,6 @@
 #pragma once
 #include "Device.hpp"
+#include "Instance.hpp"
 #include "PhysicalDevice.hpp"
 #include "Pipeline.hpp"
 #include "ProjectThalia/Window.hpp"
@@ -11,23 +12,6 @@
 
 namespace ProjectThalia::Rendering
 {
-	struct QueueFamilyIndices
-	{
-		public:
-			std::optional<uint32_t> graphicsFamily;
-			std::optional<uint32_t> presentFamily;
-
-			[[nodiscard]] bool isComplete() const { return graphicsFamily.has_value() && presentFamily.has_value(); }
-	};
-
-	struct SwapChainSupportDetails
-	{
-		public:
-			vk::SurfaceCapabilitiesKHR        capabilities;
-			std::vector<vk::SurfaceFormatKHR> formats;
-			std::vector<vk::PresentModeKHR>   presentModes;
-	};
-
 	class VulkanContext
 	{
 		public:
@@ -43,12 +27,11 @@ namespace ProjectThalia::Rendering
 
 			static std::unique_ptr<Device> _device;
 
+			Instance       _instance;
 			PhysicalDevice _physicalDevice;
 			Swapchain      _swapchain;
 			Pipeline       _pipeline;
-
-			vk::Instance   _instance;
-			vk::SurfaceKHR _surface;
+			RenderPass     _renderPass;
 
 			vk::CommandPool   _commandPool;
 			vk::CommandBuffer _commandBuffer;
@@ -60,7 +43,6 @@ namespace ProjectThalia::Rendering
 			std::vector<VkFramebuffer> _swapChainFrameBuffers;
 
 			void CreateInstance(SDL_Window* sdlWindow);
-			void CreateSurface(SDL_Window* sdlWindow);
 			void CreateFrameBuffers();
 			void CreateCommandBuffers();
 			void RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex);
