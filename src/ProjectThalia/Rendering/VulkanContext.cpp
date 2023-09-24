@@ -19,10 +19,8 @@ namespace ProjectThalia::Rendering
 
 		_device = std::make_unique<Device>(Device(_physicalDevice));
 
-		glm::ivec2 size = window.GetSize();
-
 		_device->CreateRenderPass();
-		_device->CreateSwapchain(_instance.GetVkSurface(), size);
+		_device->CreateSwapchain(_instance.GetVkSurface(), window.GetSize());
 		_device->CreatePipeline("main",
 								{{"res/shaders/Debug.vert.spv", vk::ShaderStageFlagBits::eVertex},
 								 {"res/shaders/Debug.frag.spv", vk::ShaderStageFlagBits::eFragment}});
@@ -48,7 +46,7 @@ namespace ProjectThalia::Rendering
 
 		commandBuffer.begin(commandBufferBeginInfo);
 
-		vk::ClearValue          clearColor          = vk::ClearValue({0.0f, 0.0f, 0.0f, 1.0f});
+		vk::ClearValue          clearColor          = vk::ClearValue({0.0f, 0.2f, 0.5f, 1.0f});
 		vk::RenderPassBeginInfo renderPassBeginInfo = vk::RenderPassBeginInfo(_device->GetRenderPass().GetVkRenderPass(),
 																			  _device->GetSwapchain().GetFrameBuffers()[imageIndex],
 																			  {{0, 0}, _device->GetSwapchain().GetExtend()},

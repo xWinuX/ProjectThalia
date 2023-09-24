@@ -38,13 +38,7 @@ namespace ProjectThalia::Rendering
 		_presentQueue  = _vkDevice.getQueue(queueFamilyIndices.presentFamily.value(), 0);
 	}
 
-	const vk::Device& Device::GetVkDevice() const { return _vkDevice; }
-
-	const PhysicalDevice& Device::GetPhysicalDevice() const { return _physicalDevice; }
-
-	const vk::Queue& Device::GetGraphicsQueue() const { return _graphicsQueue; }
-
-	const vk::Queue& Device::GetPresentQueue() const { return _presentQueue; }
+	void Device::CreateRenderPass() { _renderPass = RenderPass(_vkDevice, _physicalDevice.GetImageFormat().format); }
 
 	void Device::CreateSwapchain(vk::SurfaceKHR surfaceKhr, glm::ivec2 size)
 	{
@@ -55,7 +49,24 @@ namespace ProjectThalia::Rendering
 							   {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y)});
 	}
 
+	void Device::CreatePipeline(const std::string& name, std::vector<Pipeline::ShaderInfo> shaderInfos)
+	{
+		_pipeline = Pipeline(name, shaderInfos, _vkDevice, _renderPass, _swapchain);
+	}
+
+	const vk::Device& Device::GetVkDevice() const { return _vkDevice; }
+
+	const PhysicalDevice& Device::GetPhysicalDevice() const { return _physicalDevice; }
+
+	const vk::Queue& Device::GetGraphicsQueue() const { return _graphicsQueue; }
+
+	const vk::Queue& Device::GetPresentQueue() const { return _presentQueue; }
+
+	const RenderPass& Device::GetRenderPass() const { return _renderPass; }
+
 	const Swapchain& Device::GetSwapchain() const { return _swapchain; }
+
+	const Pipeline& Device::GetPipeline() const { return _pipeline; }
 
 	void Device::Destroy()
 	{
@@ -64,15 +75,4 @@ namespace ProjectThalia::Rendering
 		_pipeline.Destroy(_vkDevice);
 		_vkDevice.destroy();
 	}
-
-	void Device::CreateRenderPass() { _renderPass = RenderPass(_vkDevice, _physicalDevice.GetImageFormat().format); }
-
-	const RenderPass& Device::GetRenderPass() const { return _renderPass; }
-
-	void Device::CreatePipeline(const std::string& name, std::vector<Pipeline::ShaderInfo> shaderInfos)
-	{
-		_pipeline = Pipeline(name, shaderInfos, _vkDevice, _renderPass, _swapchain);
-	}
-
-	const Pipeline& Device::GetPipeline() const { return _pipeline; }
 }
