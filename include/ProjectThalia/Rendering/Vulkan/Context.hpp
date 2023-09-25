@@ -30,14 +30,15 @@ namespace ProjectThalia::Rendering::Vulkan
 			Instance       _instance;
 			PhysicalDevice _physicalDevice;
 
-			vk::CommandPool   _commandPool;
-			vk::CommandBuffer _commandBuffer;
+			vk::CommandPool _commandPool;
 
-			vk::Semaphore _imageAvailableSemaphore;
-			vk::Semaphore _renderFinishedSemaphore;
-			vk::Fence     _inFlightFence;
+			std::vector<vk::CommandBuffer> _commandBuffer           = std::vector<vk::CommandBuffer>(MAX_FRAMES_IN_FLIGHT);
+			std::vector<vk::Semaphore>     _imageAvailableSemaphore = std::vector<vk::Semaphore>(MAX_FRAMES_IN_FLIGHT);
+			std::vector<vk::Semaphore>     _renderFinishedSemaphore = std::vector<vk::Semaphore>(MAX_FRAMES_IN_FLIGHT);
+			std::vector<vk::Fence>         _inFlightFence           = std::vector<vk::Fence>(MAX_FRAMES_IN_FLIGHT);
 
-			bool _frameBufferResized = false;
+			uint32_t _currentFrame       = 0;
+			bool     _frameBufferResized = false;
 
 			void CreateInstance(SDL_Window* sdlWindow);
 			void CreateCommandBuffers();

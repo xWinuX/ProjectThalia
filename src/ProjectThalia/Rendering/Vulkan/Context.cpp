@@ -41,9 +41,12 @@ namespace ProjectThalia::Rendering::Vulkan
 		vk::SemaphoreCreateInfo semaphoreCreateInfo = vk::SemaphoreCreateInfo();
 		vk::FenceCreateInfo     fenceCreateInfo     = vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
 
-		_imageAvailableSemaphore = _device->GetVkDevice().createSemaphore(semaphoreCreateInfo);
-		_renderFinishedSemaphore = _device->GetVkDevice().createSemaphore(semaphoreCreateInfo);
-		_inFlightFence           = _device->GetVkDevice().createFence(fenceCreateInfo);
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		{
+			_imageAvailableSemaphore[i] = _device->GetVkDevice().createSemaphore(semaphoreCreateInfo);
+			_renderFinishedSemaphore[i] = _device->GetVkDevice().createSemaphore(semaphoreCreateInfo);
+			_inFlightFence[i]           = _device->GetVkDevice().createFence(fenceCreateInfo);
+		}
 	}
 
 	void Context::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex)
@@ -59,8 +62,8 @@ namespace ProjectThalia::Rendering::Vulkan
 																			  1,
 																			  &clearColor);
 
-		_commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
-		_commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, _device->GetPipeline().GetVkPipeline());
+		commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, _device->GetPipeline().GetVkPipeline());
 
 		vk::Viewport viewport = vk::Viewport(0,
 											 0,
@@ -68,10 +71,10 @@ namespace ProjectThalia::Rendering::Vulkan
 											 static_cast<float>(_device->GetSwapchain().GetExtend().height),
 											 0.0f,
 											 1.0f);
-		_commandBuffer.setViewport(0, 1, &viewport);
+		commandBuffer.setViewport(0, 1, &viewport);
 
 		vk::Rect2D scissor = vk::Rect2D({0, 0}, _device->GetSwapchain().GetExtend());
-		_commandBuffer.setScissor(0, 1, &scissor);
+		commandBuffer.setScissor(0, 1, &scissor);
 
 		commandBuffer.draw(3, 1, 0, 0);
 
@@ -86,18 +89,22 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		_commandPool = _device->GetVkDevice().createCommandPool(commandPoolCreateInfo);
 
-		vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vk::CommandBufferAllocateInfo(_commandPool, vk::CommandBufferLevel::ePrimary, 1);
+		vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vk::CommandBufferAllocateInfo(_commandPool,
+																								vk::CommandBufferLevel::ePrimary,
+																								_commandBuffer.size());
 
-		_commandBuffer = _device->GetVkDevice().allocateCommandBuffers(commandBufferAllocateInfo)[0];
+		_commandBuffer = _device->GetVkDevice().allocateCommandBuffers(commandBufferAllocateInfo);
 	}
 
 	void Context::Destroy()
 	{
 		_device->GetVkDevice().waitIdle();
 
-		_device->GetVkDevice().destroy(_imageAvailableSemaphore);
-		_device->GetVkDevice().destroy(_renderFinishedSemaphore);
-		_device->GetVkDevice().destroy(_inFlightFence);
+
+		for (const vk::Semaphore& semaphore : _imageAvailableSemaphore) { _device->GetVkDevice().destroy(semaphore); }
+		for (const vk::Semaphore& semaphore : _renderFinishedSemaphore) { _device->GetVkDevice().destroy(semaphore); }
+		for (const vk::Fence& fence : _inFlightFence) { _device->GetVkDevice().destroy(fence); }
+
 		_device->GetVkDevice().destroy(_commandPool);
 
 		_device->Destroy();
@@ -106,11 +113,11 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	void Context::DrawFrame()
 	{
-		_device->GetVkDevice().waitForFences(1, &_inFlightFence, vk::True, UINT64_MAX);
+		_device->GetVkDevice().waitForFences(1, &_inFlightFence[_currentFrame], vk::True, UINT64_MAX);
 
 		vk::ResultValue<uint32_t> imageIndexResult = _device->GetVkDevice().acquireNextImageKHR(_device->GetSwapchain().GetVkSwapchain(),
 																								UINT64_MAX,
-																								_imageAvailableSemaphore,
+																								_imageAvailableSemaphore[_currentFrame],
 																								VK_NULL_HANDLE);
 
 		if (imageIndexResult.result == vk::Result::eErrorOutOfDateKHR)
@@ -125,17 +132,20 @@ namespace ProjectThalia::Rendering::Vulkan
 			ErrorHandler::ThrowRuntimeError("failed to acquire swap chain image!");
 		}
 
-		_device->GetVkDevice().resetFences(1, &_inFlightFence);
+		_device->GetVkDevice().resetFences(1, &_inFlightFence[_currentFrame]);
 
-		_commandBuffer.reset({});
-		RecordCommandBuffer(_commandBuffer, imageIndexResult.value);
+		_commandBuffer[_currentFrame].reset({});
+		RecordCommandBuffer(_commandBuffer[_currentFrame], imageIndexResult.value);
 
 		vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
-		vk::SubmitInfo         submitInfo   = vk::SubmitInfo(_imageAvailableSemaphore, waitStages, _commandBuffer, _renderFinishedSemaphore);
+		vk::SubmitInfo         submitInfo   = vk::SubmitInfo(_imageAvailableSemaphore[_currentFrame],
+                                                   waitStages,
+                                                   _commandBuffer[_currentFrame],
+                                                   _renderFinishedSemaphore[_currentFrame]);
 
-		_device->GetGraphicsQueue().submit(submitInfo, _inFlightFence);
+		_device->GetGraphicsQueue().submit(submitInfo, _inFlightFence[_currentFrame]);
 
-		vk::PresentInfoKHR presentInfo = vk::PresentInfoKHR(_renderFinishedSemaphore,
+		vk::PresentInfoKHR presentInfo = vk::PresentInfoKHR(_renderFinishedSemaphore[_currentFrame],
 															_device->GetSwapchain().GetVkSwapchain(),
 															imageIndexResult.value,
 															nullptr);
@@ -150,7 +160,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		}
 		else if (presentResult != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("failed to present swap chain image!"); }
 
-		//currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+		_currentFrame = (_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 
 	void Context::CreateInstance(SDL_Window* sdlWindow)
