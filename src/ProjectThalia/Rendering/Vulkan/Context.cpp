@@ -9,18 +9,20 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	void Context::Initialize(Window& window)
+	void Context::Initialize(Window* window)
 	{
+		_window = window; // TODO: Move to renderer
+
 		Debug::Log::Info("Initalize");
 
-		CreateInstance(window.GetSDLWindow());
+		CreateInstance(_window->GetSDLWindow());
 
 		_physicalDevice = PhysicalDevice(_instance.GetVkInstance(), _instance.GetVkSurface(), _deviceExtensions, _validationLayers);
 
 		_device = std::make_unique<Device>(Device(_physicalDevice));
 
 		_device->CreateRenderPass();
-		_device->CreateSwapchain(_instance.GetVkSurface(), window.GetSize());
+		_device->CreateSwapchain(_instance.GetVkSurface(), _window->GetSize());
 		_device->CreatePipeline("main",
 								{{"res/shaders/Debug.vert.spv", vk::ShaderStageFlagBits::eVertex},
 								 {"res/shaders/Debug.frag.spv", vk::ShaderStageFlagBits::eFragment}});
@@ -28,6 +30,10 @@ namespace ProjectThalia::Rendering::Vulkan
 		CreateCommandBuffers();
 
 		CreateSyncObjects();
+
+		_window->OnResize.Add([this](int width, int height) {
+			_frameBufferResized = true;
+		});
 	}
 
 	void Context::CreateSyncObjects()
@@ -100,27 +106,51 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	void Context::DrawFrame()
 	{
-		Debug::Log::Info("Draw frame");
-		vk::Result waitForFencesResult = _device->GetVkDevice().waitForFences(1, &_inFlightFence, vk::True, UINT64_MAX);
-		vk::Result resetFencesResult   = _device->GetVkDevice().resetFences(1, &_inFlightFence);
+		_device->GetVkDevice().waitForFences(1, &_inFlightFence, vk::True, UINT64_MAX);
 
-		vk::ResultValue<uint32_t> imageIndex = _device->GetVkDevice().acquireNextImageKHR(_device->GetSwapchain().GetVkSwapchain(),
-																						  UINT64_MAX,
-																						  _imageAvailableSemaphore,
-																						  VK_NULL_HANDLE);
+		vk::ResultValue<uint32_t> imageIndexResult = _device->GetVkDevice().acquireNextImageKHR(_device->GetSwapchain().GetVkSwapchain(),
+																								UINT64_MAX,
+																								_imageAvailableSemaphore,
+																								VK_NULL_HANDLE);
+
+		if (imageIndexResult.result == vk::Result::eErrorOutOfDateKHR)
+		{
+			_device->GetVkDevice().waitIdle();
+			_device->CreateSwapchain(_instance.GetVkSurface(), _window->GetSize());
+
+			return;
+		}
+		else if (imageIndexResult.result != vk::Result::eSuccess && imageIndexResult.result != vk::Result::eSuboptimalKHR)
+		{
+			ErrorHandler::ThrowRuntimeError("failed to acquire swap chain image!");
+		}
+
+		_device->GetVkDevice().resetFences(1, &_inFlightFence);
 
 		_commandBuffer.reset({});
-		RecordCommandBuffer(_commandBuffer, imageIndex.value);
+		RecordCommandBuffer(_commandBuffer, imageIndexResult.value);
 
 		vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
 		vk::SubmitInfo         submitInfo   = vk::SubmitInfo(_imageAvailableSemaphore, waitStages, _commandBuffer, _renderFinishedSemaphore);
 
-
 		_device->GetGraphicsQueue().submit(submitInfo, _inFlightFence);
 
-		vk::PresentInfoKHR presentInfo = vk::PresentInfoKHR(_renderFinishedSemaphore, _device->GetSwapchain().GetVkSwapchain(), imageIndex.value, nullptr);
+		vk::PresentInfoKHR presentInfo = vk::PresentInfoKHR(_renderFinishedSemaphore,
+															_device->GetSwapchain().GetVkSwapchain(),
+															imageIndexResult.value,
+															nullptr);
 
 		vk::Result presentResult = _device->GetPresentQueue().presentKHR(presentInfo);
+
+		if (presentResult == vk::Result::eErrorOutOfDateKHR || presentResult == vk::Result::eSuboptimalKHR || _frameBufferResized)
+		{
+			_device->GetVkDevice().waitIdle();
+			_frameBufferResized = false;
+			_device->CreateSwapchain(_instance.GetVkSurface(), _window->GetSize());
+		}
+		else if (presentResult != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("failed to present swap chain image!"); }
+
+		//currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 
 	void Context::CreateInstance(SDL_Window* sdlWindow)

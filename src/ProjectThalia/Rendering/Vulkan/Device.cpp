@@ -42,6 +42,9 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	void Device::CreateSwapchain(vk::SurfaceKHR surfaceKhr, glm::ivec2 size)
 	{
+		// Destroy previously created swapchain (since the swapchain can be recreated when the window is resized this)
+		_swapchain.Destroy(_vkDevice);
+
 		_swapchain = Swapchain(_vkDevice,
 							   _physicalDevice,
 							   _renderPass.GetVkRenderPass(),

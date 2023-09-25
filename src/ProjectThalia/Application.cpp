@@ -16,12 +16,25 @@ namespace ProjectThalia
 		bool quit = false;
 		while (!quit)
 		{
-			_renderer.DrawFrame();
 
 			while (SDL_PollEvent(&e))
 			{
-				if (e.type == SDL_QUIT) { quit = true; }
+				switch (e.type)
+				{
+					case SDL_KEYDOWN: _event.Invoke(0); break;
+					case SDL_QUIT: quit = true; break;
+				}
+
+				switch (e.window.event)
+				{
+					case SDL_WINDOWEVENT_SIZE_CHANGED: _window.OnResize.Invoke(e.window.data1, e.window.data2); break;
+					case SDL_WINDOWEVENT_MINIMIZED: _window.SetMinimized(true); break;
+					case SDL_WINDOWEVENT_RESTORED: _window.SetMinimized(false); break;
+				}
 			}
+
+
+			if (!_window.IsMinimized()) { _renderer.DrawFrame(); }
 		}
 
 		Destroy();
@@ -41,6 +54,7 @@ namespace ProjectThalia
 		}
 
 		_window.Open();
-		_renderer.Initialize(_window);
+		_renderer.Initialize(&_window);
 	}
+
 }

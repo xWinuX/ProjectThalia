@@ -2,6 +2,7 @@
 #include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
 #include "ProjectThalia/IO/Stream.hpp"
+#include "ProjectThalia/Rendering/Vulkan/Utility.hpp"
 
 namespace ProjectThalia::Rendering::Vulkan
 {
@@ -128,8 +129,8 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	void Pipeline::Destroy(vk::Device device)
 	{
-		for (const vk::ShaderModule& item : _shaderModules) { device.destroy(item); }
-		device.destroy(_layout);
-		device.destroy(_vkPipeline);
+		for (const vk::ShaderModule& item : _shaderModules) { Utility::DeleteDeviceHandle(device, item); }
+		Utility::DeleteDeviceHandle(device, _layout);
+		Utility::DeleteDeviceHandle(device, _vkPipeline);
 	}
 }

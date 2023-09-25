@@ -1,4 +1,5 @@
 #include "ProjectThalia/Window.hpp"
+#include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
 
 #include <format>
@@ -17,6 +18,7 @@ namespace ProjectThalia
 								   SCREEN_WIDTH,
 								   SCREEN_HEIGHT,
 								   SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN);
+
 		if (_window == nullptr) { ErrorHandler::ThrowRuntimeError(std::format("Window could not be created! SDL_Error: {0}\n", SDL_GetError())); }
 	}
 
@@ -26,9 +28,9 @@ namespace ProjectThalia
 		SDL_Quit();
 	}
 
-	SDL_Window* Window::GetSDLWindow() { return _window; }
+	SDL_Window* Window::GetSDLWindow() const { return _window; }
 
-	glm::ivec2 Window::GetSize()
+	glm::ivec2 Window::GetSize() const
 	{
 		glm::ivec2 size;
 
@@ -36,4 +38,8 @@ namespace ProjectThalia
 
 		return size;
 	}
+
+	bool Window::IsMinimized() const { return _isMinimized; }
+
+	void Window::SetMinimized(bool newState) { _isMinimized = newState; }
 }

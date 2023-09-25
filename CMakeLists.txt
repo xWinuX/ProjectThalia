@@ -47,6 +47,8 @@ add_executable(${PROJECT_NAME}
         include/ProjectThalia/Rendering/Vulkan/Instance.hpp
         src/ProjectThalia/Rendering/Renderer.cpp
         include/ProjectThalia/Rendering/Renderer.hpp
+        include/ProjectThalia/Rendering/Vulkan/Utility.hpp
+        include/ProjectThalia/Event.hpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE include)

@@ -1,4 +1,5 @@
 #include "ProjectThalia/Rendering/Vulkan/RenderPass.hpp"
+#include "ProjectThalia/Rendering/Vulkan/Utility.hpp"
 
 namespace ProjectThalia::Rendering::Vulkan
 {
@@ -32,5 +33,8 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	const vk::RenderPass& RenderPass::GetVkRenderPass() const { return _vkRenderPass; }
 
-	void RenderPass::Destroy(vk::Device device) { device.destroy(_vkRenderPass); }
+	void RenderPass::Destroy(vk::Device device)
+	{
+		Utility::DeleteDeviceHandle(device, _vkRenderPass);
+	}
 }

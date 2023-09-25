@@ -13,13 +13,17 @@ namespace ProjectThalia::Rendering::Vulkan
 	class Context
 	{
 		public:
-			void Initialize(Window& sdlWindow);
+			void Initialize(Window* window);
 			void Destroy();
 			void DrawFrame();
 
 		private:
+			const int MAX_FRAMES_IN_FLIGHT = 2;
+
 			const std::vector<const char*> _validationLayers = {"VK_LAYER_KHRONOS_validation"};
 			const std::vector<const char*> _deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+
+			Window* _window; // TODO: Move to renderer
 
 			std::unique_ptr<Device> _device;
 
@@ -32,6 +36,8 @@ namespace ProjectThalia::Rendering::Vulkan
 			vk::Semaphore _imageAvailableSemaphore;
 			vk::Semaphore _renderFinishedSemaphore;
 			vk::Fence     _inFlightFence;
+
+			bool _frameBufferResized = false;
 
 			void CreateInstance(SDL_Window* sdlWindow);
 			void CreateCommandBuffers();

@@ -9,7 +9,7 @@ namespace ProjectThalia::Rendering
 		public:
 			Renderer() = default;
 
-			void Initialize(Window& window);
+			void Initialize(Window* window);
 			void DrawFrame();
 			void Destroy();
 

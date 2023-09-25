@@ -1,4 +1,5 @@
 #include "ProjectThalia/Rendering/Vulkan/Swapchain.hpp"
+#include "ProjectThalia/Rendering/Vulkan/Utility.hpp"
 
 namespace ProjectThalia::Rendering::Vulkan
 {
@@ -97,9 +98,10 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	void Swapchain::Destroy(vk::Device device)
 	{
-		device.destroy(_vkSwapchain);
-		for (const vk::ImageView& imageView : _imageViews) { device.destroy(imageView); }
-		for (const vk::Framebuffer& frameBuffer : _frameBuffers) { device.destroy(frameBuffer); }
+		Utility::DeleteDeviceHandle(device, _vkSwapchain);
+
+		for (const vk::ImageView& imageView : _imageViews) { Utility::DeleteDeviceHandle(device, imageView); }
+		for (const vk::Framebuffer& frameBuffer : _frameBuffers) { Utility::DeleteDeviceHandle(device, frameBuffer); }
 	}
 
 	const vk::SwapchainKHR& Swapchain::GetVkSwapchain() const { return _vkSwapchain; }
