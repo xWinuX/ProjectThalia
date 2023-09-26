@@ -49,6 +49,7 @@ add_executable(${PROJECT_NAME}
         include/ProjectThalia/Rendering/Renderer.hpp
         include/ProjectThalia/Rendering/Vulkan/Utility.hpp
         include/ProjectThalia/Event.hpp
+        include/ProjectThalia/Rendering/Vertex.hpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE include)
