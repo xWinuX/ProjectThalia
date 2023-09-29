@@ -4,10 +4,11 @@
 #include <vulkan/vulkan.hpp>
 
 
-#define STATIC_VARS(name, num, offsets, formats)                       \
-	const size_t     name::_offsets[]                       = offsets; \
-	const vk::Format name::_formats[]                       = formats; \
-	const auto       name::VertexInputAttributeDescriptions = ProjectThalia::Rendering::GetVertexInputAttributeDescriptions<num>(_offsets, _formats);
+#define STATIC_VARS(name, num, offsets, formats)               \
+	const size_t     name::_offsets[] = offsets;               \
+	const vk::Format name::_formats[] = formats;               \
+	const std::array<vk::VertexInputAttributeDescription, num> \
+			name::VertexInputAttributeDescriptions = ProjectThalia::Rendering::GetVertexInputAttributeDescriptions<num>(_offsets, _formats);
 
 #define DEFINE_VERTEX_FORMAT_BEGIN(name, num)                                                                   \
 	struct name                                                                                                 \
