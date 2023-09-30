@@ -1,4 +1,5 @@
 #include "ProjectThalia/Rendering/Vulkan/Device.hpp"
+#include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
 #include <set>
 
@@ -34,8 +35,9 @@ namespace ProjectThalia::Rendering::Vulkan
 		vk::Result vulkanDeviceCreateResult = _physicalDevice.GetVkPhysicalDevice().createDevice(&deviceCreateInfo, nullptr, &_vkDevice);
 		if (vulkanDeviceCreateResult != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("Failed to create logical device!"); }
 
-		_graphicsQueue = _vkDevice.getQueue(queueFamilyIndices.graphicsFamily.value(), 0);
-		_presentQueue  = _vkDevice.getQueue(queueFamilyIndices.presentFamily.value(), 0);
+		_memoryProperties = _physicalDevice.GetVkPhysicalDevice().getMemoryProperties();
+		_graphicsQueue    = _vkDevice.getQueue(queueFamilyIndices.graphicsFamily.value(), 0);
+		_presentQueue     = _vkDevice.getQueue(queueFamilyIndices.presentFamily.value(), 0);
 	}
 
 	void Device::CreateRenderPass() { _renderPass = RenderPass(_vkDevice, _physicalDevice.GetImageFormat().format); }
@@ -54,7 +56,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	void Device::CreatePipeline(const std::string& name, std::vector<Pipeline::ShaderInfo> shaderInfos)
 	{
-		_pipeline = Pipeline(name, shaderInfos, _vkDevice, _renderPass, _swapchain);
+		_pipeline = Pipeline(_vkDevice, _renderPass, _swapchain, name, shaderInfos);
 	}
 
 	const vk::Device& Device::GetVkDevice() const { return _vkDevice; }
@@ -71,6 +73,8 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	const Pipeline& Device::GetPipeline() const { return _pipeline; }
 
+	const vk::PhysicalDeviceMemoryProperties& Device::GetMemoryProperties() const { return _memoryProperties; }
+
 	void Device::Destroy()
 	{
 		_swapchain.Destroy(_vkDevice);
@@ -78,4 +82,5 @@ namespace ProjectThalia::Rendering::Vulkan
 		_pipeline.Destroy(_vkDevice);
 		_vkDevice.destroy();
 	}
+
 }

@@ -1,7 +1,6 @@
 #include "ProjectThalia/Debug/Log.hpp"
 
 #include <chrono>
-#include <format>
 #include <iostream>
 
 namespace ProjectThalia::Debug
@@ -37,5 +36,18 @@ namespace ProjectThalia::Debug
 		auto time = std::chrono::system_clock::now();
 
 		return std::format("{:%H:%M:%S}", time);
+	}
+
+	void Log::Info(const std::string& message, std::string file, int lineNumber) { Print(message, LogLevel::Info, file, lineNumber); }
+	void Log::Warning(const std::string& message, std::string file, int lineNumber) { Print(message, LogLevel::Warning, file, lineNumber); }
+	void Log::Error(const std::string& message, std::string file, int lineNumber) { Print(message, LogLevel::Warning, file, lineNumber); }
+	void Log::Fatal(const std::string& message, std::string file, int lineNumber) { Print(message, LogLevel::Warning, file, lineNumber); }
+
+	void Log::Print(const std::string& message, LogLevel logLevel, std::string& file, int lineNumber)
+	{
+		// Get file name from path
+		file = file.substr(file.find_last_of("/\\") + 1);
+
+		Print(std::format("[{0}:{1}] ", file, lineNumber) + message, logLevel);
 	}
 }

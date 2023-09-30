@@ -40,13 +40,13 @@ namespace ProjectThalia::Rendering::Vulkan
 
 				if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics && !_queueFamilyIndices.graphicsFamily.has_value())
 				{
-					Debug::Log::Info(std::format("graphics index: {0}", i));
+					LOG("graphics index: {0}", i);
 					_queueFamilyIndices.graphicsFamily = i;
 				}
 
 				if (presentSupport && !_queueFamilyIndices.presentFamily.has_value())
 				{
-					Debug::Log::Info(std::format("present index: {0}", i));
+					LOG("present index: {0}", i);
 					_queueFamilyIndices.presentFamily = i;
 				}
 
@@ -54,9 +54,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 				i++;
 			}
-
 			if (!_queueFamilyIndices.isComplete()) { continue; }
-
 
 			// Check swap chain support
 			_swapchainSupportDetails = SwapchainSupportDetails();
@@ -69,7 +67,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			// Select device
 			_vkPhysicalDevice = physicalDevice;
-			Debug::Log::Info(std::format("Selected physical device: {0}", deviceProperties.deviceName.data()));
+			LOG("Selected physical device: {0}", deviceProperties.deviceName.data());
 			break;
 		}
 

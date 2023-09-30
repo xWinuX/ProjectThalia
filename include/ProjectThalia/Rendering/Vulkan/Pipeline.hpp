@@ -18,11 +18,11 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		public:
 			Pipeline() = default;
-			Pipeline(const std::string&             name,
-					 const std::vector<ShaderInfo>& shaderInfos,
-					 const vk::Device&              device,
+			Pipeline(const vk::Device&              device,
 					 const RenderPass&              renderPass,
-					 const Swapchain&               swapchain);
+					 const Swapchain&               swapchain,
+					 const std::string&             name,
+					 const std::vector<ShaderInfo>& shaderInfos);
 
 			void Destroy(vk::Device device);
 

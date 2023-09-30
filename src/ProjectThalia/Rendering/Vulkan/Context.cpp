@@ -13,8 +13,6 @@ namespace ProjectThalia::Rendering::Vulkan
 	{
 		_window = window; // TODO: Move to renderer
 
-		Debug::Log::Info("Initalize");
-
 		CreateInstance(_window->GetSDLWindow());
 
 		_physicalDevice = PhysicalDevice(_instance.GetVkInstance(), _instance.GetVkSurface(), _deviceExtensions, _validationLayers);

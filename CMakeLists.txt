@@ -7,15 +7,14 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+include(cmake/AutomateVCPKG.cmake)
+include(cmake/Vulkan.cmake)
+
 option(SKIP_AUTOMATE_VCPKG "When ON, you will need to built the packages required by MyProject on your own or supply your own vcpkg toolchain.")
 if (NOT SKIP_AUTOMATE_VCPKG)
-    include(cmake/AutomateVCPKG.cmake)
-
     vcpkg_bootstrap()
     vcpkg_install_packages_in_manifest()
 endif()
-
-include(cmake/Vulkan.cmake)
 
 project(ProjectThalia)
 
@@ -52,6 +51,7 @@ add_executable(${PROJECT_NAME}
         include/ProjectThalia/Rendering/Vertex.hpp
 )
 
+# add everything in include as an... well... include
 target_include_directories(${PROJECT_NAME} PRIVATE include)
 
 # Vulkan
@@ -78,10 +78,10 @@ target_link_libraries(${PROJECT_NAME}
         $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
 )
 
+# Get all shader files
 file(GLOB_RECURSE SHADERS res/shaders/*.vert res/shaders/*.frag)
 
-message(${SHADERS})
-
+# Compile all shaders
 compile_shader(${PROJECT_NAME}
         ENV vulkan1.2
         FORMAT spv

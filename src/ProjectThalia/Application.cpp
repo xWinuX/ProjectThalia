@@ -12,7 +12,6 @@ namespace ProjectThalia
 
 		// Main Loop
 		SDL_Event e;
-		Debug::Log::Info("BEFORE LOOP");
 		bool quit = false;
 		while (!quit)
 		{

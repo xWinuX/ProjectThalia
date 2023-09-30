@@ -14,20 +14,20 @@ namespace ProjectThalia::Rendering::Vulkan
 		public:
 			explicit Device(PhysicalDevice& physicalDevice);
 
-			[[nodiscard]] const vk::Device&     GetVkDevice() const;
-			[[nodiscard]] const PhysicalDevice& GetPhysicalDevice() const;
-			[[nodiscard]] const vk::Queue&      GetGraphicsQueue() const;
-			[[nodiscard]] const vk::Queue&      GetPresentQueue() const;
-
 			void CreateSwapchain(vk::SurfaceKHR surfaceKhr, glm::ivec2 size);
 			void CreateRenderPass();
 			void CreatePipeline(const std::string& name, std::vector<Pipeline::ShaderInfo> shaderInfos);
 
 			void Destroy();
 
-			[[nodiscard]] const Swapchain&  GetSwapchain() const;
-			[[nodiscard]] const RenderPass& GetRenderPass() const;
-			[[nodiscard]] const Pipeline&   GetPipeline() const;
+			[[nodiscard]] const Swapchain&                          GetSwapchain() const;
+			[[nodiscard]] const RenderPass&                         GetRenderPass() const;
+			[[nodiscard]] const Pipeline&                           GetPipeline() const;
+			[[nodiscard]] const vk::Device&                         GetVkDevice() const;
+			[[nodiscard]] const PhysicalDevice&                     GetPhysicalDevice() const;
+			[[nodiscard]] const vk::Queue&                          GetGraphicsQueue() const;
+			[[nodiscard]] const vk::Queue&                          GetPresentQueue() const;
+			[[nodiscard]] const vk::PhysicalDeviceMemoryProperties& GetMemoryProperties() const;
 
 		private:
 			vk::Device      _vkDevice;
@@ -39,5 +39,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			vk::Queue _graphicsQueue;
 			vk::Queue _presentQueue;
+
+			vk::PhysicalDeviceMemoryProperties _memoryProperties;
 	};
 }

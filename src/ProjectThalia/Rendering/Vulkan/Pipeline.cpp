@@ -2,15 +2,16 @@
 #include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
 #include "ProjectThalia/IO/Stream.hpp"
+#include "ProjectThalia/Rendering/Vertex.hpp"
 #include "ProjectThalia/Rendering/Vulkan/Utility.hpp"
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	Pipeline::Pipeline(const std::string&             name,
-					   const std::vector<ShaderInfo>& shaderInfos,
-					   const vk::Device&              device,
+	Pipeline::Pipeline(const vk::Device&              device,
 					   const RenderPass&              renderPass,
-					   const Swapchain&               swapchain)
+					   const Swapchain&               swapchain,
+					   const std::string&             name,
+					   const std::vector<ShaderInfo>& shaderInfos)
 	{
 		std::vector<vk::PipelineShaderStageCreateInfo> _shaderStages = std::vector<vk::PipelineShaderStageCreateInfo>(shaderInfos.size());
 		_shaderModules.reserve(shaderInfos.size());
@@ -30,19 +31,24 @@ namespace ProjectThalia::Rendering::Vulkan
 																										"main");
 			_shaderStages[i]                                        = shaderStageCreateInfo;
 		}
-
-		Debug::Log::Info("After shader compiling");
-
+		
 		std::vector<vk::DynamicState> dynamicStates = {
 				vk::DynamicState::eViewport,
 				vk::DynamicState::eScissor,
 		};
 
-		vk::PipelineDynamicStateCreateInfo       dynamicStateCreateInfo     = vk::PipelineDynamicStateCreateInfo({}, dynamicStates);
-		vk::PipelineVertexInputStateCreateInfo   vertexInputStateCreateInfo = vk::PipelineVertexInputStateCreateInfo({}, 0, nullptr, 0, nullptr);
-		vk::PipelineInputAssemblyStateCreateInfo assemblyStateCreateInfo    = vk::PipelineInputAssemblyStateCreateInfo({},
-                                                                                                                    vk::PrimitiveTopology::eTriangleList,
-                                                                                                                    vk::False);
+
+		vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo = vk::PipelineDynamicStateCreateInfo({}, dynamicStates);
+		vk::PipelineVertexInputStateCreateInfo
+				vertexInputStateCreateInfo = vk::PipelineVertexInputStateCreateInfo({},
+																					1,
+																					&VertexPosition::VertexInputBindingDescription,
+																					VertexPosition::VertexInputAttributeDescriptions.size(),
+																					VertexPosition::VertexInputAttributeDescriptions.data());
+
+		vk::PipelineInputAssemblyStateCreateInfo assemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo({},
+																													vk::PrimitiveTopology::eTriangleList,
+																													vk::False);
 
 		vk::Viewport viewport = vk::Viewport(0,
 											 0,

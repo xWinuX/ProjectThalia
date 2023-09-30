@@ -4,17 +4,19 @@
 #include <vulkan/vulkan.hpp>
 
 
-#define STATIC_VARS(name, num, offsets, formats)               \
-	const size_t     name::_offsets[] = offsets;               \
-	const vk::Format name::_formats[] = formats;               \
-	const std::array<vk::VertexInputAttributeDescription, num> \
-			name::VertexInputAttributeDescriptions = ProjectThalia::Rendering::GetVertexInputAttributeDescriptions<num>(_offsets, _formats);
+#define STATIC_VARS(name, num, offsets, formats)                                                                                             \
+	const size_t     name::_offsets[] = offsets;                                                                                             \
+	const vk::Format name::_formats[] = formats;                                                                                             \
+	const std::array<vk::VertexInputAttributeDescription, num>                                                                               \
+			name::VertexInputAttributeDescriptions = ProjectThalia::Rendering::GetVertexInputAttributeDescriptions<num>(_offsets, _formats); \
+	const vk::VertexInputBindingDescription name::VertexInputBindingDescription = GetBindingDescription<name>();
 
 #define DEFINE_VERTEX_FORMAT_BEGIN(name, num)                                                                   \
 	struct name                                                                                                 \
 	{                                                                                                           \
 		public:                                                                                                 \
 			static const std::array<vk::VertexInputAttributeDescription, num> VertexInputAttributeDescriptions; \
+			static const vk::VertexInputBindingDescription                    VertexInputBindingDescription;    \
                                                                                                                 \
 		private:                                                                                                \
 			static const vk::Format _formats[];                                                                 \
@@ -57,6 +59,13 @@ namespace ProjectThalia::Rendering
 		}
 
 		return vertexInputAttributeDescriptions;
+	}
+
+	template<typename T>
+	vk::VertexInputBindingDescription GetBindingDescription()
+	{
+		vk::VertexInputBindingDescription vertexInputBindingDescription = vk::VertexInputBindingDescription(0, sizeof(T), vk::VertexInputRate::eVertex);
+		return vertexInputBindingDescription;
 	}
 
 	DEFINE_VERTEX_FORMAT_1(VertexPosition, glm::vec3, Position, vk::Format::eR32G32Sfloat)
