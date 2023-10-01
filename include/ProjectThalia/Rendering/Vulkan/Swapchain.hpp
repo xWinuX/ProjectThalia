@@ -1,23 +1,23 @@
 #pragma once
 
-#include "PhysicalDevice.hpp"
-#include "SDL_video.h"
+#include "DeviceObject.hpp"
 
-#include "vulkan/vulkan.hpp"
+#include <SDL_video.h>
 #include <optional>
+#include <vulkan/vulkan.hpp>
 
 namespace ProjectThalia::Rendering::Vulkan
 {
 	class Device;
 
-	class Swapchain
+	class Swapchain final : DeviceObject
 	{
 		public:
 			Swapchain() = default;
 
-			explicit Swapchain(const Device& device, const vk::SurfaceKHR& surface, vk::Extent2D size);
+			explicit Swapchain(const Device* device, const vk::SurfaceKHR& surface, vk::Extent2D size);
 
-			void Destroy(vk::Device device);
+			void Destroy() override;
 
 			[[nodiscard]] const vk::SwapchainKHR&             GetVkSwapchain() const;
 			[[nodiscard]] const std::vector<vk::Image>&       GetImages() const;

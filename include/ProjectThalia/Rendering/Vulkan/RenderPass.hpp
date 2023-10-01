@@ -1,20 +1,21 @@
 #pragma once
 
+#include "DeviceObject.hpp"
 #include "vulkan/vulkan.hpp"
 
 namespace ProjectThalia::Rendering::Vulkan
 {
 	class Device;
 
-	class RenderPass
+	class RenderPass final : DeviceObject
 	{
 		public:
 			RenderPass() = default;
-			RenderPass(const Device& device);
+			explicit RenderPass(const Device* device);
 
 			[[nodiscard]] const vk::RenderPass& GetVkRenderPass() const;
 
-			void Destroy(vk::Device device);
+			void Destroy() override;
 
 		private:
 			vk::RenderPass _vkRenderPass;

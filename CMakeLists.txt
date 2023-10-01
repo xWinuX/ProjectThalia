@@ -51,6 +51,8 @@ add_executable(${PROJECT_NAME}
         include/ProjectThalia/Rendering/Vertex.hpp
         src/ProjectThalia/Rendering/Vulkan/Buffer.cpp
         include/ProjectThalia/Rendering/Vulkan/Buffer.hpp
+        src/ProjectThalia/Rendering/Vulkan/DeviceObject.cpp
+        include/ProjectThalia/Rendering/Vulkan/DeviceObject.hpp
 )
 
 # add everything in include as an... well... include

@@ -3,9 +3,9 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	Swapchain::Swapchain(const Device& device, const vk::SurfaceKHR& surface, vk::Extent2D size)
+	Swapchain::Swapchain(const Device* device, const vk::SurfaceKHR& surface, vk::Extent2D size)
 	{
-		const PhysicalDevice& physicalDevice = device.GetPhysicalDevice();
+		const PhysicalDevice& physicalDevice = device->GetPhysicalDevice();
 
 		// Select surface format
 		const PhysicalDevice::SwapchainSupportDetails& swapchainSupportDetails = physicalDevice.GetSwapchainSupportDetails();
@@ -62,8 +62,8 @@ namespace ProjectThalia::Rendering::Vulkan
 		swapChainCreateInfo.setClipped(vk::True);
 		swapChainCreateInfo.setOldSwapchain(VK_NULL_HANDLE);
 
-		_vkSwapchain = device.GetVkDevice().createSwapchainKHR(swapChainCreateInfo);
-		_images      = device.GetVkDevice().getSwapchainImagesKHR(_vkSwapchain);
+		_vkSwapchain = device->GetVkDevice().createSwapchainKHR(swapChainCreateInfo);
+		_images      = device->GetVkDevice().getSwapchainImagesKHR(_vkSwapchain);
 
 		// Create image views
 		_imageViews.resize(_images.size());
@@ -80,7 +80,7 @@ namespace ProjectThalia::Rendering::Vulkan
 																				   vk::ComponentSwizzle::eIdentity},
 																				  {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
 
-			_imageViews[i] = device.GetVkDevice().createImageView(imageViewCreateInfo);
+			_imageViews[i] = device->GetVkDevice().createImageView(imageViewCreateInfo);
 		}
 
 		// Create frame buffers
@@ -89,23 +89,15 @@ namespace ProjectThalia::Rendering::Vulkan
 		for (size_t i = 0; i < _imageViews.size(); i++)
 		{
 			vk::FramebufferCreateInfo framebufferInfo = vk::FramebufferCreateInfo({},
-																				  device.GetRenderPass().GetVkRenderPass(),
+																				  device->GetRenderPass().GetVkRenderPass(),
 																				  1,
 																				  &_imageViews[i],
 																				  _extend.width,
 																				  _extend.height,
 																				  1);
 
-			_frameBuffers[i] = device.GetVkDevice().createFramebuffer(framebufferInfo);
+			_frameBuffers[i] = device->GetVkDevice().createFramebuffer(framebufferInfo);
 		}
-	}
-
-	void Swapchain::Destroy(vk::Device device)
-	{
-		Utility::DeleteDeviceHandle(device, _vkSwapchain);
-
-		for (const vk::ImageView& imageView : _imageViews) { Utility::DeleteDeviceHandle(device, imageView); }
-		for (const vk::Framebuffer& frameBuffer : _frameBuffers) { Utility::DeleteDeviceHandle(device, frameBuffer); }
 	}
 
 	const vk::SwapchainKHR& Swapchain::GetVkSwapchain() const { return _vkSwapchain; }
@@ -117,4 +109,12 @@ namespace ProjectThalia::Rendering::Vulkan
 	const vk::Extent2D& Swapchain::GetExtend() const { return _extend; }
 
 	const std::vector<vk::Framebuffer>& Swapchain::GetFrameBuffers() const { return _frameBuffers; }
+
+	void Swapchain::Destroy()
+	{
+		Utility::DeleteDeviceHandle(GetDevice(), _vkSwapchain);
+
+		for (const vk::ImageView& imageView : _imageViews) { Utility::DeleteDeviceHandle(GetDevice(), imageView); }
+		for (const vk::Framebuffer& frameBuffer : _frameBuffers) { Utility::DeleteDeviceHandle(GetDevice(), frameBuffer); }
+	}
 }

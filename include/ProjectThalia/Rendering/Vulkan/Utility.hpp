@@ -25,5 +25,11 @@ namespace ProjectThalia::Rendering::Vulkan
 			{
 				if (vkDeviceHandle != VK_NULL_HANDLE) { device.GetVkDevice().destroy(vkDeviceHandle); }
 			}
+
+			template<ValidDeviceHandles T>
+			static void DeleteDeviceHandle(const Device* device, T vkDeviceHandle)
+			{
+				if (vkDeviceHandle != VK_NULL_HANDLE) { device->GetVkDevice().destroy(vkDeviceHandle); }
+			}
 	};
 }

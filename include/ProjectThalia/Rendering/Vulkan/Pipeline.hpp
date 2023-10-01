@@ -1,7 +1,6 @@
 #pragma once
 
-#include "RenderPass.hpp"
-#include "Swapchain.hpp"
+#include "DeviceObject.hpp"
 
 #include <vulkan/vulkan.hpp>
 
@@ -9,7 +8,7 @@ namespace ProjectThalia::Rendering::Vulkan
 {
 	class Device;
 
-	class Pipeline
+	class Pipeline final : DeviceObject
 	{
 		public:
 			struct ShaderInfo
@@ -21,11 +20,9 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		public:
 			Pipeline() = default;
-			Pipeline(const Device&              device,
-					 const std::string&             name,
-					 const std::vector<ShaderInfo>& shaderInfos);
+			Pipeline(const Device* device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos);
 
-			void Destroy(vk::Device device);
+			void Destroy() override;
 
 			[[nodiscard]] const vk::Pipeline&       GetVkPipeline() const;
 			[[nodiscard]] const vk::PipelineLayout& GetLayout() const;

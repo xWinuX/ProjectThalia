@@ -7,7 +7,8 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	Pipeline::Pipeline(const Device& device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos)
+	Pipeline::Pipeline(const Device* device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos) :
+		DeviceObject(device)
 	{
 		std::vector<vk::PipelineShaderStageCreateInfo> _shaderStages = std::vector<vk::PipelineShaderStageCreateInfo>(shaderInfos.size());
 		_shaderModules.reserve(shaderInfos.size());
@@ -18,7 +19,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			vk::ShaderModuleCreateInfo createInfo = vk::ShaderModuleCreateInfo({}, shaderCode.size(), reinterpret_cast<const uint32_t*>(shaderCode.data()));
 
-			vk::ShaderModule shaderModule = device.GetVkDevice().createShaderModule(createInfo);
+			vk::ShaderModule shaderModule = device->GetVkDevice().createShaderModule(createInfo);
 			_shaderModules.push_back(shaderModule);
 
 			vk::PipelineShaderStageCreateInfo shaderStageCreateInfo = vk::PipelineShaderStageCreateInfo({},
@@ -48,7 +49,7 @@ namespace ProjectThalia::Rendering::Vulkan
 																													vk::PrimitiveTopology::eTriangleList,
 																													vk::False);
 
-		const vk::Extent2D& extend   = device.GetSwapchain().GetExtend();
+		const vk::Extent2D& extend   = device->GetSwapchain().GetExtend();
 		vk::Viewport        viewport = vk::Viewport(0, 0, static_cast<float>(extend.width), static_cast<float>(extend.height), 0.0f, 1.0f);
 
 		vk::Rect2D scissor = vk::Rect2D({0, 0}, extend);
@@ -97,7 +98,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo({}, 0, nullptr, 0, nullptr);
 
-		_layout = device.GetVkDevice().createPipelineLayout(pipelineLayoutCreateInfo);
+		_layout = device->GetVkDevice().createPipelineLayout(pipelineLayoutCreateInfo);
 
 		vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo = vk::GraphicsPipelineCreateInfo({},
 																								   2,
@@ -112,12 +113,12 @@ namespace ProjectThalia::Rendering::Vulkan
 																								   &colorBlendStateCreateInfo,
 																								   &dynamicStateCreateInfo,
 																								   _layout,
-																								   device.GetRenderPass().GetVkRenderPass(),
+																								   device->GetRenderPass().GetVkRenderPass(),
 																								   0,
 																								   VK_NULL_HANDLE,
 																								   -1);
 
-		vk::ResultValue<vk::Pipeline> graphicsPipelineResult = device.GetVkDevice().createGraphicsPipeline(VK_NULL_HANDLE, graphicsPipelineCreateInfo);
+		vk::ResultValue<vk::Pipeline> graphicsPipelineResult = device->GetVkDevice().createGraphicsPipeline(VK_NULL_HANDLE, graphicsPipelineCreateInfo);
 		if (graphicsPipelineResult.result != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("Failed to create graphics pipeline!"); }
 
 		_vkPipeline = graphicsPipelineResult.value;
@@ -127,10 +128,10 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	const vk::PipelineLayout& Pipeline::GetLayout() const { return _layout; }
 
-	void Pipeline::Destroy(vk::Device device)
+	void Pipeline::Destroy()
 	{
-		for (const vk::ShaderModule& item : _shaderModules) { Utility::DeleteDeviceHandle(device, item); }
-		Utility::DeleteDeviceHandle(device, _layout);
-		Utility::DeleteDeviceHandle(device, _vkPipeline);
+		for (const vk::ShaderModule& item : _shaderModules) { Utility::DeleteDeviceHandle(GetDevice(), item); }
+		Utility::DeleteDeviceHandle(GetDevice(), _layout);
+		Utility::DeleteDeviceHandle(GetDevice(), _vkPipeline);
 	}
 }

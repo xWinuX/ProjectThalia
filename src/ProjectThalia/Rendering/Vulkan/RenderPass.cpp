@@ -3,10 +3,11 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	RenderPass::RenderPass(const Device& device)
+	RenderPass::RenderPass(const Device* device) :
+		DeviceObject(device)
 	{
 		vk::AttachmentDescription colorAttachment = vk::AttachmentDescription({},
-																			  device.GetPhysicalDevice().GetImageFormat().format,
+																			  device->GetPhysicalDevice().GetImageFormat().format,
 																			  vk::SampleCountFlagBits::e1,
 																			  vk::AttachmentLoadOp::eClear,
 																			  vk::AttachmentStoreOp::eStore,
@@ -28,13 +29,11 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		vk::RenderPassCreateInfo renderPassCreateInfo = vk::RenderPassCreateInfo({}, 1, &colorAttachment, 1, &subpass, 1, &subpassDependency);
 
-		_vkRenderPass = device.GetVkDevice().createRenderPass(renderPassCreateInfo);
+		_vkRenderPass = device->GetVkDevice().createRenderPass(renderPassCreateInfo);
 	}
 
 	const vk::RenderPass& RenderPass::GetVkRenderPass() const { return _vkRenderPass; }
 
-	void RenderPass::Destroy(vk::Device device)
-	{
-		Utility::DeleteDeviceHandle(device, _vkRenderPass);
-	}
+	void RenderPass::Destroy() { Utility::DeleteDeviceHandle(GetDevice(), _vkRenderPass); }
+
 }

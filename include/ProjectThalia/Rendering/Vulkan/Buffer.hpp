@@ -1,5 +1,6 @@
 #pragma once
 
+#include "DeviceObject.hpp"
 #include "ProjectThalia/Rendering/Vertex.hpp"
 #include <vulkan/vulkan.hpp>
 
@@ -7,12 +8,12 @@ namespace ProjectThalia::Rendering::Vulkan
 {
 	class Device;
 
-	class Buffer
+	class Buffer final : DeviceObject
 	{
 		public:
 			Buffer() = default;
 
-			Buffer(const Device&                         device,
+			Buffer(const Device*                         device,
 				   vk::Flags<vk::BufferUsageFlagBits>    usage,
 				   vk::SharingMode                       sharingMode,
 				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
@@ -22,7 +23,7 @@ namespace ProjectThalia::Rendering::Vulkan
 				   vk::DeviceSize                        dataStride);
 
 			template<typename T>
-			Buffer(const Device&                         device,
+			Buffer(const Device*                         device,
 				   vk::Flags<vk::BufferUsageFlagBits>    usage,
 				   vk::SharingMode                       sharingMode,
 				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
@@ -32,7 +33,7 @@ namespace ProjectThalia::Rendering::Vulkan
 				Buffer(device, usage, sharingMode, memoryPropertyFlags, bufferSize, reinterpret_cast<const char*>(data), dataSize, sizeof(T)) {};
 
 			template<typename T>
-			Buffer(const Device&                         device,
+			Buffer(const Device*                         device,
 				   vk::Flags<vk::BufferUsageFlagBits>    usage,
 				   vk::SharingMode                       sharingMode,
 				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
@@ -41,7 +42,7 @@ namespace ProjectThalia::Rendering::Vulkan
 				Buffer(device, usage, sharingMode, memoryPropertyFlags, dataSize, reinterpret_cast<const char*>(data), dataSize, sizeof(T)) {};
 
 			template<typename T>
-			Buffer(const Device&                         device,
+			Buffer(const Device*                         device,
 				   vk::Flags<vk::BufferUsageFlagBits>    usage,
 				   vk::SharingMode                       sharingMode,
 				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
@@ -56,7 +57,7 @@ namespace ProjectThalia::Rendering::Vulkan
 					   sizeof(T)) {};
 
 			template<typename T>
-			Buffer(const Device&                         device,
+			Buffer(const Device*                         device,
 				   vk::Flags<vk::BufferUsageFlagBits>    usage,
 				   vk::SharingMode                       sharingMode,
 				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
@@ -72,7 +73,7 @@ namespace ProjectThalia::Rendering::Vulkan
 					   sizeof(T)) {};
 
 			template<typename T, int TSize>
-			Buffer(const Device&                         device,
+			Buffer(const Device*                         device,
 				   vk::Flags<vk::BufferUsageFlagBits>    usage,
 				   vk::SharingMode                       sharingMode,
 				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
@@ -87,7 +88,7 @@ namespace ProjectThalia::Rendering::Vulkan
 					   sizeof(T)) {};
 
 			template<typename T, int TSize>
-			Buffer(const Device&                         device,
+			Buffer(const Device*                         device,
 				   vk::Flags<vk::BufferUsageFlagBits>    usage,
 				   vk::SharingMode                       sharingMode,
 				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
@@ -106,12 +107,12 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			//void MapData();
 
-			void Destroy(const Device& device);
+			void Destroy() override;
 
-			void Copy(const Device& device, const Buffer& destinationBuffer);
+			void Copy(const Buffer& destinationBuffer);
 
 			template<typename T>
-			static Buffer CreateStagingBuffer(const Device& device, const T* data, vk::DeviceSize dataSize)
+			static Buffer CreateStagingBuffer(const Device* device, const T* data, vk::DeviceSize dataSize)
 			{
 				return Buffer(device,
 							  vk::BufferUsageFlagBits::eTransferSrc,
@@ -122,13 +123,13 @@ namespace ProjectThalia::Rendering::Vulkan
 			}
 
 			template<typename T>
-			static Buffer CreateStagingBuffer(const Device& device, const std::vector<T>& data)
+			static Buffer CreateStagingBuffer(const Device* device, const std::vector<T>& data)
 			{
 				return CreateStagingBuffer(device, data.data(), data.size() * sizeof(T));
 			}
 
 			template<typename T>
-			static Buffer CreateStagedVertexBuffer(const Device& device, const T* data, vk::DeviceSize dataSize)
+			static Buffer CreateStagedVertexBuffer(const Device* device, const T* data, vk::DeviceSize dataSize)
 			{
 				Buffer vertexBuffer = Buffer(device,
 											 vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
@@ -139,15 +140,15 @@ namespace ProjectThalia::Rendering::Vulkan
 
 				Buffer stagingBuffer = CreateStagingBuffer(device, data, dataSize);
 
-				stagingBuffer.Copy(device, vertexBuffer);
+				stagingBuffer.Copy(vertexBuffer);
 
-				stagingBuffer.Destroy(device);
+				stagingBuffer.Destroy();
 
 				return vertexBuffer;
 			}
 
 			template<typename T>
-			static Buffer CreateStagedVertexBuffer(const Device& device, const std::vector<T>& data)
+			static Buffer CreateStagedVertexBuffer(const Device* device, const std::vector<T>& data)
 			{
 				return CreateStagedVertexBuffer(device, data.data(), data.size() * sizeof(T));
 			}

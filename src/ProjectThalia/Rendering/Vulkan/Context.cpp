@@ -1,10 +1,11 @@
 #include "ProjectThalia/Rendering/Vulkan/Context.hpp"
+
 #include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
-
 #include "ProjectThalia/IO/Stream.hpp"
 #include "ProjectThalia/Rendering/Vertex.hpp"
-#include "SDL2/SDL_vulkan.h"
+
+#include <SDL2/SDL_vulkan.h>
 #include <filesystem>
 #include <vector>
 
@@ -31,9 +32,11 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		CreateSyncObjects();
 
-		const std::vector<VertexPosition2DColor> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+		const std::vector<VertexPosition2DColor> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+															 {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+															 {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
 
-		_vertexBuffer = Buffer::CreateStagedVertexBuffer(*_device, vertices);
+		_vertexBuffer = Buffer::CreateStagedVertexBuffer(_device.get(), vertices);
 
 		_window->OnResize.Add([this](int width, int height) {
 			_frameBufferResized = true;
@@ -69,8 +72,8 @@ namespace ProjectThalia::Rendering::Vulkan
 		commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, _device->GetPipeline().GetVkPipeline());
 
-		vk::Buffer vertexBuffers[] = {_vertexBuffer.GetVkBuffer()};
-		vk::DeviceSize offsets[] = {0};
+		vk::Buffer     vertexBuffers[] = {_vertexBuffer.GetVkBuffer()};
+		vk::DeviceSize offsets[]       = {0};
 
 		commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
@@ -110,7 +113,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		for (const vk::Semaphore& semaphore : _renderFinishedSemaphore) { _device->GetVkDevice().destroy(semaphore); }
 		for (const vk::Fence& fence : _inFlightFence) { _device->GetVkDevice().destroy(fence); }
 
-		_vertexBuffer.Destroy(*_device);
+		_vertexBuffer.Destroy();
 
 		_device->Destroy();
 		_instance.Destroy();
