@@ -1,8 +1,9 @@
-#include "ProjectThalia/Core/Application.hpp"
+#include "ProjectThalia/Application.hpp"
 
-int main(int argc, char* args[])
+int main()
 {
-	ProjectThalia::Core::Application application;
+	ProjectThalia::Application application = ProjectThalia::Application();
+
 	application.Run();
 
 	return 0;

@@ -3,12 +3,16 @@
 Vulkan & SDL based 2D Sandbox 
 
 ## VCPKG
-This project uses vcpkg to manage its dependencies, if you haven't already installed it get started [here](https://vcpkg.io/en/getting-started)
+This project uses vcpkg to manage its dependencies. \
+CMake will install a vcpkg instance inside the build folder and download the packages specified inside vcpkg.json. \
+If you do not want that you can set the CMake option "SKIP_AUTOMATE_VCPKG" to true, but this also means you have to build all needed dependencies yourself.
 
 ## How to build
 
-In the root folder of the project execute the following command to generate the build files \
-`cmake -G "Visual Studio 17 2022" -DCMAKE_TOOLCHAIN_FILE=<path to your vcpkg installation>\scripts\buildsystems\vcpkg.cmake -S . -B cmake-build-debug`
+You can either run the build.bat like this: \
+`cmd.exe /c build.bat <config>`
 
-After this you can build the project like this \
-`cmake --build cmake-build-debug --target ProjectThalia --config <Debug|Release>`
+Or do it manually like this: \
+`cmake -G "Visual Studio 17 2022" -S . -B build -DCMAKE_BUILD_TYPE=<config>`
+
+`cmake --build build --target ProjectThalia --config <config>`
