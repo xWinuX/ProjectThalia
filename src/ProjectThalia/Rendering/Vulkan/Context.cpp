@@ -25,19 +25,15 @@ namespace ProjectThalia::Rendering::Vulkan
 		_device->CreatePipeline("main",
 								{{"res/shaders/Debug.vert.spv", vk::ShaderStageFlagBits::eVertex},
 								 {"res/shaders/Debug.frag.spv", vk::ShaderStageFlagBits::eFragment}});
+		_device->CreateGraphicsCommandPool();
 
 		CreateCommandBuffers();
 
 		CreateSyncObjects();
 
-		const VertexPosition2DColor vertices[] = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+		const std::vector<VertexPosition2DColor> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
 
-		_vertexBuffer = Buffer(_device->GetVkDevice(),
-							   _device->GetMemoryProperties(),
-							   reinterpret_cast<const char*>(vertices),
-							   sizeof(vertices),
-							   vk::BufferUsageFlagBits::eVertexBuffer,
-							   vk::SharingMode::eExclusive);
+		_vertexBuffer = Buffer::CreateStagedVertexBuffer(*_device, vertices);
 
 		_window->OnResize.Add([this](int width, int height) {
 			_frameBufferResized = true;
@@ -97,12 +93,9 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	void Context::CreateCommandBuffers()
 	{
-		vk::CommandPoolCreateInfo commandPoolCreateInfo = vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-																					_physicalDevice.GetQueueFamilyIndices().graphicsFamily.value());
 
-		_commandPool = _device->GetVkDevice().createCommandPool(commandPoolCreateInfo);
 
-		vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vk::CommandBufferAllocateInfo(_commandPool,
+		vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vk::CommandBufferAllocateInfo(_device->GetGraphicsCommandPool(),
 																								vk::CommandBufferLevel::ePrimary,
 																								_commandBuffer.size());
 
@@ -113,12 +106,11 @@ namespace ProjectThalia::Rendering::Vulkan
 	{
 		_device->GetVkDevice().waitIdle();
 
-
 		for (const vk::Semaphore& semaphore : _imageAvailableSemaphore) { _device->GetVkDevice().destroy(semaphore); }
 		for (const vk::Semaphore& semaphore : _renderFinishedSemaphore) { _device->GetVkDevice().destroy(semaphore); }
 		for (const vk::Fence& fence : _inFlightFence) { _device->GetVkDevice().destroy(fence); }
 
-		_device->GetVkDevice().destroy(_commandPool);
+		_vertexBuffer.Destroy(*_device);
 
 		_device->Destroy();
 		_instance.Destroy();

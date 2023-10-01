@@ -80,7 +80,18 @@ namespace ProjectThalia::Rendering::Vulkan
 		_swapchain.Destroy(_vkDevice);
 		_renderPass.Destroy(_vkDevice);
 		_pipeline.Destroy(_vkDevice);
+		_vkDevice.destroy(_graphicsCommandPool);
 		_vkDevice.destroy();
 	}
+
+	void Device::CreateGraphicsCommandPool()
+	{
+		vk::CommandPoolCreateInfo commandPoolCreateInfo = vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+																					_physicalDevice.GetQueueFamilyIndices().graphicsFamily.value());
+
+		_graphicsCommandPool = _vkDevice.createCommandPool(commandPoolCreateInfo);
+	}
+
+	const vk::CommandPool& Device::GetGraphicsCommandPool() const { return _graphicsCommandPool; }
 
 }

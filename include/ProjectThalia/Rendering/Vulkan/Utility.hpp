@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Device.hpp"
+
 namespace ProjectThalia::Rendering::Vulkan
 {
 	template<typename T>
@@ -13,12 +15,15 @@ namespace ProjectThalia::Rendering::Vulkan
 	{
 		public:
 			template<ValidDeviceHandles T>
-			static void DeleteDeviceHandle(vk::Device device, T vkDeviceHandle);
-	};
+			static void DeleteDeviceHandle(const vk::Device& device, T vkDeviceHandle)
+			{
+				if (vkDeviceHandle != VK_NULL_HANDLE) { device.destroy(vkDeviceHandle); }
+			}
 
-	template<ValidDeviceHandles T>
-	void Utility::DeleteDeviceHandle(vk::Device device, T vkDeviceHandle)
-	{
-		if (vkDeviceHandle != VK_NULL_HANDLE) { device.destroy(vkDeviceHandle); }
-	}
+			template<ValidDeviceHandles T>
+			static void DeleteDeviceHandle(const Device& device, T vkDeviceHandle)
+			{
+				if (vkDeviceHandle != VK_NULL_HANDLE) { device.GetVkDevice().destroy(vkDeviceHandle); }
+			}
+	};
 }

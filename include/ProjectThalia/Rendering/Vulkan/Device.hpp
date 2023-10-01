@@ -17,6 +17,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			void CreateSwapchain(vk::SurfaceKHR surfaceKhr, glm::ivec2 size);
 			void CreateRenderPass();
 			void CreatePipeline(const std::string& name, std::vector<Pipeline::ShaderInfo> shaderInfos);
+			void CreateGraphicsCommandPool();
 
 			void Destroy();
 
@@ -28,6 +29,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			[[nodiscard]] const vk::Queue&                          GetGraphicsQueue() const;
 			[[nodiscard]] const vk::Queue&                          GetPresentQueue() const;
 			[[nodiscard]] const vk::PhysicalDeviceMemoryProperties& GetMemoryProperties() const;
+			[[nodiscard]] const vk::CommandPool&                    GetGraphicsCommandPool() const;
 
 		private:
 			vk::Device      _vkDevice;
@@ -36,6 +38,8 @@ namespace ProjectThalia::Rendering::Vulkan
 			Swapchain  _swapchain;
 			RenderPass _renderPass;
 			Pipeline   _pipeline;
+
+			vk::CommandPool _graphicsCommandPool;
 
 			vk::Queue _graphicsQueue;
 			vk::Queue _presentQueue;

@@ -1,29 +1,35 @@
 #include "ProjectThalia/Rendering/Vulkan/Buffer.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
+#include "ProjectThalia/Rendering/Vulkan/Device.hpp"
 #include "ProjectThalia/Rendering/Vulkan/Utility.hpp"
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	Buffer::Buffer(const vk::Device&                         device,
-				   const vk::PhysicalDeviceMemoryProperties& memoryProperties,
-				   const char*                               data,
-				   vk::DeviceSize                            size,
-				   vk::BufferUsageFlagBits                   usage,
-				   vk::SharingMode                           sharingMode)
+	Buffer::Buffer(const Device&                         device,
+				   vk::Flags<vk::BufferUsageFlagBits>    usage,
+				   vk::SharingMode                       sharingMode,
+				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
+				   vk::DeviceSize                        bufferSize,
+				   const char*                           data,
+				   vk::DeviceSize                        dataSize,
+				   vk::DeviceSize                        dataStride) :
+		_bufferSize(bufferSize),
+		_dataSize(dataSize),
+		_dataStride(dataStride)
 	{
-		vk::BufferCreateInfo bufferCreateInfo = vk::BufferCreateInfo({}, size, usage, sharingMode);
+		vk::BufferCreateInfo bufferCreateInfo = vk::BufferCreateInfo({}, bufferSize, usage, sharingMode);
 
-		_vkBuffer = device.createBuffer(bufferCreateInfo);
+		_vkBuffer = device.GetVkDevice().createBuffer(bufferCreateInfo);
 
 		vk::MemoryRequirements memoryRequirements;
-		device.getBufferMemoryRequirements(_vkBuffer, &memoryRequirements);
+		device.GetVkDevice().getBufferMemoryRequirements(_vkBuffer, &memoryRequirements);
 
 		// Find memory type
-		int                     memoryType = -1;
-		vk::MemoryPropertyFlags properties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
-		for (int i = 0; i < memoryProperties.memoryTypeCount; i++)
+		int memoryType = -1;
+		for (int i = 0; i < device.GetMemoryProperties().memoryTypeCount; i++)
 		{
-			if ((memoryRequirements.memoryTypeBits & (1 << i)) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
+			if ((memoryRequirements.memoryTypeBits & (1 << i)) &&
+				(device.GetMemoryProperties().memoryTypes[i].propertyFlags & memoryPropertyFlags) == memoryPropertyFlags)
 			{
 				memoryType = i;
 				break;
@@ -32,23 +38,47 @@ namespace ProjectThalia::Rendering::Vulkan
 		if (memoryType == -1) { ErrorHandler::ThrowRuntimeError("Failed to find suitable memory type!"); }
 
 		vk::MemoryAllocateInfo memoryAllocateInfo = vk::MemoryAllocateInfo(memoryRequirements.size, memoryType);
-		_memory                                   = device.allocateMemory(memoryAllocateInfo);
+		_memory                                   = device.GetVkDevice().allocateMemory(memoryAllocateInfo);
 
-		device.bindBufferMemory(_vkBuffer, _memory, 0);
+		device.GetVkDevice().bindBufferMemory(_vkBuffer, _memory, 0);
 
 		if (data != nullptr)
 		{
-			void* mappedData = device.mapMemory(_memory, 0, size);
-			memcpy(mappedData, data, size);
-			device.unmapMemory(_memory);
+			void* mappedData = device.GetVkDevice().mapMemory(_memory, 0, bufferSize);
+			memcpy(mappedData, data, bufferSize);
+			device.GetVkDevice().unmapMemory(_memory);
 		}
 	}
 
 	const vk::Buffer& Buffer::GetVkBuffer() const { return _vkBuffer; }
 
-	void Buffer::Destroy(vk::Device device)
+	void Buffer::Destroy(const Device& device)
 	{
 		Utility::DeleteDeviceHandle(device, _vkBuffer);
-		device.freeMemory(_memory);
+		device.GetVkDevice().freeMemory(_memory);
+	}
+
+	void Buffer::Copy(const Device& device, const Buffer& destinationBuffer)
+	{
+		vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vk::CommandBufferAllocateInfo(device.GetGraphicsCommandPool(), vk::CommandBufferLevel::ePrimary, 1);
+		vk::CommandBuffer             commandBuffer             = device.GetVkDevice().allocateCommandBuffers(commandBufferAllocateInfo)[0];
+
+		vk::CommandBufferBeginInfo beginInfo = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
+		commandBuffer.begin(beginInfo);
+
+		vk::BufferCopy copyRegion = vk::BufferCopy(0, 0, _bufferSize);
+		commandBuffer.copyBuffer(_vkBuffer, destinationBuffer.GetVkBuffer(), 1, &copyRegion);
+
+		commandBuffer.end();
+
+		vk::SubmitInfo submitInfo;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers    = &commandBuffer;
+
+		device.GetGraphicsQueue().submit(1, &submitInfo, VK_NULL_HANDLE);
+		device.GetGraphicsQueue().waitIdle();
+
+		device.GetVkDevice().freeCommandBuffers(device.GetGraphicsCommandPool(), 1, &commandBuffer);
 	}
 }
