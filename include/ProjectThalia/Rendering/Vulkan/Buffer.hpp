@@ -111,6 +111,9 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			void Copy(const Buffer& destinationBuffer);
 
+			uint32_t GetBufferElementNum() const;
+			uint32_t GetDataElementNum() const;
+
 			template<typename T>
 			static Buffer CreateStagingBuffer(const Device* device, const T* data, vk::DeviceSize dataSize)
 			{
@@ -151,6 +154,31 @@ namespace ProjectThalia::Rendering::Vulkan
 			static Buffer CreateStagedVertexBuffer(const Device* device, const std::vector<T>& data)
 			{
 				return CreateStagedVertexBuffer(device, data.data(), data.size() * sizeof(T));
+			}
+
+			template<typename T>
+			static Buffer CreateStagedIndexBuffer(const Device* device, const T* data, vk::DeviceSize dataSize)
+			{
+				Buffer vertexBuffer = Buffer(device,
+											 vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
+											 vk::SharingMode::eExclusive,
+											 vk::MemoryPropertyFlagBits::eDeviceLocal,
+											 static_cast<const T*>(nullptr),
+											 dataSize);
+
+				Buffer stagingBuffer = CreateStagingBuffer(device, data, dataSize);
+
+				stagingBuffer.Copy(vertexBuffer);
+
+				stagingBuffer.Destroy();
+
+				return vertexBuffer;
+			}
+
+			template<typename T>
+			static Buffer CreateStagedIndexBuffer(const Device* device, const std::vector<T>& data)
+			{
+				return CreateStagedIndexBuffer(device, data.data(), data.size() * sizeof(T));
 			}
 
 		private:

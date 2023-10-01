@@ -32,11 +32,15 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		CreateSyncObjects();
 
-		const std::vector<VertexPosition2DColor> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-															 {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-															 {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+		const std::vector<VertexPosition2DColor> vertices = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+															 {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+															 {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+															 {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+
+		const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
 
 		_vertexBuffer = Buffer::CreateStagedVertexBuffer(_device.get(), vertices);
+		_indexBuffer  = Buffer::CreateStagedIndexBuffer(_device.get(), indices);
 
 		_window->OnResize.Add([this](int width, int height) {
 			_frameBufferResized = true;
@@ -76,6 +80,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		vk::DeviceSize offsets[]       = {0};
 
 		commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+		commandBuffer.bindIndexBuffer(_indexBuffer.GetVkBuffer(), 0, vk::IndexType::eUint16);
 
 		vk::Viewport viewport = vk::Viewport(0,
 											 0,
@@ -88,7 +93,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		vk::Rect2D scissor = vk::Rect2D({0, 0}, _device->GetSwapchain().GetExtend());
 		commandBuffer.setScissor(0, 1, &scissor);
 
-		commandBuffer.draw(3, 1, 0, 0);
+		commandBuffer.drawIndexed(_indexBuffer.GetBufferElementNum(), 1, 0, 0, 0);
 
 		commandBuffer.endRenderPass();
 		commandBuffer.end();
@@ -114,6 +119,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		for (const vk::Fence& fence : _inFlightFence) { _device->GetVkDevice().destroy(fence); }
 
 		_vertexBuffer.Destroy();
+		_indexBuffer.Destroy();
 
 		_device->Destroy();
 		_instance.Destroy();

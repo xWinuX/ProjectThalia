@@ -84,4 +84,8 @@ namespace ProjectThalia::Rendering::Vulkan
 		Utility::DeleteDeviceHandle(GetDevice(), _vkBuffer);
 		GetDevice()->GetVkDevice().freeMemory(_memory);
 	}
+
+	uint32_t Buffer::GetBufferElementNum() const { return _bufferSize / _dataStride; }
+
+	uint32_t Buffer::GetDataElementNum() const { return _dataSize / _dataStride; }
 }

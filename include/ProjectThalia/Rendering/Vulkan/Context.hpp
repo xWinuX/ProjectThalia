@@ -32,6 +32,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			Instance       _instance;
 			PhysicalDevice _physicalDevice;
+			Buffer         _indexBuffer;
 			Buffer         _vertexBuffer;
 
 			std::vector<vk::CommandBuffer> _commandBuffer           = std::vector<vk::CommandBuffer>(MAX_FRAMES_IN_FLIGHT);
