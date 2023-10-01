@@ -3,7 +3,8 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	Swapchain::Swapchain(const Device* device, const vk::SurfaceKHR& surface, vk::Extent2D size)
+	Swapchain::Swapchain(const Device* device, const vk::SurfaceKHR& surface, vk::Extent2D size) :
+		DeviceObject(device)
 	{
 		const PhysicalDevice& physicalDevice = device->GetPhysicalDevice();
 
