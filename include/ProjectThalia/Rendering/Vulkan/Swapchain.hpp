@@ -8,16 +8,14 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
+	class Device;
+
 	class Swapchain
 	{
 		public:
 			Swapchain() = default;
 
-			explicit Swapchain(const vk::Device&     device,
-							   const PhysicalDevice& physicalDevice,
-							   const vk::RenderPass& renderPass,
-							   const vk::SurfaceKHR& surface,
-							   vk::Extent2D          size);
+			explicit Swapchain(const Device& device, const vk::SurfaceKHR& surface, vk::Extent2D size);
 
 			void Destroy(vk::Device device);
 

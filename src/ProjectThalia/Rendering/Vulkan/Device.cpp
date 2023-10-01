@@ -40,23 +40,21 @@ namespace ProjectThalia::Rendering::Vulkan
 		_presentQueue     = _vkDevice.getQueue(queueFamilyIndices.presentFamily.value(), 0);
 	}
 
-	void Device::CreateRenderPass() { _renderPass = RenderPass(_vkDevice, _physicalDevice.GetImageFormat().format); }
+	void Device::CreateRenderPass() { _renderPass = RenderPass(*this); }
 
 	void Device::CreateSwapchain(vk::SurfaceKHR surfaceKhr, glm::ivec2 size)
 	{
 		// Destroy previously created swapchain (since the swapchain can be recreated when the window is resized this)
 		_swapchain.Destroy(_vkDevice);
 
-		_swapchain = Swapchain(_vkDevice,
-							   _physicalDevice,
-							   _renderPass.GetVkRenderPass(),
+		_swapchain = Swapchain(*this,
 							   surfaceKhr,
 							   {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y)});
 	}
 
 	void Device::CreatePipeline(const std::string& name, std::vector<Pipeline::ShaderInfo> shaderInfos)
 	{
-		_pipeline = Pipeline(_vkDevice, _renderPass, _swapchain, name, shaderInfos);
+		_pipeline = Pipeline(*this, name, shaderInfos);
 	}
 
 	const vk::Device& Device::GetVkDevice() const { return _vkDevice; }

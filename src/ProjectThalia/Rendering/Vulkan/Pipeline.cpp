@@ -7,11 +7,7 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	Pipeline::Pipeline(const vk::Device&              device,
-					   const RenderPass&              renderPass,
-					   const Swapchain&               swapchain,
-					   const std::string&             name,
-					   const std::vector<ShaderInfo>& shaderInfos)
+	Pipeline::Pipeline(const Device& device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos)
 	{
 		std::vector<vk::PipelineShaderStageCreateInfo> _shaderStages = std::vector<vk::PipelineShaderStageCreateInfo>(shaderInfos.size());
 		_shaderModules.reserve(shaderInfos.size());
@@ -22,7 +18,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			vk::ShaderModuleCreateInfo createInfo = vk::ShaderModuleCreateInfo({}, shaderCode.size(), reinterpret_cast<const uint32_t*>(shaderCode.data()));
 
-			vk::ShaderModule shaderModule = device.createShaderModule(createInfo);
+			vk::ShaderModule shaderModule = device.GetVkDevice().createShaderModule(createInfo);
 			_shaderModules.push_back(shaderModule);
 
 			vk::PipelineShaderStageCreateInfo shaderStageCreateInfo = vk::PipelineShaderStageCreateInfo({},
@@ -31,17 +27,14 @@ namespace ProjectThalia::Rendering::Vulkan
 																										"main");
 			_shaderStages[i]                                        = shaderStageCreateInfo;
 		}
-		
+
 		std::vector<vk::DynamicState> dynamicStates = {
 				vk::DynamicState::eViewport,
 				vk::DynamicState::eScissor,
 		};
 
 
-		for (auto& item : VertexPosition2DColor::VertexInputAttributeDescriptions)
-		{
-			LOG("item: {0}", std::to_string((int)item.format));
-		}
+		for (auto& item : VertexPosition2DColor::VertexInputAttributeDescriptions) { LOG("item: {0}", std::to_string((int) item.format)); }
 
 		vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo = vk::PipelineDynamicStateCreateInfo({}, dynamicStates);
 		vk::PipelineVertexInputStateCreateInfo
@@ -55,14 +48,10 @@ namespace ProjectThalia::Rendering::Vulkan
 																													vk::PrimitiveTopology::eTriangleList,
 																													vk::False);
 
-		vk::Viewport viewport = vk::Viewport(0,
-											 0,
-											 static_cast<float>(swapchain.GetExtend().width),
-											 static_cast<float>(swapchain.GetExtend().height),
-											 0.0f,
-											 1.0f);
+		const vk::Extent2D& extend   = device.GetSwapchain().GetExtend();
+		vk::Viewport        viewport = vk::Viewport(0, 0, static_cast<float>(extend.width), static_cast<float>(extend.height), 0.0f, 1.0f);
 
-		vk::Rect2D scissor = vk::Rect2D({0, 0}, swapchain.GetExtend());
+		vk::Rect2D scissor = vk::Rect2D({0, 0}, extend);
 
 		vk::PipelineViewportStateCreateInfo viewportStateCreateInfo = vk::PipelineViewportStateCreateInfo({}, 1, &viewport, 1, &scissor);
 
@@ -108,7 +97,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo({}, 0, nullptr, 0, nullptr);
 
-		_layout = device.createPipelineLayout(pipelineLayoutCreateInfo);
+		_layout = device.GetVkDevice().createPipelineLayout(pipelineLayoutCreateInfo);
 
 		vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo = vk::GraphicsPipelineCreateInfo({},
 																								   2,
@@ -123,12 +112,12 @@ namespace ProjectThalia::Rendering::Vulkan
 																								   &colorBlendStateCreateInfo,
 																								   &dynamicStateCreateInfo,
 																								   _layout,
-																								   renderPass.GetVkRenderPass(),
+																								   device.GetRenderPass().GetVkRenderPass(),
 																								   0,
 																								   VK_NULL_HANDLE,
 																								   -1);
 
-		vk::ResultValue<vk::Pipeline> graphicsPipelineResult = device.createGraphicsPipeline(VK_NULL_HANDLE, graphicsPipelineCreateInfo);
+		vk::ResultValue<vk::Pipeline> graphicsPipelineResult = device.GetVkDevice().createGraphicsPipeline(VK_NULL_HANDLE, graphicsPipelineCreateInfo);
 		if (graphicsPipelineResult.result != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("Failed to create graphics pipeline!"); }
 
 		_vkPipeline = graphicsPipelineResult.value;

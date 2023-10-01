@@ -3,10 +3,10 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	RenderPass::RenderPass(const vk::Device& device, vk::Format format)
+	RenderPass::RenderPass(const Device& device)
 	{
 		vk::AttachmentDescription colorAttachment = vk::AttachmentDescription({},
-																			  format,
+																			  device.GetPhysicalDevice().GetImageFormat().format,
 																			  vk::SampleCountFlagBits::e1,
 																			  vk::AttachmentLoadOp::eClear,
 																			  vk::AttachmentStoreOp::eStore,
@@ -28,7 +28,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		vk::RenderPassCreateInfo renderPassCreateInfo = vk::RenderPassCreateInfo({}, 1, &colorAttachment, 1, &subpass, 1, &subpassDependency);
 
-		_vkRenderPass = device.createRenderPass(renderPassCreateInfo);
+		_vkRenderPass = device.GetVkDevice().createRenderPass(renderPassCreateInfo);
 	}
 
 	const vk::RenderPass& RenderPass::GetVkRenderPass() const { return _vkRenderPass; }

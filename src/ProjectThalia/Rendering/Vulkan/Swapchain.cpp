@@ -3,12 +3,10 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	Swapchain::Swapchain(const vk::Device&     device,
-												   const PhysicalDevice& physicalDevice,
-												   const vk::RenderPass& renderPass,
-												   const vk::SurfaceKHR& surface,
-												   vk::Extent2D          size)
+	Swapchain::Swapchain(const Device& device, const vk::SurfaceKHR& surface, vk::Extent2D size)
 	{
+		const PhysicalDevice& physicalDevice = device.GetPhysicalDevice();
+
 		// Select surface format
 		const PhysicalDevice::SwapchainSupportDetails& swapchainSupportDetails = physicalDevice.GetSwapchainSupportDetails();
 
@@ -64,8 +62,8 @@ namespace ProjectThalia::Rendering::Vulkan
 		swapChainCreateInfo.setClipped(vk::True);
 		swapChainCreateInfo.setOldSwapchain(VK_NULL_HANDLE);
 
-		_vkSwapchain = device.createSwapchainKHR(swapChainCreateInfo);
-		_images      = device.getSwapchainImagesKHR(_vkSwapchain);
+		_vkSwapchain = device.GetVkDevice().createSwapchainKHR(swapChainCreateInfo);
+		_images      = device.GetVkDevice().getSwapchainImagesKHR(_vkSwapchain);
 
 		// Create image views
 		_imageViews.resize(_images.size());
@@ -82,7 +80,7 @@ namespace ProjectThalia::Rendering::Vulkan
 																				   vk::ComponentSwizzle::eIdentity},
 																				  {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
 
-			_imageViews[i] = device.createImageView(imageViewCreateInfo);
+			_imageViews[i] = device.GetVkDevice().createImageView(imageViewCreateInfo);
 		}
 
 		// Create frame buffers
@@ -90,9 +88,15 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		for (size_t i = 0; i < _imageViews.size(); i++)
 		{
-			vk::FramebufferCreateInfo framebufferInfo = vk::FramebufferCreateInfo({}, renderPass, 1, &_imageViews[i], _extend.width, _extend.height, 1);
+			vk::FramebufferCreateInfo framebufferInfo = vk::FramebufferCreateInfo({},
+																				  device.GetRenderPass().GetVkRenderPass(),
+																				  1,
+																				  &_imageViews[i],
+																				  _extend.width,
+																				  _extend.height,
+																				  1);
 
-			_frameBuffers[i] = device.createFramebuffer(framebufferInfo);
+			_frameBuffers[i] = device.GetVkDevice().createFramebuffer(framebufferInfo);
 		}
 	}
 

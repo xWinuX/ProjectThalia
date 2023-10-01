@@ -2,10 +2,13 @@
 
 #include "RenderPass.hpp"
 #include "Swapchain.hpp"
-#include "vulkan/vulkan.hpp"
+
+#include <vulkan/vulkan.hpp>
 
 namespace ProjectThalia::Rendering::Vulkan
 {
+	class Device;
+
 	class Pipeline
 	{
 		public:
@@ -18,9 +21,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		public:
 			Pipeline() = default;
-			Pipeline(const vk::Device&              device,
-					 const RenderPass&              renderPass,
-					 const Swapchain&               swapchain,
+			Pipeline(const Device&              device,
 					 const std::string&             name,
 					 const std::vector<ShaderInfo>& shaderInfos);
 
