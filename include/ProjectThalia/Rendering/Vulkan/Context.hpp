@@ -1,4 +1,5 @@
 #pragma once
+#include "Buffer.hpp"
 #include "Device.hpp"
 #include "Instance.hpp"
 #include "PhysicalDevice.hpp"
@@ -29,6 +30,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			Instance       _instance;
 			PhysicalDevice _physicalDevice;
+			Buffer         _vertexBuffer;
 
 			vk::CommandPool _commandPool;
 

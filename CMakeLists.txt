@@ -49,6 +49,8 @@ add_executable(${PROJECT_NAME}
         include/ProjectThalia/Rendering/Vulkan/Utility.hpp
         include/ProjectThalia/Event.hpp
         include/ProjectThalia/Rendering/Vertex.hpp
+        src/ProjectThalia/Rendering/Vulkan/Buffer.cpp
+        include/ProjectThalia/Rendering/Vulkan/Buffer.hpp
 )
 
 # add everything in include as an... well... include
@@ -78,12 +80,11 @@ target_link_libraries(${PROJECT_NAME}
         $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
 )
 
-# Get all shader files
-file(GLOB_RECURSE SHADERS res/shaders/*.vert res/shaders/*.frag)
-
 # Compile all shaders
 compile_shader(${PROJECT_NAME}
-        ENV vulkan1.2
+        ENV vulkan1.3
         FORMAT spv
-        SOURCES ${SHADERS}
+        SOURCES
+        res/shaders/Debug.vert
+        res/shaders/Debug.frag
 )

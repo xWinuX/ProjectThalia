@@ -3,6 +3,7 @@
 #include "ProjectThalia/ErrorHandler.hpp"
 
 #include "ProjectThalia/IO/Stream.hpp"
+#include "ProjectThalia/Rendering/Vertex.hpp"
 #include "SDL2/SDL_vulkan.h"
 #include <filesystem>
 #include <vector>
@@ -28,6 +29,15 @@ namespace ProjectThalia::Rendering::Vulkan
 		CreateCommandBuffers();
 
 		CreateSyncObjects();
+
+		const VertexPosition2DColor vertices[] = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+
+		_vertexBuffer = Buffer(_device->GetVkDevice(),
+							   _device->GetMemoryProperties(),
+							   reinterpret_cast<const char*>(vertices),
+							   sizeof(vertices),
+							   vk::BufferUsageFlagBits::eVertexBuffer,
+							   vk::SharingMode::eExclusive);
 
 		_window->OnResize.Add([this](int width, int height) {
 			_frameBufferResized = true;
@@ -62,6 +72,11 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, _device->GetPipeline().GetVkPipeline());
+
+		vk::Buffer vertexBuffers[] = {_vertexBuffer.GetVkBuffer()};
+		vk::DeviceSize offsets[] = {0};
+
+		commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
 		vk::Viewport viewport = vk::Viewport(0,
 											 0,

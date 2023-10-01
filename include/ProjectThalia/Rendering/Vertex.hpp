@@ -1,15 +1,17 @@
 #pragma once
+
 #include <array>
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.hpp>
 
+#define PROTECT_ARRAY(...) __VA_ARGS__
 
 #define STATIC_VARS(name, num, offsets, formats)                                                                                             \
-	const size_t     name::_offsets[] = offsets;                                                                                             \
-	const vk::Format name::_formats[] = formats;                                                                                             \
-	const std::array<vk::VertexInputAttributeDescription, num>                                                                               \
+	inline const size_t     name::_offsets[] = offsets;                                                                                             \
+	inline const vk::Format name::_formats[] = formats;                                                                                             \
+	inline const std::array<vk::VertexInputAttributeDescription, num>                                                                               \
 			name::VertexInputAttributeDescriptions = ProjectThalia::Rendering::GetVertexInputAttributeDescriptions<num>(_offsets, _formats); \
-	const vk::VertexInputBindingDescription name::VertexInputBindingDescription = GetBindingDescription<name>();
+	inline const vk::VertexInputBindingDescription name::VertexInputBindingDescription = GetBindingDescription<name>();
 
 #define DEFINE_VERTEX_FORMAT_BEGIN(name, num)                                                                   \
 	struct name                                                                                                 \
@@ -33,7 +35,7 @@
 	DEFINE_VERTEX_FORMAT_BEGIN(name, 1)                     \
 	type0 name0;                                            \
 	DEFINE_VERTEX_FORMAT_END()                              \
-	STATIC_VARS(name, 1, {(offsetof(name, name0))}, {(format0)})
+	STATIC_VARS(name, 1, PROTECT_ARRAY({offsetof(name, name0)}), PROTECT_ARRAY({format0}))
 
 
 #define DEFINE_VERTEX_FORMAT_2(name, type0, name0, format0, type1, name1, format1) \
@@ -41,7 +43,7 @@
 	type0 name0;                                                                   \
 	type1 name1;                                                                   \
 	DEFINE_VERTEX_FORMAT_END()                                                     \
-	STATIC_VARS(name, 2, {(offsetof(name, name0), offsetof(name, name1))}, {(format0, format1)})
+	STATIC_VARS(name, 2, PROTECT_ARRAY({offsetof(name, name0), offsetof(name, name1)}), PROTECT_ARRAY({format0, format1}))
 
 namespace ProjectThalia::Rendering
 {
@@ -68,6 +70,5 @@ namespace ProjectThalia::Rendering
 		return vertexInputBindingDescription;
 	}
 
-	DEFINE_VERTEX_FORMAT_1(VertexPosition, glm::vec3, Position, vk::Format::eR32G32Sfloat)
-	DEFINE_VERTEX_FORMAT_2(VertexPositionColor, glm::vec3, Position, vk::Format::eR32G32Sfloat, glm::vec3, Color, vk::Format::eR32G32Sfloat)
+	DEFINE_VERTEX_FORMAT_2(VertexPosition2DColor, glm::vec2, Position, vk::Format::eR32G32Sfloat, glm::vec3, Color, vk::Format::eR32G32B32Sfloat)
 }

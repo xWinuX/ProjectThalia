@@ -12,7 +12,7 @@ if %ERRORLEVEL% neq 0 (
   exit /b %ERRORLEVEL%
 )
 
-cmake --build build --target ProjectThalia --config %CONFIG%
+cmake --build build --target ProjectThalia --config %CONFIG% --verbose
 if %ERRORLEVEL% neq 0 (
   echo "Build failed. Exiting."
   exit /b %ERRORLEVEL%

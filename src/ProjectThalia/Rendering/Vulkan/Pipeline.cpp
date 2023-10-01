@@ -38,13 +38,18 @@ namespace ProjectThalia::Rendering::Vulkan
 		};
 
 
+		for (auto& item : VertexPosition2DColor::VertexInputAttributeDescriptions)
+		{
+			LOG("item: {0}", std::to_string((int)item.format));
+		}
+
 		vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo = vk::PipelineDynamicStateCreateInfo({}, dynamicStates);
 		vk::PipelineVertexInputStateCreateInfo
 				vertexInputStateCreateInfo = vk::PipelineVertexInputStateCreateInfo({},
 																					1,
-																					&VertexPosition::VertexInputBindingDescription,
-																					VertexPosition::VertexInputAttributeDescriptions.size(),
-																					VertexPosition::VertexInputAttributeDescriptions.data());
+																					&VertexPosition2DColor::VertexInputBindingDescription,
+																					VertexPosition2DColor::VertexInputAttributeDescriptions.size(),
+																					VertexPosition2DColor::VertexInputAttributeDescriptions.data());
 
 		vk::PipelineInputAssemblyStateCreateInfo assemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo({},
 																													vk::PrimitiveTopology::eTriangleList,
