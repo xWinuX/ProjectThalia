@@ -10,6 +10,14 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	class Buffer final : DeviceObject
 	{
+		private:
+			struct SubBuffer
+			{
+					vk::DeviceSize sizeInBytes;
+					size_t         numElements;
+					vk::DeviceSize elementSizeInBytes;
+			};
+
 		public:
 			Buffer() = default;
 
@@ -17,176 +25,73 @@ namespace ProjectThalia::Rendering::Vulkan
 				   vk::Flags<vk::BufferUsageFlagBits>    usage,
 				   vk::SharingMode                       sharingMode,
 				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
-				   vk::DeviceSize                        bufferSize,
-				   const char*                           data,
-				   vk::DeviceSize                        dataSize,
-				   vk::DeviceSize                        dataStride);
-
-			template<typename T>
-			Buffer(const Device*                         device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
-				   vk::DeviceSize                        bufferSize,
-				   const T*                              data,
-				   vk::DeviceSize                        dataSize) :
-				Buffer(device, usage, sharingMode, memoryPropertyFlags, bufferSize, reinterpret_cast<const char*>(data), dataSize, sizeof(T)) {};
-
-			template<typename T>
-			Buffer(const Device*                         device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
-				   const T*                              data,
-				   vk::DeviceSize                        dataSize) :
-				Buffer(device, usage, sharingMode, memoryPropertyFlags, dataSize, reinterpret_cast<const char*>(data), dataSize, sizeof(T)) {};
-
-			template<typename T>
-			Buffer(const Device*                         device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
-				   const std::vector<T>&                 data) :
-				Buffer(device,
-					   usage,
-					   sharingMode,
-					   memoryPropertyFlags,
-					   data.size() * sizeof(T),
-					   reinterpret_cast<const char*>(data.data()),
-					   data.size() * sizeof(T),
-					   sizeof(T)) {};
-
-			template<typename T>
-			Buffer(const Device*                         device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
-				   const std::vector<T>&                 data,
-				   vk::DeviceSize                        bufferSize) :
-				Buffer(device,
-					   usage,
-					   sharingMode,
-					   memoryPropertyFlags,
-					   bufferSize,
-					   reinterpret_cast<const char*>(data.data()),
-					   data.size() * sizeof(T),
-					   sizeof(T)) {};
-
-			template<typename T, int TSize>
-			Buffer(const Device*                         device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
-				   const std::array<T, TSize>&           data) :
-				Buffer(device,
-					   usage,
-					   sharingMode,
-					   memoryPropertyFlags,
-					   TSize * sizeof(T),
-					   reinterpret_cast<const char*>(data.data()),
-					   TSize * sizeof(T),
-					   sizeof(T)) {};
-
-			template<typename T, int TSize>
-			Buffer(const Device*                         device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
-				   const std::array<T, TSize>&           data,
-				   vk::DeviceSize                        bufferSize) :
-				Buffer(device,
-					   usage,
-					   sharingMode,
-					   memoryPropertyFlags,
-					   bufferSize,
-					   reinterpret_cast<const char*>(data.data()),
-					   TSize * sizeof(T),
-					   sizeof(T)) {};
-
-			[[nodiscard]] const vk::Buffer& GetVkBuffer() const;
-
-			//void MapData();
+				   vk::DeviceSize                        numSubBuffers,
+				   const char**                          data,
+				   const vk::DeviceSize*                 bufferSizesInBytes,
+				   const vk::DeviceSize*                 dataSize,
+				   const vk::DeviceSize*                 dataElementSizesInBytes);
 
 			void Destroy() override;
 
 			void Copy(const Buffer& destinationBuffer);
 
-			uint32_t GetBufferElementNum() const;
-			uint32_t GetDataElementNum() const;
+			[[nodiscard]] const vk::Buffer& GetVkBuffer() const;
+			[[nodiscard]] size_t            GetNumSubBuffers() const;
+			[[nodiscard]] size_t            GetBufferElementNum(size_t index = 0) const;
+			[[nodiscard]] size_t            GetDataElementNum(size_t index = 0) const;
+			[[nodiscard]] vk::DeviceSize    GetSizeInBytes(size_t index = 0) const;
 
-			template<typename T>
-			static Buffer CreateStagingBuffer(const Device* device, const T* data, vk::DeviceSize dataSize)
+			template<typename TVertex, typename TIndex>
+			static Buffer CreateStagedModelBuffer(const Device* device, const std::vector<TVertex>& vertices, const std::vector<TIndex>& indices)
 			{
-				return Buffer(device,
-							  vk::BufferUsageFlagBits::eTransferSrc,
-							  vk::SharingMode::eExclusive,
-							  vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
-							  data,
-							  dataSize);
+				return CreateStagedModelBuffer(device, vertices.data(), vertices.size(), indices.data(), indices.size());
 			}
 
-			template<typename T>
-			static Buffer CreateStagingBuffer(const Device* device, const std::vector<T>& data)
+			template<typename TVertex, typename TIndex>
+			static Buffer CreateStagedModelBuffer(const Device*  device,
+												  const TVertex* vertices,
+												  vk::DeviceSize numVertices,
+												  const TIndex*  indices,
+												  vk::DeviceSize numIndices)
 			{
-				return CreateStagingBuffer(device, data.data(), data.size() * sizeof(T));
-			}
+				const char*    data[]                    = {reinterpret_cast<const char*>(vertices), reinterpret_cast<const char*>(indices)};
+				vk::DeviceSize dataSizesInBytes[]        = {numVertices * sizeof(TVertex), numIndices * sizeof(TIndex)};
+				vk::DeviceSize dataElementSizesInBytes[] = {sizeof(TVertex), sizeof(TIndex)};
 
-			template<typename T>
-			static Buffer CreateStagedVertexBuffer(const Device* device, const T* data, vk::DeviceSize dataSize)
-			{
-				Buffer vertexBuffer = Buffer(device,
-											 vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
-											 vk::SharingMode::eExclusive,
-											 vk::MemoryPropertyFlagBits::eDeviceLocal,
-											 static_cast<const T*>(nullptr),
-											 dataSize);
+				Buffer stagingBuffer = Buffer(device,
+											  vk::BufferUsageFlagBits::eTransferSrc,
+											  vk::SharingMode::eExclusive,
+											  vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+											  2,
+											  data,
+											  dataSizesInBytes,
+											  dataSizesInBytes,
+											  dataElementSizesInBytes);
 
-				Buffer stagingBuffer = CreateStagingBuffer(device, data, dataSize);
+				Buffer modelBuffer = Buffer(device,
+											vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer |
+													vk::BufferUsageFlagBits::eIndexBuffer,
+											vk::SharingMode::eExclusive,
+											vk::MemoryPropertyFlagBits::eDeviceLocal,
+											2,
+											EMPTY_DATA,
+											dataSizesInBytes,
+											dataSizesInBytes,
+											dataElementSizesInBytes);
 
-				stagingBuffer.Copy(vertexBuffer);
-
+				stagingBuffer.Copy(modelBuffer);
 				stagingBuffer.Destroy();
 
-				return vertexBuffer;
-			}
-
-			template<typename T>
-			static Buffer CreateStagedVertexBuffer(const Device* device, const std::vector<T>& data)
-			{
-				return CreateStagedVertexBuffer(device, data.data(), data.size() * sizeof(T));
-			}
-
-			template<typename T>
-			static Buffer CreateStagedIndexBuffer(const Device* device, const T* data, vk::DeviceSize dataSize)
-			{
-				Buffer vertexBuffer = Buffer(device,
-											 vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
-											 vk::SharingMode::eExclusive,
-											 vk::MemoryPropertyFlagBits::eDeviceLocal,
-											 static_cast<const T*>(nullptr),
-											 dataSize);
-
-				Buffer stagingBuffer = CreateStagingBuffer(device, data, dataSize);
-
-				stagingBuffer.Copy(vertexBuffer);
-
-				stagingBuffer.Destroy();
-
-				return vertexBuffer;
-			}
-
-			template<typename T>
-			static Buffer CreateStagedIndexBuffer(const Device* device, const std::vector<T>& data)
-			{
-				return CreateStagedIndexBuffer(device, data.data(), data.size() * sizeof(T));
+				return modelBuffer;
 			}
 
 		private:
+			static const char* EMPTY_DATA[];
+
+			vk::DeviceSize   _bufferSize = 0;
 			vk::Buffer       _vkBuffer;
 			vk::DeviceMemory _memory;
 
-			vk::DeviceSize _bufferSize = 0;
-			vk::DeviceSize _dataSize   = 0;
-			vk::DeviceSize _dataStride = 0;
+			std::vector<SubBuffer> _subBuffers;
 	};
 }

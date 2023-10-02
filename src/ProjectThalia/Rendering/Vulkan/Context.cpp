@@ -39,8 +39,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
 
-		_vertexBuffer = Buffer::CreateStagedVertexBuffer(_device.get(), vertices);
-		_indexBuffer  = Buffer::CreateStagedIndexBuffer(_device.get(), indices);
+		_quadModelBuffer = Buffer::CreateStagedModelBuffer(_device.get(), vertices,  indices);
 
 		_window->OnResize.Add([this](int width, int height) {
 			_frameBufferResized = true;
@@ -76,11 +75,11 @@ namespace ProjectThalia::Rendering::Vulkan
 		commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, _device->GetPipeline().GetVkPipeline());
 
-		vk::Buffer     vertexBuffers[] = {_vertexBuffer.GetVkBuffer()};
+		vk::Buffer     vertexBuffers[] = {_quadModelBuffer.GetVkBuffer()};
 		vk::DeviceSize offsets[]       = {0};
 
 		commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
-		commandBuffer.bindIndexBuffer(_indexBuffer.GetVkBuffer(), 0, vk::IndexType::eUint16);
+		commandBuffer.bindIndexBuffer(_quadModelBuffer.GetVkBuffer(), _quadModelBuffer.GetSizeInBytes(0), vk::IndexType::eUint16);
 
 		vk::Viewport viewport = vk::Viewport(0,
 											 0,
@@ -93,7 +92,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		vk::Rect2D scissor = vk::Rect2D({0, 0}, _device->GetSwapchain().GetExtend());
 		commandBuffer.setScissor(0, 1, &scissor);
 
-		commandBuffer.drawIndexed(_indexBuffer.GetBufferElementNum(), 1, 0, 0, 0);
+		commandBuffer.drawIndexed(_quadModelBuffer.GetBufferElementNum(1), 1, 0, 0, 0);
 
 		commandBuffer.endRenderPass();
 		commandBuffer.end();
@@ -118,8 +117,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		for (const vk::Semaphore& semaphore : _renderFinishedSemaphore) { _device->GetVkDevice().destroy(semaphore); }
 		for (const vk::Fence& fence : _inFlightFence) { _device->GetVkDevice().destroy(fence); }
 
-		_vertexBuffer.Destroy();
-		_indexBuffer.Destroy();
+		_quadModelBuffer.Destroy();
 
 		_device->Destroy();
 		_instance.Destroy();

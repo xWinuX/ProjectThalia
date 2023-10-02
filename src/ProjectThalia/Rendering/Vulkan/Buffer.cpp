@@ -5,20 +5,42 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
+	const char* Buffer::EMPTY_DATA[] = {
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr,
+	};
+
 	Buffer::Buffer(const Device*                         device,
 				   vk::Flags<vk::BufferUsageFlagBits>    usage,
 				   vk::SharingMode                       sharingMode,
 				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
-				   vk::DeviceSize                        bufferSize,
-				   const char*                           data,
-				   vk::DeviceSize                        dataSize,
-				   vk::DeviceSize                        dataStride) :
-		DeviceObject(device),
-		_bufferSize(bufferSize),
-		_dataSize(dataSize),
-		_dataStride(dataStride)
+				   vk::DeviceSize                        numSubBuffers,
+				   const char**                          data,
+				   const vk::DeviceSize*                 bufferSizesInBytes,
+				   const size_t*                         dataSize,
+				   const vk::DeviceSize*                 dataElementSizesInBytes) :
+		DeviceObject(device)
 	{
-		vk::BufferCreateInfo bufferCreateInfo = vk::BufferCreateInfo({}, bufferSize, usage, sharingMode);
+		if (numSubBuffers > 12) { ErrorHandler::ThrowRuntimeError("Can't have more than 12 sub buffers!"); }
+
+		_subBuffers.resize(numSubBuffers);
+		for (int i = 0; i < numSubBuffers; i++)
+		{
+			_subBuffers[i] = {bufferSizesInBytes[i], dataSize[i] / dataElementSizesInBytes[i], dataElementSizesInBytes[i]};
+			_bufferSize += bufferSizesInBytes[i];
+		}
+
+		vk::BufferCreateInfo bufferCreateInfo = vk::BufferCreateInfo({}, _bufferSize, usage, sharingMode);
 
 		_vkBuffer = device->GetVkDevice().createBuffer(bufferCreateInfo);
 
@@ -43,10 +65,16 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		device->GetVkDevice().bindBufferMemory(_vkBuffer, _memory, 0);
 
-		if (data != nullptr)
+		// Copy data
+		if (*data != nullptr)
 		{
-			void* mappedData = device->GetVkDevice().mapMemory(_memory, 0, bufferSize);
-			memcpy(mappedData, data, bufferSize);
+			void*  mappedData = device->GetVkDevice().mapMemory(_memory, 0, _bufferSize);
+			size_t offset     = 0;
+			for (int i = 0; i < numSubBuffers; i++)
+			{
+				memcpy((char*) mappedData + offset, data[i], bufferSizesInBytes[i]);
+				offset += bufferSizesInBytes[i];
+			}
 			device->GetVkDevice().unmapMemory(_memory);
 		}
 	}
@@ -58,7 +86,8 @@ namespace ProjectThalia::Rendering::Vulkan
 		vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vk::CommandBufferAllocateInfo(GetDevice()->GetGraphicsCommandPool(),
 																								vk::CommandBufferLevel::ePrimary,
 																								1);
-		vk::CommandBuffer             commandBuffer             = GetDevice()->GetVkDevice().allocateCommandBuffers(commandBufferAllocateInfo)[0];
+
+		vk::CommandBuffer commandBuffer = GetDevice()->GetVkDevice().allocateCommandBuffers(commandBufferAllocateInfo)[0];
 
 		vk::CommandBufferBeginInfo beginInfo = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
@@ -85,7 +114,11 @@ namespace ProjectThalia::Rendering::Vulkan
 		GetDevice()->GetVkDevice().freeMemory(_memory);
 	}
 
-	uint32_t Buffer::GetBufferElementNum() const { return _bufferSize / _dataStride; }
+	size_t Buffer::GetDataElementNum(size_t index) const { return _subBuffers[index].numElements; }
 
-	uint32_t Buffer::GetDataElementNum() const { return _dataSize / _dataStride; }
+	size_t Buffer::GetNumSubBuffers() const { return _subBuffers.size(); }
+
+	size_t Buffer::GetBufferElementNum(size_t index) const { return _subBuffers[index].numElements; }
+
+	vk::DeviceSize Buffer::GetSizeInBytes(size_t index) const { return _subBuffers[0].sizeInBytes; }
 }

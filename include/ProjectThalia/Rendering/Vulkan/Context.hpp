@@ -32,8 +32,8 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			Instance       _instance;
 			PhysicalDevice _physicalDevice;
-			Buffer         _indexBuffer;
-			Buffer         _vertexBuffer;
+
+			Buffer _quadModelBuffer;
 
 			std::vector<vk::CommandBuffer> _commandBuffer           = std::vector<vk::CommandBuffer>(MAX_FRAMES_IN_FLIGHT);
 			std::vector<vk::Semaphore>     _imageAvailableSemaphore = std::vector<vk::Semaphore>(MAX_FRAMES_IN_FLIGHT);
