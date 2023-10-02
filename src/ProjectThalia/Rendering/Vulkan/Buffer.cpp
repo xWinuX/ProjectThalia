@@ -66,13 +66,23 @@ namespace ProjectThalia::Rendering::Vulkan
 		device->GetVkDevice().bindBufferMemory(_vkBuffer, _memory, 0);
 
 		// Copy data
-		if (*data != nullptr)
+		if (data != nullptr)
 		{
-			void*  mappedData = device->GetVkDevice().mapMemory(_memory, 0, _bufferSize);
-			size_t offset     = 0;
+			void*  mappedData;
+			size_t offset       = 0;
+			bool   mappedBuffer = false;
 			for (int i = 0; i < numSubBuffers; i++)
 			{
-				memcpy((char*) mappedData + offset, data[i], bufferSizesInBytes[i]);
+				if (data[i] != nullptr)
+				{
+					if (!mappedBuffer)
+					{
+						mappedData   = device->GetVkDevice().mapMemory(_memory, 0, _bufferSize);
+						mappedBuffer = true;
+					}
+
+					memcpy((char*) mappedData + offset, data[i], bufferSizesInBytes[i]);
+				}
 				offset += bufferSizesInBytes[i];
 			}
 			device->GetVkDevice().unmapMemory(_memory);
