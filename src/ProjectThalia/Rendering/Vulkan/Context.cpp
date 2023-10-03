@@ -9,6 +9,11 @@
 #include <filesystem>
 #include <vector>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include <chrono>
+
 namespace ProjectThalia::Rendering::Vulkan
 {
 	void Context::Initialize(Window* window)
@@ -23,10 +28,63 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		_device->CreateRenderPass();
 		_device->CreateSwapchain(_instance.GetVkSurface(), _window->GetSize());
+
+
+		// Create descriptor layout set
+		vk::DescriptorSetLayoutBinding descriptorSetLayoutBinding = vk::DescriptorSetLayoutBinding(0,
+																								   vk::DescriptorType::eUniformBuffer,
+																								   1,
+																								   vk::ShaderStageFlagBits::eVertex,
+																								   nullptr);
+
+		vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo({}, 1, &descriptorSetLayoutBinding);
+		_descriptorSetLayout                                            = _device->GetVkDevice().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
+
+		std::vector<vk::DescriptorSetLayout> uniformBuffers = {_descriptorSetLayout};
+
+		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			_uniformBuffers[i]    = Buffer::CreateUniformBuffer<UniformBufferObject>(_device.get(), nullptr);
+			_uniformBufferData[i] = _uniformBuffers[i].Map<UniformBufferObject>();
+		}
+
 		_device->CreatePipeline("main",
 								{{"res/shaders/Debug.vert.spv", vk::ShaderStageFlagBits::eVertex},
-								 {"res/shaders/Debug.frag.spv", vk::ShaderStageFlagBits::eFragment}});
+								 {"res/shaders/Debug.frag.spv", vk::ShaderStageFlagBits::eFragment}},
+								&uniformBuffers);
 		_device->CreateGraphicsCommandPool();
+
+
+		// Create descriptor pool
+		vk::DescriptorPoolSize descriptorPoolSize = vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT));
+		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo({},
+																							 static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT),
+																							 descriptorPoolSize);
+
+		_descriptorPool = _device->GetVkDevice().createDescriptorPool(descriptorPoolCreateInfo);
+
+
+		// Create descriptor sets
+		std::vector<vk::DescriptorSetLayout> descriptorSetLayouts      = std::vector<vk::DescriptorSetLayout>(MAX_FRAMES_IN_FLIGHT, _descriptorSetLayout);
+		vk::DescriptorSetAllocateInfo        descriptorSetAllocateInfo = vk::DescriptorSetAllocateInfo(_descriptorPool, descriptorSetLayouts);
+
+		_device->GetVkDevice().allocateDescriptorSets(&descriptorSetAllocateInfo, _descriptorSets.data());
+
+
+		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		{
+			vk::DescriptorBufferInfo descriptorBufferInfo = vk::DescriptorBufferInfo(_uniformBuffers[i].GetVkBuffer(), 0, sizeof(UniformBufferObject));
+
+			vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet(_descriptorSets[i],
+																			   0,
+																			   0,
+																			   vk::DescriptorType::eUniformBuffer,
+																			   nullptr,
+																			   descriptorBufferInfo,
+																			   nullptr);
+
+			_device->GetVkDevice().updateDescriptorSets(1, &writeDescriptorSet, 0, nullptr);
+		}
 
 		CreateCommandBuffers();
 
@@ -39,7 +97,8 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
 
-		_quadModelBuffer = Buffer::CreateStagedModelBuffer(_device.get(), vertices,  indices);
+		_quadModelBuffer = Buffer::CreateStagedModelBuffer(_device.get(), vertices, indices);
+
 
 		_window->OnResize.Add([this](int width, int height) {
 			_frameBufferResized = true;
@@ -92,6 +151,8 @@ namespace ProjectThalia::Rendering::Vulkan
 		vk::Rect2D scissor = vk::Rect2D({0, 0}, _device->GetSwapchain().GetExtend());
 		commandBuffer.setScissor(0, 1, &scissor);
 
+		commandBuffer
+				.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, _device->GetPipeline().GetLayout(), 0, 1, &_descriptorSets[_currentFrame], 0, nullptr);
 		commandBuffer.drawIndexed(_quadModelBuffer.GetBufferElementNum(1), 1, 0, 0, 0);
 
 		commandBuffer.endRenderPass();
@@ -119,6 +180,11 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		_quadModelBuffer.Destroy();
 
+		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) { _uniformBuffers[i].Destroy(); }
+
+		_device->GetVkDevice().destroy(_descriptorSetLayout);
+		_device->GetVkDevice().destroy(_descriptorPool);
+
 		_device->Destroy();
 		_instance.Destroy();
 	}
@@ -145,6 +211,20 @@ namespace ProjectThalia::Rendering::Vulkan
 		}
 
 		_device->GetVkDevice().resetFences(1, &_inFlightFence[_currentFrame]);
+
+		static auto startTime = std::chrono::high_resolution_clock::now();
+
+		auto  currentTime = std::chrono::high_resolution_clock::now();
+		float time        = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+		_uniformBufferData[_currentFrame]->model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		_uniformBufferData[_currentFrame]->view  = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		_uniformBufferData[_currentFrame]->proj  = glm::perspective(glm::radians(45.0f),
+                                                                   static_cast<float>(_device->GetSwapchain().GetExtend().width) /
+                                                                           static_cast<float>(_device->GetSwapchain().GetExtend().height),
+                                                                   0.1f,
+                                                                   10.0f);
+		_uniformBufferData[_currentFrame]->proj[1][1] *= -1;
 
 		_commandBuffer[_currentFrame].reset({});
 		RecordCommandBuffer(_commandBuffer[_currentFrame], imageIndexResult.value);

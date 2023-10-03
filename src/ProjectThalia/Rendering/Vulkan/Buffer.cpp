@@ -24,20 +24,24 @@ namespace ProjectThalia::Rendering::Vulkan
 				   vk::Flags<vk::BufferUsageFlagBits>    usage,
 				   vk::SharingMode                       sharingMode,
 				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
+				   vk::DeviceSize                        bufferSizeInBytes,
 				   vk::DeviceSize                        numSubBuffers,
 				   const char**                          data,
 				   const vk::DeviceSize*                 bufferSizesInBytes,
-				   const size_t*                         dataSize,
+				   const vk::DeviceSize*                 dataSizesInBytes,
 				   const vk::DeviceSize*                 dataElementSizesInBytes) :
+		_bufferSize(bufferSizeInBytes),
 		DeviceObject(device)
 	{
 		if (numSubBuffers > 12) { ErrorHandler::ThrowRuntimeError("Can't have more than 12 sub buffers!"); }
 
+		bool bufferSizeFromSubBuffers = _bufferSize == 0;
+
 		_subBuffers.resize(numSubBuffers);
 		for (int i = 0; i < numSubBuffers; i++)
 		{
-			_subBuffers[i] = {bufferSizesInBytes[i], dataSize[i] / dataElementSizesInBytes[i], dataElementSizesInBytes[i]};
-			_bufferSize += bufferSizesInBytes[i];
+			_subBuffers[i] = {bufferSizesInBytes[i], dataSizesInBytes[i] / dataElementSizesInBytes[i], dataElementSizesInBytes[i]};
+			if (bufferSizeFromSubBuffers) { _bufferSize += bufferSizesInBytes[i]; }
 		}
 
 		vk::BufferCreateInfo bufferCreateInfo = vk::BufferCreateInfo({}, _bufferSize, usage, sharingMode);
@@ -77,17 +81,50 @@ namespace ProjectThalia::Rendering::Vulkan
 				{
 					if (!mappedBuffer)
 					{
-						mappedData   = device->GetVkDevice().mapMemory(_memory, 0, _bufferSize);
+						mappedData   = Map(0, _bufferSize);
 						mappedBuffer = true;
 					}
-
 					memcpy((char*) mappedData + offset, data[i], bufferSizesInBytes[i]);
 				}
 				offset += bufferSizesInBytes[i];
 			}
-			device->GetVkDevice().unmapMemory(_memory);
+
+			if (mappedBuffer) { device->GetVkDevice().unmapMemory(_memory); }
 		}
 	}
+
+	Buffer::Buffer(const Device*                         device,
+				   vk::Flags<vk::BufferUsageFlagBits>    usage,
+				   vk::SharingMode                       sharingMode,
+				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
+				   vk::DeviceSize                        numSubBuffers,
+				   const char**                          data,
+				   const vk::DeviceSize*                 bufferSizesInBytes,
+				   const size_t*                         dataSizesInBytes,
+				   const vk::DeviceSize*                 dataElementSizesInBytes) :
+		Buffer(device, usage, sharingMode, memoryPropertyFlags, 0, numSubBuffers, data, bufferSizesInBytes, dataSizesInBytes, dataElementSizesInBytes)
+	{}
+
+	Buffer::Buffer(const Device*                         device,
+				   vk::Flags<vk::BufferUsageFlagBits>    usage,
+				   vk::SharingMode                       sharingMode,
+				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
+				   vk::DeviceSize                        bufferSizeInBytes,
+				   const char*                           data,
+				   vk::DeviceSize                        dataSizeInBytes,
+				   vk::DeviceSize                        dataElementSizeInBytes) :
+		Buffer(device, usage, sharingMode, memoryPropertyFlags, bufferSizeInBytes, 1, &data, &dataSizeInBytes, &bufferSizeInBytes, &dataElementSizeInBytes)
+	{}
+
+	Buffer::Buffer(const Device*                         device,
+				   vk::Flags<vk::BufferUsageFlagBits>    usage,
+				   vk::SharingMode                       sharingMode,
+				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
+				   const char*                           data,
+				   vk::DeviceSize                        bufferSizeInBytes,
+				   vk::DeviceSize                        dataElementSizeInBytes) :
+		Buffer(device, usage, sharingMode, memoryPropertyFlags, bufferSizeInBytes, 1, &data, &bufferSizeInBytes, &bufferSizeInBytes, &dataElementSizeInBytes)
+	{}
 
 	const vk::Buffer& Buffer::GetVkBuffer() const { return _vkBuffer; }
 
@@ -131,4 +168,11 @@ namespace ProjectThalia::Rendering::Vulkan
 	size_t Buffer::GetBufferElementNum(size_t index) const { return _subBuffers[index].numElements; }
 
 	vk::DeviceSize Buffer::GetSizeInBytes(size_t index) const { return _subBuffers[0].sizeInBytes; }
+
+	void* Buffer::Map(vk::DeviceSize offset, vk::DeviceSize size)
+	{
+		return GetDevice()->GetVkDevice().mapMemory(_memory, offset, size == 0 ? _bufferSize : size);
+	}
+
+	void Buffer::Unmap() { GetDevice()->GetVkDevice().unmapMemory(_memory); }
 }

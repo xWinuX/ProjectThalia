@@ -50,7 +50,12 @@ namespace ProjectThalia::Rendering::Vulkan
 		_swapchain = Swapchain(this, surfaceKhr, {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y)});
 	}
 
-	void Device::CreatePipeline(const std::string& name, std::vector<Pipeline::ShaderInfo> shaderInfos) { _pipeline = Pipeline(this, name, shaderInfos); }
+	void Device::CreatePipeline(const std::string&                          name,
+								const std::vector<Pipeline::ShaderInfo>&    shaderInfos,
+								const std::vector<vk::DescriptorSetLayout>* uniformBuffers)
+	{
+		_pipeline = Pipeline(this, name, shaderInfos, uniformBuffers);
+	}
 
 	const vk::Device& Device::GetVkDevice() const { return _vkDevice; }
 

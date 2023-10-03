@@ -20,7 +20,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		public:
 			Pipeline() = default;
-			Pipeline(const Device* device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos);
+			Pipeline(const Device* device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos, const std::vector<vk::DescriptorSetLayout>* uniformBuffers = nullptr);
 
 			void Destroy() override;
 

@@ -7,7 +7,10 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	Pipeline::Pipeline(const Device* device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos) :
+	Pipeline::Pipeline(const Device*                               device,
+					   const std::string&                          name,
+					   const std::vector<ShaderInfo>&              shaderInfos,
+					   const std::vector<vk::DescriptorSetLayout>* uniformBuffers) :
 		DeviceObject(device)
 	{
 		std::vector<vk::PipelineShaderStageCreateInfo> _shaderStages = std::vector<vk::PipelineShaderStageCreateInfo>(shaderInfos.size());
@@ -61,7 +64,7 @@ namespace ProjectThalia::Rendering::Vulkan
 																														 vk::False,
 																														 vk::PolygonMode::eFill,
 																														 vk::CullModeFlagBits::eBack,
-																														 vk::FrontFace::eClockwise,
+																														 vk::FrontFace::eCounterClockwise,
 																														 vk::False,
 																														 0.0f,
 																														 0.0f,
@@ -97,6 +100,12 @@ namespace ProjectThalia::Rendering::Vulkan
 																												{0.0f, 0.0f, 0.0f, 0.0f});
 
 		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo({}, 0, nullptr, 0, nullptr);
+
+		if (uniformBuffers != nullptr)
+		{
+			pipelineLayoutCreateInfo.setLayoutCount = uniformBuffers->size();
+			pipelineLayoutCreateInfo.pSetLayouts    = uniformBuffers->data();
+		}
 
 		_layout = device->GetVkDevice().createPipelineLayout(pipelineLayoutCreateInfo);
 

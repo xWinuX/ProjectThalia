@@ -14,19 +14,26 @@ namespace ProjectThalia::Rendering::Vulkan
 	class Context
 	{
 		public:
-			Context() {}
+			Context() = default;
 
 			void Initialize(Window* window);
 			void Destroy();
 			void DrawFrame();
 
 		private:
+			struct UniformBufferObject
+			{
+					glm::mat4 model;
+					glm::mat4 view;
+					glm::mat4 proj;
+			};
+
 			const int MAX_FRAMES_IN_FLIGHT = 2;
 
 			const std::vector<const char*> _validationLayers = {"VK_LAYER_KHRONOS_validation"};
 			const std::vector<const char*> _deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
-			Window* _window; // TODO: Move to renderer
+			Window* _window = nullptr; // TODO: Move to renderer
 
 			std::unique_ptr<Device> _device;
 
@@ -34,6 +41,13 @@ namespace ProjectThalia::Rendering::Vulkan
 			PhysicalDevice _physicalDevice;
 
 			Buffer _quadModelBuffer;
+
+			std::vector<Buffer>               _uniformBuffers    = std::vector<Buffer>(MAX_FRAMES_IN_FLIGHT);
+			std::vector<UniformBufferObject*> _uniformBufferData = std::vector<UniformBufferObject*>(MAX_FRAMES_IN_FLIGHT);
+
+			vk::DescriptorSetLayout        _descriptorSetLayout;
+			vk::DescriptorPool             _descriptorPool;
+			std::vector<vk::DescriptorSet> _descriptorSets = std::vector<vk::DescriptorSet>(MAX_FRAMES_IN_FLIGHT);
 
 			std::vector<vk::CommandBuffer> _commandBuffer           = std::vector<vk::CommandBuffer>(MAX_FRAMES_IN_FLIGHT);
 			std::vector<vk::Semaphore>     _imageAvailableSemaphore = std::vector<vk::Semaphore>(MAX_FRAMES_IN_FLIGHT);
