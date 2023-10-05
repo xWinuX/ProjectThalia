@@ -1,3 +1,4 @@
+# This Project is still W.I.P
 # ProjectThalia
 
 Vulkan & SDL based 2D Sandbox 
