@@ -90,12 +90,12 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		CreateSyncObjects();
 
-		const std::vector<VertexPosition2DColor> vertices = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-															 {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-															 {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-															 {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+		const std::vector<VertexPosition2DColor> vertices = {{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+															 {{0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}},
+															 {{-0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}},
+															 {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}}};
 
-		const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
+		const std::vector<uint16_t> indices = {0, 1, 2, 2, 1, 3};
 
 		_quadModelBuffer = Buffer::CreateStagedModelBuffer(_device.get(), vertices, indices);
 
@@ -141,9 +141,9 @@ namespace ProjectThalia::Rendering::Vulkan
 		commandBuffer.bindIndexBuffer(_quadModelBuffer.GetVkBuffer(), _quadModelBuffer.GetSizeInBytes(0), vk::IndexType::eUint16);
 
 		vk::Viewport viewport = vk::Viewport(0,
-											 0,
-											 static_cast<float>(_device->GetSwapchain().GetExtend().width),
 											 static_cast<float>(_device->GetSwapchain().GetExtend().height),
+											 static_cast<float>(_device->GetSwapchain().GetExtend().width),
+											 -static_cast<float>(_device->GetSwapchain().GetExtend().height),
 											 0.0f,
 											 1.0f);
 		commandBuffer.setViewport(0, 1, &viewport);
@@ -217,14 +217,16 @@ namespace ProjectThalia::Rendering::Vulkan
 		auto  currentTime = std::chrono::high_resolution_clock::now();
 		float time        = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-		_uniformBufferData[_currentFrame]->model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		_uniformBufferData[_currentFrame]->view  = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		_uniformBufferData[_currentFrame]->model = glm::translate(glm::mat4(1.0f), time * glm::vec3(0, 1, 1));
+		//_uniformBufferData[_currentFrame]->model = glm::rotate(_uniformBufferData[_currentFrame]->model,
+		//													   time * glm::radians(90.0f),
+		//													   glm::vec3(0.0f, 0.0f, 1.0f));
+		_uniformBufferData[_currentFrame]->view  = glm::lookAt(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		_uniformBufferData[_currentFrame]->proj  = glm::perspective(glm::radians(45.0f),
                                                                    static_cast<float>(_device->GetSwapchain().GetExtend().width) /
-                                                                           static_cast<float>(_device->GetSwapchain().GetExtend().height),
+                                                                           -static_cast<float>(_device->GetSwapchain().GetExtend().height),
                                                                    0.1f,
                                                                    10.0f);
-		_uniformBufferData[_currentFrame]->proj[1][1] *= -1;
 
 		_commandBuffer[_currentFrame].reset({});
 		RecordCommandBuffer(_commandBuffer[_currentFrame], imageIndexResult.value);

@@ -53,7 +53,7 @@ namespace ProjectThalia::Rendering::Vulkan
 																													vk::False);
 
 		const vk::Extent2D& extend   = device->GetSwapchain().GetExtend();
-		vk::Viewport        viewport = vk::Viewport(0, 0, static_cast<float>(extend.width), static_cast<float>(extend.height), 0.0f, 1.0f);
+		vk::Viewport        viewport = vk::Viewport(0, static_cast<float>(extend.height), static_cast<float>(extend.width), -static_cast<float>(extend.height), 0.0f, 1.0f);
 
 		vk::Rect2D scissor = vk::Rect2D({0, 0}, extend);
 
@@ -63,8 +63,8 @@ namespace ProjectThalia::Rendering::Vulkan
 																														 vk::False,
 																														 vk::False,
 																														 vk::PolygonMode::eFill,
-																														 vk::CullModeFlagBits::eBack,
-																														 vk::FrontFace::eCounterClockwise,
+																														 vk::CullModeFlagBits::eNone,
+																														 vk::FrontFace::eClockwise,
 																														 vk::False,
 																														 0.0f,
 																														 0.0f,
