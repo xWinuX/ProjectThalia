@@ -6,9 +6,6 @@ find_program(glslc_executable NAMES glslc HINTS Vulkan::glslc)
 function(compile_shader target)
     cmake_parse_arguments(PARSE_ARGV 1 arg "" "ENV;FORMAT" "SOURCES")
 
-    # Determine the build configuration folder (Debug, Release, etc.)
-    set(config_folder "$<CONFIG>")
-
     message(${arg_SOURCES})
 
     foreach(source ${arg_SOURCES})
@@ -27,6 +24,6 @@ function(compile_shader target)
                 ${CMAKE_CURRENT_SOURCE_DIR}/${source}
         )
 
-        target_sources(${target} PRIVATE ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT})  # Change source path
+        target_sources(${target} PRIVATE ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/${source}.${arg_FORMAT})  # Change source path
     endforeach()
 endfunction()

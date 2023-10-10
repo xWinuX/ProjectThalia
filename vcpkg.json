@@ -20,5 +20,8 @@
     "name" : "imgui",
     "version>=" : "1.89.9",
     "features" : [ "sdl2-binding", "vulkan-binding" ]
+  }, {
+    "name" : "stb",
+    "version>=" : "2023-04-11#1"
   } ]
 }

@@ -33,30 +33,44 @@ namespace ProjectThalia::Rendering::Vulkan
 		_bufferSize(bufferSizeInBytes),
 		DeviceObject(device)
 	{
-		if (numSubBuffers > 12) { ErrorHandler::ThrowRuntimeError("Can't have more than 12 sub buffers!"); }
+		InitializeSubBuffers(numSubBuffers, bufferSizesInBytes, dataSizesInBytes, dataElementSizesInBytes);
 
-		bool bufferSizeFromSubBuffers = _bufferSize == 0;
+		CreateBuffer(usage, sharingMode, memoryPropertyFlags, data);
+	}
 
-		_subBuffers.resize(numSubBuffers);
-		for (int i = 0; i < numSubBuffers; i++)
-		{
-			_subBuffers[i] = {bufferSizesInBytes[i], dataSizesInBytes[i] / dataElementSizesInBytes[i], dataElementSizesInBytes[i]};
-			if (bufferSizeFromSubBuffers) { _bufferSize += bufferSizesInBytes[i]; }
-		}
+	Buffer::Buffer(const Device*                         device,
+				   vk::Flags<vk::BufferUsageFlagBits>    usage,
+				   vk::SharingMode                       sharingMode,
+				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
+				   const char**                          data,
+				   const Buffer&                         buffer) :
+		_bufferSize(buffer._bufferSize),
+		DeviceObject(device)
+	{
+		// Copy sub buffers
+		_subBuffers = buffer._subBuffers;
 
+		CreateBuffer(usage, sharingMode, memoryPropertyFlags, data);
+	}
+
+	void Buffer::CreateBuffer(vk::Flags<vk::BufferUsageFlagBits>&          usage,
+							  vk::SharingMode&                             sharingMode,
+							  const vk::Flags<vk::MemoryPropertyFlagBits>& memoryPropertyFlags,
+							  const char* const*                           data)
+	{
 		vk::BufferCreateInfo bufferCreateInfo = vk::BufferCreateInfo({}, _bufferSize, usage, sharingMode);
 
-		_vkBuffer = device->GetVkDevice().createBuffer(bufferCreateInfo);
+		_vkBuffer = GetDevice()->GetVkDevice().createBuffer(bufferCreateInfo);
 
 		vk::MemoryRequirements memoryRequirements;
-		device->GetVkDevice().getBufferMemoryRequirements(_vkBuffer, &memoryRequirements);
+		GetDevice()->GetVkDevice().getBufferMemoryRequirements(_vkBuffer, &memoryRequirements);
 
 		// Find memory type
 		int memoryType = -1;
-		for (int i = 0; i < device->GetMemoryProperties().memoryTypeCount; i++)
+		for (int i = 0; i < GetDevice()->GetMemoryProperties().memoryTypeCount; i++)
 		{
 			if ((memoryRequirements.memoryTypeBits & (1 << i)) &&
-				(device->GetMemoryProperties().memoryTypes[i].propertyFlags & memoryPropertyFlags) == memoryPropertyFlags)
+				(GetDevice()->GetMemoryProperties().memoryTypes[i].propertyFlags & memoryPropertyFlags) == memoryPropertyFlags)
 			{
 				memoryType = i;
 				break;
@@ -65,9 +79,9 @@ namespace ProjectThalia::Rendering::Vulkan
 		if (memoryType == -1) { ErrorHandler::ThrowRuntimeError("Failed to find suitable memory type!"); }
 
 		vk::MemoryAllocateInfo memoryAllocateInfo = vk::MemoryAllocateInfo(memoryRequirements.size, memoryType);
-		_memory                                   = device->GetVkDevice().allocateMemory(memoryAllocateInfo);
+		_memory                                   = GetDevice()->GetVkDevice().allocateMemory(memoryAllocateInfo);
 
-		device->GetVkDevice().bindBufferMemory(_vkBuffer, _memory, 0);
+		GetDevice()->GetVkDevice().bindBufferMemory(_vkBuffer, _memory, 0);
 
 		// Copy data
 		if (data != nullptr)
@@ -75,7 +89,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			void*  mappedData;
 			size_t offset       = 0;
 			bool   mappedBuffer = false;
-			for (int i = 0; i < numSubBuffers; i++)
+			for (int i = 0; i < _subBuffers.size(); i++)
 			{
 				if (data[i] != nullptr)
 				{
@@ -84,12 +98,29 @@ namespace ProjectThalia::Rendering::Vulkan
 						mappedData   = Map(0, _bufferSize);
 						mappedBuffer = true;
 					}
-					memcpy((char*) mappedData + offset, data[i], bufferSizesInBytes[i]);
+					memcpy((char*) mappedData + offset, data[i], _subBuffers[i].sizeInBytes);
 				}
-				offset += bufferSizesInBytes[i];
+				offset += _subBuffers[i].sizeInBytes;
 			}
 
-			if (mappedBuffer) { device->GetVkDevice().unmapMemory(_memory); }
+			if (mappedBuffer) { GetDevice()->GetVkDevice().unmapMemory(_memory); }
+		}
+	}
+
+	void Buffer::InitializeSubBuffers(unsigned long long int numSubBuffers,
+									  const vk::DeviceSize*  bufferSizesInBytes,
+									  const vk::DeviceSize*  dataSizesInBytes,
+									  const vk::DeviceSize*  dataElementSizesInBytes)
+	{
+		if (numSubBuffers > 12) { ErrorHandler::ThrowRuntimeError("Can't have more than 12 sub buffers!"); }
+
+		bool bufferSizeFromSubBuffers = _bufferSize == 0;
+
+		_subBuffers.resize(numSubBuffers);
+		for (int i = 0; i < numSubBuffers; i++)
+		{
+			_subBuffers[i] = {bufferSizesInBytes[i], dataSizesInBytes[i] / dataElementSizesInBytes[i], dataElementSizesInBytes[i], _bufferSize};
+			if (bufferSizeFromSubBuffers) { _bufferSize += bufferSizesInBytes[i]; }
 		}
 	}
 
@@ -175,4 +206,17 @@ namespace ProjectThalia::Rendering::Vulkan
 	}
 
 	void Buffer::Unmap() { GetDevice()->GetVkDevice().unmapMemory(_memory); }
+
+	void Buffer::Stage(const char** data)
+	{
+		Buffer stagingBuffer = Buffer(GetDevice(),
+									  vk::BufferUsageFlagBits::eTransferSrc,
+									  vk::SharingMode::eExclusive,
+									  vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+									  data,
+									  *this);
+
+		stagingBuffer.Copy(*this);
+		stagingBuffer.Destroy();
+	}
 }

@@ -28,7 +28,7 @@ namespace ProjectThalia::Rendering::Vulkan
 					glm::mat4 proj;
 			};
 
-			const int MAX_FRAMES_IN_FLIGHT = 2;
+			const int MAX_FRAMES_IN_FLIGHT = 1;
 
 			const std::vector<const char*> _validationLayers = {"VK_LAYER_KHRONOS_validation"};
 			const std::vector<const char*> _deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};

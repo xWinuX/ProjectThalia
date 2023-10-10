@@ -16,10 +16,18 @@ namespace ProjectThalia::Rendering::Vulkan
 					vk::DeviceSize sizeInBytes;
 					size_t         numElements;
 					vk::DeviceSize elementSizeInBytes;
+					vk::DeviceSize offset;
 			};
 
 		public:
 			Buffer() = default;
+
+			Buffer(const Device*                         device,
+				   vk::Flags<vk::BufferUsageFlagBits>    usage,
+				   vk::SharingMode                       sharingMode,
+				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
+				   const char**                          data,
+				   const Buffer&                         buffer);
 
 			Buffer(const Device*                         device,
 				   vk::Flags<vk::BufferUsageFlagBits>    usage,
@@ -41,7 +49,6 @@ namespace ProjectThalia::Rendering::Vulkan
 				   const vk::DeviceSize*                 bufferSizesInBytes,
 				   const vk::DeviceSize*                 dataSizesInBytes,
 				   const vk::DeviceSize*                 dataElementSizesInBytes);
-
 
 			Buffer(const Device*                         device,
 				   vk::Flags<vk::BufferUsageFlagBits>    usage,
@@ -65,16 +72,11 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			void Copy(const Buffer& destinationBuffer);
 
-			void* Map(vk::DeviceSize offset = 0, vk::DeviceSize size = 0);
-
-			template<typename T>
-			T* Map(vk::DeviceSize offset = 0, vk::DeviceSize size = 0)
-			{
-				return static_cast<T*>(Map(offset, size));
-			}
+			void* Map(vk::DeviceSize offset, vk::DeviceSize size);
 
 			void Unmap();
 
+			void Stage(const char** data);
 
 			[[nodiscard]] const vk::Buffer& GetVkBuffer() const;
 			[[nodiscard]] size_t            GetNumSubBuffers() const;
@@ -82,12 +84,31 @@ namespace ProjectThalia::Rendering::Vulkan
 			[[nodiscard]] size_t            GetDataElementNum(size_t index = 0) const;
 			[[nodiscard]] vk::DeviceSize    GetSizeInBytes(size_t index = 0) const;
 
+			template<typename T>
+			void CopyData(const T* data, const vk::DeviceSize dataSizeInBytes, uint32_t subBufferIndex = 0)
+			{
+				void* mappedData = Map(_subBuffers[subBufferIndex].offset, _subBuffers[subBufferIndex].sizeInBytes);
+				memcpy(mappedData, data, dataSizeInBytes);
+				Unmap();
+			}
+
+			template<typename T>
+			T* Map(vk::DeviceSize offset, vk::DeviceSize size)
+			{
+				return static_cast<T*>(Map(offset, size));
+			}
+
+			template<typename T>
+			T* FullMap()
+			{
+				return static_cast<T*>(Map(0, _bufferSize));
+			}
+
 			template<typename TVertex, typename TIndex>
 			static Buffer CreateStagedModelBuffer(const Device* device, const std::vector<TVertex>& vertices, const std::vector<TIndex>& indices)
 			{
 				return CreateStagedModelBuffer(device, vertices.data(), vertices.size(), indices.data(), indices.size());
 			}
-
 
 			template<typename TVertex, typename TIndex>
 			static Buffer CreateStagedModelBuffer(const Device*  device,
@@ -100,16 +121,6 @@ namespace ProjectThalia::Rendering::Vulkan
 				vk::DeviceSize dataSizesInBytes[]        = {numVertices * sizeof(TVertex), numIndices * sizeof(TIndex)};
 				vk::DeviceSize dataElementSizesInBytes[] = {sizeof(TVertex), sizeof(TIndex)};
 
-				Buffer stagingBuffer = Buffer(device,
-											  vk::BufferUsageFlagBits::eTransferSrc,
-											  vk::SharingMode::eExclusive,
-											  vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
-											  2,
-											  data,
-											  dataSizesInBytes,
-											  dataSizesInBytes,
-											  dataElementSizesInBytes);
-
 				Buffer modelBuffer = Buffer(device,
 											vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer |
 													vk::BufferUsageFlagBits::eIndexBuffer,
@@ -121,8 +132,7 @@ namespace ProjectThalia::Rendering::Vulkan
 											dataSizesInBytes,
 											dataElementSizesInBytes);
 
-				stagingBuffer.Copy(modelBuffer);
-				stagingBuffer.Destroy();
+				modelBuffer.Stage(data);
 
 				return modelBuffer;
 			}
@@ -139,6 +149,18 @@ namespace ProjectThalia::Rendering::Vulkan
 							  sizeof(T));
 			}
 
+			template<typename T>
+			static Buffer CreateTransferBuffer(const Device* device, const T* data, vk::DeviceSize dataSizeInBytes)
+			{
+				return Buffer(device,
+							  vk::BufferUsageFlagBits::eTransferSrc,
+							  vk::SharingMode::eExclusive,
+							  vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+							  reinterpret_cast<const char*>(data),
+							  dataSizeInBytes,
+							  sizeof(T));
+			}
+
 		private:
 			static const char* EMPTY_DATA[];
 
@@ -147,5 +169,13 @@ namespace ProjectThalia::Rendering::Vulkan
 			vk::DeviceMemory _memory;
 
 			std::vector<SubBuffer> _subBuffers;
+			void                   InitializeSubBuffers(unsigned long long int        numSubBuffers,
+														const unsigned long long int* bufferSizesInBytes,
+														const unsigned long long int* dataSizesInBytes,
+														const unsigned long long int* dataElementSizesInBytes);
+			void                   CreateBuffer(vk::Flags<vk::BufferUsageFlagBits>&          usage,
+												vk::SharingMode&                             sharingMode,
+												const vk::Flags<vk::MemoryPropertyFlagBits>& memoryPropertyFlags,
+												const char* const*                           data);
 	};
 }

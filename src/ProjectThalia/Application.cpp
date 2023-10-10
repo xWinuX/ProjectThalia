@@ -1,3 +1,6 @@
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 #include "ProjectThalia/Application.hpp"
 #include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"

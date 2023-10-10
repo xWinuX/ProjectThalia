@@ -2,17 +2,16 @@
 
 #include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
+#include "ProjectThalia/IO/ImageFile.hpp"
 #include "ProjectThalia/IO/Stream.hpp"
 #include "ProjectThalia/Rendering/Vertex.hpp"
 
 #include <SDL2/SDL_vulkan.h>
+#include <chrono>
 #include <filesystem>
-#include <vector>
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
-#include <chrono>
+#include <vector>
 
 namespace ProjectThalia::Rendering::Vulkan
 {
@@ -29,7 +28,6 @@ namespace ProjectThalia::Rendering::Vulkan
 		_device->CreateRenderPass();
 		_device->CreateSwapchain(_instance.GetVkSurface(), _window->GetSize());
 
-
 		// Create descriptor layout set
 		vk::DescriptorSetLayoutBinding descriptorSetLayoutBinding = vk::DescriptorSetLayoutBinding(0,
 																								   vk::DescriptorType::eUniformBuffer,
@@ -45,7 +43,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			_uniformBuffers[i]    = Buffer::CreateUniformBuffer<UniformBufferObject>(_device.get(), nullptr);
-			_uniformBufferData[i] = _uniformBuffers[i].Map<UniformBufferObject>();
+			_uniformBufferData[i] = _uniformBuffers[i].FullMap<UniformBufferObject>();
 		}
 
 		_device->CreatePipeline("main",
@@ -99,6 +97,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		_quadModelBuffer = Buffer::CreateStagedModelBuffer(_device.get(), vertices, indices);
 
+		IO::ImageFile textureImage = IO::ImageFile("res/textures/floppa.png", IO::ImageFile::RGBA);
 
 		_window->OnResize.Add([this](int width, int height) {
 			_frameBufferResized = true;
@@ -161,8 +160,6 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	void Context::CreateCommandBuffers()
 	{
-
-
 		vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vk::CommandBufferAllocateInfo(_device->GetGraphicsCommandPool(),
 																								vk::CommandBufferLevel::ePrimary,
 																								_commandBuffer.size());
@@ -217,10 +214,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		auto  currentTime = std::chrono::high_resolution_clock::now();
 		float time        = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-		_uniformBufferData[_currentFrame]->model = glm::translate(glm::mat4(1.0f), time * glm::vec3(0, 1, 1));
-		//_uniformBufferData[_currentFrame]->model = glm::rotate(_uniformBufferData[_currentFrame]->model,
-		//													   time * glm::radians(90.0f),
-		//													   glm::vec3(0.0f, 0.0f, 1.0f));
+		_uniformBufferData[_currentFrame]->model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		_uniformBufferData[_currentFrame]->view  = glm::lookAt(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		_uniformBufferData[_currentFrame]->proj  = glm::perspective(glm::radians(45.0f),
                                                                    static_cast<float>(_device->GetSwapchain().GetExtend().width) /

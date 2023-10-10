@@ -53,6 +53,10 @@ add_executable(${PROJECT_NAME}
         include/ProjectThalia/Rendering/Vulkan/Buffer.hpp
         src/ProjectThalia/Rendering/Vulkan/DeviceObject.cpp
         include/ProjectThalia/Rendering/Vulkan/DeviceObject.hpp
+        src/ProjectThalia/Rendering/Vulkan/Image.cpp
+        include/ProjectThalia/Rendering/Vulkan/Image.hpp
+        src/ProjectThalia/IO/ImageFile.cpp
+        include/ProjectThalia/IO/ImageFile.hpp
 )
 
 # add everything in include as an... well... include
@@ -81,6 +85,13 @@ target_link_libraries(${PROJECT_NAME}
         $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
         $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
 )
+
+# STB
+find_package(Stb REQUIRED)
+target_include_directories(${PROJECT_NAME} PRIVATE ${Stb_INCLUDE_DIR})
+
+# Copy all res files to binary folder
+file(COPY res DESTINATION "${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}")
 
 # Compile all shaders
 compile_shader(${PROJECT_NAME}
