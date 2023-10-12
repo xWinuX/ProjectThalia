@@ -33,6 +33,13 @@ namespace ProjectThalia::Rendering::Vulkan
 			[[nodiscard]] const vk::PhysicalDeviceMemoryProperties& GetMemoryProperties() const;
 			[[nodiscard]] const vk::CommandPool&                    GetGraphicsCommandPool() const;
 
+			[[nodiscard]] int FindMemoryTypeIndex(const vk::MemoryRequirements&                memoryRequirements,
+												  const vk::Flags<vk::MemoryPropertyFlagBits>& memoryPropertyFlags) const;
+
+
+			[[nodiscard]] vk::CommandBuffer BeginOneshotCommands() const;
+			void                            EndOneshotCommands(vk::CommandBuffer commandBuffer) const;
+
 		private:
 			vk::Device      _vkDevice;
 			PhysicalDevice& _physicalDevice;

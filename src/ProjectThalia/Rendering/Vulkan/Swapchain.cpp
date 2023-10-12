@@ -13,7 +13,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		// Select present mode
 		vk::PresentModeKHR presentMode = vk::PresentModeKHR::eFifo;
-		for (const auto& availablePresentMode : swapchainSupportDetails.presentModes)
+		for (const auto& availablePresentMode : swapchainSupportDetails.PresentModes)
 		{
 			if (availablePresentMode == vk::PresentModeKHR::eMailbox)
 			{
@@ -23,7 +23,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		}
 
 		// Select swap extend
-		const vk::SurfaceCapabilitiesKHR& capabilities = swapchainSupportDetails.capabilities;
+		const vk::SurfaceCapabilitiesKHR& capabilities = swapchainSupportDetails.Capabilities;
 		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) { _extend = capabilities.currentExtent; }
 		else
 		{
@@ -32,10 +32,10 @@ namespace ProjectThalia::Rendering::Vulkan
 		}
 
 		// Select image count
-		uint32_t imageCount = swapchainSupportDetails.capabilities.minImageCount + 1;
-		if (swapchainSupportDetails.capabilities.maxImageCount > 0 && imageCount > swapchainSupportDetails.capabilities.maxImageCount)
+		uint32_t imageCount = swapchainSupportDetails.Capabilities.minImageCount + 1;
+		if (swapchainSupportDetails.Capabilities.maxImageCount > 0 && imageCount > swapchainSupportDetails.Capabilities.maxImageCount)
 		{
-			imageCount = swapchainSupportDetails.capabilities.maxImageCount;
+			imageCount = swapchainSupportDetails.Capabilities.maxImageCount;
 		}
 
 		// Create swap chain
@@ -49,15 +49,15 @@ namespace ProjectThalia::Rendering::Vulkan
 																					vk::ImageUsageFlagBits::eColorAttachment);
 
 		const PhysicalDevice::QueueFamilyIndices& queueFamilyIndices = physicalDevice.GetQueueFamilyIndices();
-		if (queueFamilyIndices.graphicsFamily != queueFamilyIndices.presentFamily)
+		if (queueFamilyIndices.GraphicsFamily != queueFamilyIndices.PresentFamily)
 		{
-			std::vector<uint32_t> queueFamilies = {queueFamilyIndices.graphicsFamily.value(), queueFamilyIndices.presentFamily.value()};
+			std::vector<uint32_t> queueFamilies = {queueFamilyIndices.GraphicsFamily.value(), queueFamilyIndices.PresentFamily.value()};
 			swapChainCreateInfo.setImageSharingMode(vk::SharingMode::eConcurrent);
 			swapChainCreateInfo.setQueueFamilyIndices(queueFamilies);
 		}
 		else { swapChainCreateInfo.setImageSharingMode(vk::SharingMode::eExclusive); }
 
-		swapChainCreateInfo.setPreTransform(swapchainSupportDetails.capabilities.currentTransform);
+		swapChainCreateInfo.setPreTransform(swapchainSupportDetails.Capabilities.currentTransform);
 		swapChainCreateInfo.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque);
 		swapChainCreateInfo.setPresentMode(presentMode);
 		swapChainCreateInfo.setClipped(vk::True);

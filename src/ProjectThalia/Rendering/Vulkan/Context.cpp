@@ -99,6 +99,8 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		IO::ImageFile textureImage = IO::ImageFile("res/textures/floppa.png", IO::ImageFile::RGBA);
 
+
+
 		_window->OnResize.Add([this](int width, int height) {
 			_frameBufferResized = true;
 		});

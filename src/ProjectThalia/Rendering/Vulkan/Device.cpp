@@ -10,8 +10,8 @@ namespace ProjectThalia::Rendering::Vulkan
 	{
 		// Get queue info
 		const PhysicalDevice::QueueFamilyIndices queueFamilyIndices  = physicalDevice.GetQueueFamilyIndices();
-		std::set<uint32_t>                       uniqueQueueFamilies = {queueFamilyIndices.graphicsFamily.value(),
-																		queueFamilyIndices.presentFamily.value()}; // Needs to be a set to filter out same queue features
+		std::set<uint32_t>                       uniqueQueueFamilies = {queueFamilyIndices.GraphicsFamily.value(),
+																		queueFamilyIndices.PresentFamily.value()}; // Needs to be a set to filter out same queue features
 
 		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos = std::vector<vk::DeviceQueueCreateInfo>(uniqueQueueFamilies.size());
 
@@ -36,8 +36,8 @@ namespace ProjectThalia::Rendering::Vulkan
 		if (vulkanDeviceCreateResult != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("Failed to create logical device!"); }
 
 		_memoryProperties = _physicalDevice.GetVkPhysicalDevice().getMemoryProperties();
-		_graphicsQueue    = _vkDevice.getQueue(queueFamilyIndices.graphicsFamily.value(), 0);
-		_presentQueue     = _vkDevice.getQueue(queueFamilyIndices.presentFamily.value(), 0);
+		_graphicsQueue    = _vkDevice.getQueue(queueFamilyIndices.GraphicsFamily.value(), 0);
+		_presentQueue     = _vkDevice.getQueue(queueFamilyIndices.PresentFamily.value(), 0);
 	}
 
 	void Device::CreateRenderPass() { _renderPass = RenderPass(this); }
@@ -85,11 +85,54 @@ namespace ProjectThalia::Rendering::Vulkan
 	void Device::CreateGraphicsCommandPool()
 	{
 		vk::CommandPoolCreateInfo commandPoolCreateInfo = vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-																					_physicalDevice.GetQueueFamilyIndices().graphicsFamily.value());
+																					_physicalDevice.GetQueueFamilyIndices().GraphicsFamily.value());
 
 		_graphicsCommandPool = _vkDevice.createCommandPool(commandPoolCreateInfo);
 	}
 
 	const vk::CommandPool& Device::GetGraphicsCommandPool() const { return _graphicsCommandPool; }
+
+	int Device::FindMemoryTypeIndex(const vk::MemoryRequirements& memoryRequirements, const vk::Flags<vk::MemoryPropertyFlagBits>& memoryPropertyFlags) const
+	{
+		int memoryType = -1;
+		for (int i = 0; i < _memoryProperties.memoryTypeCount; i++)
+		{
+			if ((memoryRequirements.memoryTypeBits & (1 << i)) && (_memoryProperties.memoryTypes[i].propertyFlags & memoryPropertyFlags) == memoryPropertyFlags)
+			{
+				memoryType = i;
+				break;
+			}
+		}
+		if (memoryType == -1) { ErrorHandler::ThrowRuntimeError("Failed to find suitable memory type!"); }
+
+		return memoryType;
+	}
+
+	vk::CommandBuffer Device::BeginOneshotCommands() const
+	{
+		vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vk::CommandBufferAllocateInfo(_graphicsCommandPool, vk::CommandBufferLevel::ePrimary, 1);
+
+		vk::CommandBuffer commandBuffer = _vkDevice.allocateCommandBuffers(commandBufferAllocateInfo)[0];
+
+		vk::CommandBufferBeginInfo beginInfo = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
+		commandBuffer.begin(beginInfo);
+
+		return commandBuffer;
+	}
+
+	void Device::EndOneshotCommands(vk::CommandBuffer commandBuffer) const
+	{
+		commandBuffer.end();
+
+		vk::SubmitInfo submitInfo;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers    = &commandBuffer;
+
+		_graphicsQueue.submit(1, &submitInfo, VK_NULL_HANDLE);
+		_graphicsQueue.waitIdle();
+
+		_vkDevice.freeCommandBuffers(_graphicsCommandPool, 1, &commandBuffer);
+	}
 
 }

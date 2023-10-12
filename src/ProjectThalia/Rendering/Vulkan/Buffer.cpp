@@ -66,17 +66,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		GetDevice()->GetVkDevice().getBufferMemoryRequirements(_vkBuffer, &memoryRequirements);
 
 		// Find memory type
-		int memoryType = -1;
-		for (int i = 0; i < GetDevice()->GetMemoryProperties().memoryTypeCount; i++)
-		{
-			if ((memoryRequirements.memoryTypeBits & (1 << i)) &&
-				(GetDevice()->GetMemoryProperties().memoryTypes[i].propertyFlags & memoryPropertyFlags) == memoryPropertyFlags)
-			{
-				memoryType = i;
-				break;
-			}
-		}
-		if (memoryType == -1) { ErrorHandler::ThrowRuntimeError("Failed to find suitable memory type!"); }
+		int memoryType = GetDevice()->FindMemoryTypeIndex(memoryRequirements, memoryPropertyFlags);
 
 		vk::MemoryAllocateInfo memoryAllocateInfo = vk::MemoryAllocateInfo(memoryRequirements.size, memoryType);
 		_memory                                   = GetDevice()->GetVkDevice().allocateMemory(memoryAllocateInfo);
@@ -161,29 +151,12 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	void Buffer::Copy(const Buffer& destinationBuffer)
 	{
-		vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vk::CommandBufferAllocateInfo(GetDevice()->GetGraphicsCommandPool(),
-																								vk::CommandBufferLevel::ePrimary,
-																								1);
-
-		vk::CommandBuffer commandBuffer = GetDevice()->GetVkDevice().allocateCommandBuffers(commandBufferAllocateInfo)[0];
-
-		vk::CommandBufferBeginInfo beginInfo = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-
-		commandBuffer.begin(beginInfo);
+		vk::CommandBuffer commandBuffer = GetDevice()->BeginOneshotCommands();
 
 		vk::BufferCopy copyRegion = vk::BufferCopy(0, 0, _bufferSize);
 		commandBuffer.copyBuffer(_vkBuffer, destinationBuffer.GetVkBuffer(), 1, &copyRegion);
 
-		commandBuffer.end();
-
-		vk::SubmitInfo submitInfo;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers    = &commandBuffer;
-
-		GetDevice()->GetGraphicsQueue().submit(1, &submitInfo, VK_NULL_HANDLE);
-		GetDevice()->GetGraphicsQueue().waitIdle();
-
-		GetDevice()->GetVkDevice().freeCommandBuffers(GetDevice()->GetGraphicsCommandPool(), 1, &commandBuffer);
+		GetDevice()->EndOneshotCommands(commandBuffer);
 	}
 
 	void Buffer::Destroy()

@@ -1,11 +1,13 @@
 #pragma once
 #include "Buffer.hpp"
 #include "Device.hpp"
+#include "Image.hpp"
 #include "Instance.hpp"
 #include "PhysicalDevice.hpp"
 #include "ProjectThalia/Window.hpp"
-#include "SDL2/SDL.h"
-#include "vulkan/vulkan.hpp"
+
+#include <SDL2/SDL.h>
+#include <vulkan/vulkan.hpp>
 #include <optional>
 #include <vector>
 
@@ -41,6 +43,8 @@ namespace ProjectThalia::Rendering::Vulkan
 			PhysicalDevice _physicalDevice;
 
 			Buffer _quadModelBuffer;
+
+			//Image _image;
 
 			std::vector<Buffer>               _uniformBuffers    = std::vector<Buffer>(MAX_FRAMES_IN_FLIGHT);
 			std::vector<UniformBufferObject*> _uniformBufferData = std::vector<UniformBufferObject*>(MAX_FRAMES_IN_FLIGHT);

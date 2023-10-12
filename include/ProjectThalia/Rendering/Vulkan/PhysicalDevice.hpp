@@ -11,18 +11,18 @@ namespace ProjectThalia::Rendering::Vulkan
 			struct QueueFamilyIndices
 			{
 				public:
-					std::optional<uint32_t> graphicsFamily;
-					std::optional<uint32_t> presentFamily;
+					std::optional<uint32_t> GraphicsFamily;
+					std::optional<uint32_t> PresentFamily;
 
-					[[nodiscard]] bool isComplete() const { return graphicsFamily.has_value() && presentFamily.has_value(); }
+					[[nodiscard]] bool isComplete() const { return GraphicsFamily.has_value() && PresentFamily.has_value(); }
 			};
 
 			struct SwapchainSupportDetails
 			{
 				public:
-					vk::SurfaceCapabilitiesKHR        capabilities;
-					std::vector<vk::SurfaceFormatKHR> formats;
-					std::vector<vk::PresentModeKHR>   presentModes;
+					vk::SurfaceCapabilitiesKHR        Capabilities;
+					std::vector<vk::SurfaceFormatKHR> Formats;
+					std::vector<vk::PresentModeKHR>   PresentModes;
 			};
 
 		public:

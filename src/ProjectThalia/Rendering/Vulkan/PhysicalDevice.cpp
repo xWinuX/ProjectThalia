@@ -38,16 +38,16 @@ namespace ProjectThalia::Rendering::Vulkan
 			{
 				unsigned int presentSupport = physicalDevice.getSurfaceSupportKHR(i, surface);
 
-				if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics && !_queueFamilyIndices.graphicsFamily.has_value())
+				if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics && !_queueFamilyIndices.GraphicsFamily.has_value())
 				{
 					LOG("graphics index: {0}", i);
-					_queueFamilyIndices.graphicsFamily = i;
+					_queueFamilyIndices.GraphicsFamily = i;
 				}
 
-				if (presentSupport && !_queueFamilyIndices.presentFamily.has_value())
+				if (presentSupport && !_queueFamilyIndices.PresentFamily.has_value())
 				{
 					LOG("present index: {0}", i);
-					_queueFamilyIndices.presentFamily = i;
+					_queueFamilyIndices.PresentFamily = i;
 				}
 
 				if (_queueFamilyIndices.isComplete()) { break; }
@@ -59,11 +59,11 @@ namespace ProjectThalia::Rendering::Vulkan
 			// Check swap chain support
 			_swapchainSupportDetails = SwapchainSupportDetails();
 
-			_swapchainSupportDetails.capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
-			_swapchainSupportDetails.formats      = physicalDevice.getSurfaceFormatsKHR(surface);
-			_swapchainSupportDetails.presentModes = physicalDevice.getSurfacePresentModesKHR(surface);
+			_swapchainSupportDetails.Capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
+			_swapchainSupportDetails.Formats      = physicalDevice.getSurfaceFormatsKHR(surface);
+			_swapchainSupportDetails.PresentModes = physicalDevice.getSurfacePresentModesKHR(surface);
 
-			if (_swapchainSupportDetails.formats.empty() || _swapchainSupportDetails.presentModes.empty()) { continue; }
+			if (_swapchainSupportDetails.Formats.empty() || _swapchainSupportDetails.PresentModes.empty()) { continue; }
 
 			// Select device
 			_vkPhysicalDevice = physicalDevice;
@@ -78,8 +78,8 @@ namespace ProjectThalia::Rendering::Vulkan
 		}
 
 		// Select Image format
-		_imageFormat = _swapchainSupportDetails.formats[0];
-		for (const auto& availableFormat : _swapchainSupportDetails.formats)
+		_imageFormat = _swapchainSupportDetails.Formats[0];
+		for (const auto& availableFormat : _swapchainSupportDetails.Formats)
 		{
 			if (availableFormat.format == vk::Format::eB8G8R8A8Srgb && availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
 			{

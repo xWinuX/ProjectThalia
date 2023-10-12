@@ -40,6 +40,4 @@ namespace ProjectThalia::IO
 	int ImageFile::GetChannels() const { return _channels; }
 
 	uint64_t ImageFile::GetTotalImageSize() const { return _totalImageSize; }
-
-
 }
