@@ -44,7 +44,9 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			Buffer _quadModelBuffer;
 
-			//Image _image;
+			Image _image;
+
+			vk::Sampler _sampler;
 
 			std::vector<Buffer>               _uniformBuffers    = std::vector<Buffer>(MAX_FRAMES_IN_FLIGHT);
 			std::vector<UniformBufferObject*> _uniformBufferData = std::vector<UniformBufferObject*>(MAX_FRAMES_IN_FLIGHT);
@@ -65,5 +67,6 @@ namespace ProjectThalia::Rendering::Vulkan
 			void CreateCommandBuffers();
 			void RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex);
 			void CreateSyncObjects();
+			void CreateDescriptorSets();
 	};
 }

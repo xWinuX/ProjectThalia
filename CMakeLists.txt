@@ -98,6 +98,6 @@ compile_shader(${PROJECT_NAME}
         ENV vulkan1.3
         FORMAT spv
         SOURCES
-        res/shaders/Debug.vert
-        res/shaders/Debug.frag
+        /res/shaders/Debug.vert
+        /res/shaders/Debug.frag
 )

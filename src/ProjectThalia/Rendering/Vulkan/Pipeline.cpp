@@ -7,10 +7,10 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	Pipeline::Pipeline(const Device*                               device,
-					   const std::string&                          name,
-					   const std::vector<ShaderInfo>&              shaderInfos,
-					   const std::vector<vk::DescriptorSetLayout>* uniformBuffers) :
+	Pipeline::Pipeline(const Device*                  device,
+					   const std::string&             name,
+					   const std::vector<ShaderInfo>& shaderInfos,
+					   const vk::ArrayProxy<vk::DescriptorSetLayout>& uniformBuffers) :
 		DeviceObject(device)
 	{
 		std::vector<vk::PipelineShaderStageCreateInfo> _shaderStages = std::vector<vk::PipelineShaderStageCreateInfo>(shaderInfos.size());
@@ -38,22 +38,27 @@ namespace ProjectThalia::Rendering::Vulkan
 		};
 
 
-		for (auto& item : VertexPosition2DColor::VertexInputAttributeDescriptions) { LOG("item: {0}", std::to_string((int) item.format)); }
+		for (auto& item : VertexPosition2DColorUV::VertexInputAttributeDescriptions) { LOG("item: {0}", std::to_string((int) item.format)); }
 
 		vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo = vk::PipelineDynamicStateCreateInfo({}, dynamicStates);
 		vk::PipelineVertexInputStateCreateInfo
 				vertexInputStateCreateInfo = vk::PipelineVertexInputStateCreateInfo({},
 																					1,
-																					&VertexPosition2DColor::VertexInputBindingDescription,
-																					VertexPosition2DColor::VertexInputAttributeDescriptions.size(),
-																					VertexPosition2DColor::VertexInputAttributeDescriptions.data());
+																					&VertexPosition2DColorUV::VertexInputBindingDescription,
+																					VertexPosition2DColorUV::VertexInputAttributeDescriptions.size(),
+																					VertexPosition2DColorUV::VertexInputAttributeDescriptions.data());
 
 		vk::PipelineInputAssemblyStateCreateInfo assemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo({},
 																													vk::PrimitiveTopology::eTriangleList,
 																													vk::False);
 
 		const vk::Extent2D& extend   = device->GetSwapchain().GetExtend();
-		vk::Viewport        viewport = vk::Viewport(0, static_cast<float>(extend.height), static_cast<float>(extend.width), -static_cast<float>(extend.height), 0.0f, 1.0f);
+		vk::Viewport        viewport = vk::Viewport(0,
+                                             static_cast<float>(extend.height),
+                                             static_cast<float>(extend.width),
+                                             -static_cast<float>(extend.height),
+                                             0.0f,
+                                             1.0f);
 
 		vk::Rect2D scissor = vk::Rect2D({0, 0}, extend);
 
@@ -99,13 +104,7 @@ namespace ProjectThalia::Rendering::Vulkan
 																												&colorBlendAttachmentState,
 																												{0.0f, 0.0f, 0.0f, 0.0f});
 
-		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo({}, 0, nullptr, 0, nullptr);
-
-		if (uniformBuffers != nullptr)
-		{
-			pipelineLayoutCreateInfo.setLayoutCount = uniformBuffers->size();
-			pipelineLayoutCreateInfo.pSetLayouts    = uniformBuffers->data();
-		}
+		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo({}, uniformBuffers.size(), uniformBuffers.data(), 0, nullptr);
 
 		_layout = device->GetVkDevice().createPipelineLayout(pipelineLayoutCreateInfo);
 

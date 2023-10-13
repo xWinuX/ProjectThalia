@@ -30,7 +30,6 @@ namespace ProjectThalia::Rendering::Vulkan
 				   const vk::DeviceSize*                 bufferSizesInBytes,
 				   const vk::DeviceSize*                 dataSizesInBytes,
 				   const vk::DeviceSize*                 dataElementSizesInBytes) :
-		_bufferSize(bufferSizeInBytes),
 		DeviceObject(device)
 	{
 		InitializeSubBuffers(numSubBuffers, bufferSizesInBytes, dataSizesInBytes, dataElementSizesInBytes);

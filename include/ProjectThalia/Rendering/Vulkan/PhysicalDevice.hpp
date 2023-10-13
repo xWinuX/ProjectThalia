@@ -33,19 +33,21 @@ namespace ProjectThalia::Rendering::Vulkan
 									std::vector<const char*> _requiredExtensions,
 									std::vector<const char*> _requiredValidationLayers);
 
-			[[nodiscard]] const vk::PhysicalDevice&       GetVkPhysicalDevice() const;
-			[[nodiscard]] const QueueFamilyIndices&       GetQueueFamilyIndices() const;
-			[[nodiscard]] const SwapchainSupportDetails&  GetSwapchainSupportDetails() const;
-			[[nodiscard]] const std::vector<const char*>& GetExtensions() const;
-			[[nodiscard]] const std::vector<const char*>& GetValidationLayers() const;
-			[[nodiscard]] const vk::SurfaceFormatKHR&     GetImageFormat() const;
+			[[nodiscard]] const vk::PhysicalDevice&           GetVkPhysicalDevice() const;
+			[[nodiscard]] const QueueFamilyIndices&           GetQueueFamilyIndices() const;
+			[[nodiscard]] const SwapchainSupportDetails&      GetSwapchainSupportDetails() const;
+			[[nodiscard]] const std::vector<const char*>&     GetExtensions() const;
+			[[nodiscard]] const std::vector<const char*>&     GetValidationLayers() const;
+			[[nodiscard]] const vk::SurfaceFormatKHR&         GetImageFormat() const;
+			[[nodiscard]] const vk::PhysicalDeviceProperties& GetProperties() const;
 
 		private:
-			vk::PhysicalDevice       _vkPhysicalDevice;
-			QueueFamilyIndices       _queueFamilyIndices;
-			SwapchainSupportDetails  _swapchainSupportDetails;
-			vk::SurfaceFormatKHR     _imageFormat; // TODO: Does this really belong here?
-			std::vector<const char*> _extensions;
-			std::vector<const char*> _validationLayers;
+			vk::PhysicalDevice           _vkPhysicalDevice;
+			QueueFamilyIndices           _queueFamilyIndices;
+			SwapchainSupportDetails      _swapchainSupportDetails;
+			vk::SurfaceFormatKHR         _imageFormat; // TODO: Does this really belong here?
+			std::vector<const char*>     _extensions;
+			std::vector<const char*>     _validationLayers;
+			vk::PhysicalDeviceProperties _properties;
 	};
 }

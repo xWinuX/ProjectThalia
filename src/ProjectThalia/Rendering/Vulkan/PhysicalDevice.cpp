@@ -17,8 +17,8 @@ namespace ProjectThalia::Rendering::Vulkan
 		for (const vk::PhysicalDevice& physicalDevice : physicalDevices)
 		{
 			// Check device type
-			vk::PhysicalDeviceProperties deviceProperties = physicalDevice.getProperties();
-			if (deviceProperties.deviceType != vk::PhysicalDeviceType::eDiscreteGpu) { continue; }
+			_properties = physicalDevice.getProperties();
+			if (_properties.deviceType != vk::PhysicalDeviceType::eDiscreteGpu) { continue; }
 
 			// Check Extensions
 			std::vector<vk::ExtensionProperties> availableExtensions = physicalDevice.enumerateDeviceExtensionProperties();
@@ -67,7 +67,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			// Select device
 			_vkPhysicalDevice = physicalDevice;
-			LOG("Selected physical device: {0}", deviceProperties.deviceName.data());
+			LOG("Selected physical device: {0}", _properties.deviceName.data());
 			break;
 		}
 
@@ -99,4 +99,6 @@ namespace ProjectThalia::Rendering::Vulkan
 	const std::vector<const char*>& PhysicalDevice::GetValidationLayers() const { return _validationLayers; }
 
 	const vk::SurfaceFormatKHR& PhysicalDevice::GetImageFormat() const { return _imageFormat; }
+
+	const vk::PhysicalDeviceProperties& PhysicalDevice::GetProperties() const { return _properties; }
 }

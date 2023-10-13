@@ -28,15 +28,81 @@ namespace ProjectThalia::Rendering::Vulkan
 		_device->CreateRenderPass();
 		_device->CreateSwapchain(_instance.GetVkSurface(), _window->GetSize());
 
-		// Create descriptor layout set
-		vk::DescriptorSetLayoutBinding descriptorSetLayoutBinding = vk::DescriptorSetLayoutBinding(0,
-																								   vk::DescriptorType::eUniformBuffer,
-																								   1,
-																								   vk::ShaderStageFlagBits::eVertex,
-																								   nullptr);
 
-		vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo({}, 1, &descriptorSetLayoutBinding);
-		_descriptorSetLayout                                            = _device->GetVkDevice().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
+		_device->CreateGraphicsCommandPool();
+		CreateCommandBuffers();
+
+		IO::ImageFile textureImage = IO::ImageFile("res/textures/floppa.png", IO::ImageFile::RGBA);
+
+		_image = Image(_device.get(),
+					   reinterpret_cast<const char*>(textureImage.GetPixels()),
+					   textureImage.GetTotalImageSize(),
+					   {static_cast<uint32_t>(textureImage.GetWidth()), static_cast<uint32_t>(textureImage.GetHeight()), 1});
+
+		CreateDescriptorSets();
+
+
+		_device->CreatePipeline("main",
+								{{"res/shaders/Debug.vert.spv", vk::ShaderStageFlagBits::eVertex},
+								 {"res/shaders/Debug.frag.spv", vk::ShaderStageFlagBits::eFragment}},
+								_descriptorSetLayout);
+
+		CreateSyncObjects();
+
+		const std::vector<VertexPosition2DColorUV> vertices = {{{-0.25f, 0.25f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}}, // Top Left
+															   {{0.25f, 0.25f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}}, // Top Right
+															   {{-0.25f, -0.25f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Left
+															   {{0.25f, -0.25f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}}; // Bottom Right
+
+		const std::vector<uint16_t> indices = {0, 1, 2, 2, 1, 3};
+
+		_quadModelBuffer = Buffer::CreateStagedModelBuffer(_device.get(), vertices, indices);
+
+
+		_window->OnResize.Add([this](int width, int height) {
+			_frameBufferResized = true;
+		});
+	}
+
+	void Context::CreateDescriptorSets()
+	{
+		// Create image sampler
+		vk::SamplerCreateInfo samplerCreateInfo = vk::SamplerCreateInfo({},
+																		vk::Filter::eNearest,
+																		vk::Filter::eNearest,
+																		vk::SamplerMipmapMode::eNearest,
+																		vk::SamplerAddressMode::eRepeat,
+																		vk::SamplerAddressMode::eRepeat,
+																		vk::SamplerAddressMode::eRepeat,
+																		0,
+																		vk::True,
+																		_device->GetPhysicalDevice().GetProperties().limits.maxSamplerAnisotropy,
+																		vk::False,
+																		vk::CompareOp::eNever,
+																		0.0f,
+																		0.0f,
+																		vk::BorderColor::eIntOpaqueBlack,
+																		vk::False);
+
+		_sampler = _device->GetVkDevice().createSampler(samplerCreateInfo);
+
+		// Create descriptor layout set
+		vk::DescriptorSetLayoutBinding uniformBufferDescriptorSetLayoutBinding = vk::DescriptorSetLayoutBinding(0,
+																												vk::DescriptorType::eUniformBuffer,
+																												1,
+																												vk::ShaderStageFlagBits::eVertex,
+																												nullptr);
+
+		vk::DescriptorSetLayoutBinding samplerDescriptorSetLayoutBinding = vk::DescriptorSetLayoutBinding(1,
+																										  vk::DescriptorType::eCombinedImageSampler,
+																										  1,
+																										  vk::ShaderStageFlagBits::eFragment,
+																										  nullptr);
+
+		std::vector<vk::DescriptorSetLayoutBinding> setLayoutBindings = {uniformBufferDescriptorSetLayoutBinding, samplerDescriptorSetLayoutBinding};
+		vk::DescriptorSetLayoutCreateInfo           descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo({}, setLayoutBindings);
+
+		_descriptorSetLayout = _device->GetVkDevice().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
 
 		std::vector<vk::DescriptorSetLayout> uniformBuffers = {_descriptorSetLayout};
 
@@ -46,18 +112,14 @@ namespace ProjectThalia::Rendering::Vulkan
 			_uniformBufferData[i] = _uniformBuffers[i].FullMap<UniformBufferObject>();
 		}
 
-		_device->CreatePipeline("main",
-								{{"res/shaders/Debug.vert.spv", vk::ShaderStageFlagBits::eVertex},
-								 {"res/shaders/Debug.frag.spv", vk::ShaderStageFlagBits::eFragment}},
-								&uniformBuffers);
-		_device->CreateGraphicsCommandPool();
-
-
 		// Create descriptor pool
-		vk::DescriptorPoolSize descriptorPoolSize = vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT));
-		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo({},
-																							 static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT),
-																							 descriptorPoolSize);
+		std::vector<vk::DescriptorPoolSize> poolSizes = {
+				vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)),
+				vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)),
+
+		};
+
+		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo({}, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT), poolSizes);
 
 		_descriptorPool = _device->GetVkDevice().createDescriptorPool(descriptorPoolCreateInfo);
 
@@ -72,38 +134,15 @@ namespace ProjectThalia::Rendering::Vulkan
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			vk::DescriptorBufferInfo descriptorBufferInfo = vk::DescriptorBufferInfo(_uniformBuffers[i].GetVkBuffer(), 0, sizeof(UniformBufferObject));
+			vk::DescriptorImageInfo  descriptorImageInfo  = vk::DescriptorImageInfo(_sampler, _image.GetView(), _image.GetLayout());
 
-			vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet(_descriptorSets[i],
-																			   0,
-																			   0,
-																			   vk::DescriptorType::eUniformBuffer,
-																			   nullptr,
-																			   descriptorBufferInfo,
-																			   nullptr);
+			std::vector<vk::WriteDescriptorSet> writeDescriptorSets =
+					{vk::WriteDescriptorSet(_descriptorSets[i], 0, 0, vk::DescriptorType::eUniformBuffer, nullptr, descriptorBufferInfo, nullptr),
+					 vk::WriteDescriptorSet(_descriptorSets[i], 1, 0, vk::DescriptorType::eCombinedImageSampler, descriptorImageInfo, nullptr, nullptr)};
 
-			_device->GetVkDevice().updateDescriptorSets(1, &writeDescriptorSet, 0, nullptr);
+
+			_device->GetVkDevice().updateDescriptorSets(writeDescriptorSets, nullptr);
 		}
-
-		CreateCommandBuffers();
-
-		CreateSyncObjects();
-
-		const std::vector<VertexPosition2DColor> vertices = {{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-															 {{0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}},
-															 {{-0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}},
-															 {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}}};
-
-		const std::vector<uint16_t> indices = {0, 1, 2, 2, 1, 3};
-
-		_quadModelBuffer = Buffer::CreateStagedModelBuffer(_device.get(), vertices, indices);
-
-		IO::ImageFile textureImage = IO::ImageFile("res/textures/floppa.png", IO::ImageFile::RGBA);
-
-
-
-		_window->OnResize.Add([this](int width, int height) {
-			_frameBufferResized = true;
-		});
 	}
 
 	void Context::CreateSyncObjects()
@@ -183,6 +222,10 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		_device->GetVkDevice().destroy(_descriptorSetLayout);
 		_device->GetVkDevice().destroy(_descriptorPool);
+
+		_image.Destroy();
+
+		_device->GetVkDevice().destroySampler(_sampler);
 
 		_device->Destroy();
 		_instance.Destroy();

@@ -16,9 +16,9 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			void CreateSwapchain(vk::SurfaceKHR surfaceKhr, glm::ivec2 size);
 			void CreateRenderPass();
-			void CreatePipeline(const std::string&                          name,
-								const std::vector<Pipeline::ShaderInfo>&    shaderInfos,
-								const std::vector<vk::DescriptorSetLayout>* uniformBuffers = nullptr);
+			void CreatePipeline(const std::string&                             name,
+								const std::vector<Pipeline::ShaderInfo>&       shaderInfos,
+								const vk::ArrayProxy<vk::DescriptorSetLayout>& uniformBuffers = nullptr);
 			void CreateGraphicsCommandPool();
 
 			void Destroy();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DeviceObject.hpp"
+#include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/Rendering/Vertex.hpp"
 #include <vulkan/vulkan.hpp>
 
@@ -87,6 +88,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			template<typename T>
 			void CopyData(const T* data, const vk::DeviceSize dataSizeInBytes, uint32_t subBufferIndex = 0)
 			{
+				LOG("Mapping buffer data with offset {0} and size {1}", _subBuffers[subBufferIndex].offset, _subBuffers[subBufferIndex].sizeInBytes);
 				void* mappedData = Map(_subBuffers[subBufferIndex].offset, _subBuffers[subBufferIndex].sizeInBytes);
 				memcpy(mappedData, data, dataSizeInBytes);
 				Unmap();
