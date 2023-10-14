@@ -4,6 +4,8 @@
 #include "ProjectThalia/Application.hpp"
 #include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
+#include "imgui_impl_sdl2.h"
+#include "imgui_impl_vulkan.h"
 
 #include <format>
 
@@ -21,6 +23,8 @@ namespace ProjectThalia
 
 			while (SDL_PollEvent(&e))
 			{
+				ImGui_ImplSDL2_ProcessEvent(&e);
+
 				switch (e.type)
 				{
 					case SDL_KEYDOWN: _event.Invoke(0); break;
@@ -35,6 +39,14 @@ namespace ProjectThalia
 				}
 			}
 
+			ImGui_ImplVulkan_NewFrame();
+			ImGui_ImplSDL2_NewFrame(_window.GetSDLWindow());
+
+			ImGui::NewFrame();
+
+			ImGui::ShowDemoWindow();
+
+			ImGui::Render();
 
 			if (!_window.IsMinimized()) { _renderer.DrawFrame(); }
 		}

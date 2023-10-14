@@ -11,6 +11,8 @@
 #include <filesystem>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <imgui_impl_sdl2.h>
+#include <imgui_impl_vulkan.h>
 #include <vector>
 
 namespace ProjectThalia::Rendering::Vulkan
@@ -49,8 +51,8 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		CreateSyncObjects();
 
-		const std::vector<VertexPosition2DColorUV> vertices = {{{-0.25f, 0.25f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}}, // Top Left
-															   {{0.25f, 0.25f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}}, // Top Right
+		const std::vector<VertexPosition2DColorUV> vertices = {{{-0.25f, 0.25f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},  // Top Left
+															   {{0.25f, 0.25f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},   // Top Right
 															   {{-0.25f, -0.25f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Left
 															   {{0.25f, -0.25f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}}; // Bottom Right
 
@@ -59,9 +61,54 @@ namespace ProjectThalia::Rendering::Vulkan
 		_quadModelBuffer = Buffer::CreateStagedModelBuffer(_device.get(), vertices, indices);
 
 
+		InitializeImGui();
+
 		_window->OnResize.Add([this](int width, int height) {
 			_frameBufferResized = true;
 		});
+	}
+
+	void Context::InitializeImGui()
+	{
+		vk::DescriptorPoolSize poolSizes[] = {{vk::DescriptorType::eSampler, 1000},
+											  {vk::DescriptorType::eCombinedImageSampler, 1000},
+											  {vk::DescriptorType::eSampledImage, 1000},
+											  {vk::DescriptorType::eStorageImage, 1000},
+											  {vk::DescriptorType::eUniformTexelBuffer, 1000},
+											  {vk::DescriptorType::eStorageTexelBuffer, 1000},
+											  {vk::DescriptorType::eUniformBuffer, 1000},
+											  {vk::DescriptorType::eStorageBuffer, 1000},
+											  {vk::DescriptorType::eUniformBufferDynamic, 1000},
+											  {vk::DescriptorType::eStorageBufferDynamic, 1000},
+											  {vk::DescriptorType::eInputAttachment, 1000}};
+
+		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo({}, 1000, poolSizes);
+
+		_imGuiDescriptorPool = _device->GetVkDevice().createDescriptorPool(descriptorPoolCreateInfo);
+
+		ImGui::CreateContext();
+
+		ImGui_ImplSDL2_InitForVulkan(_window->GetSDLWindow());
+
+		ImGui_ImplVulkan_InitInfo initInfo = {};
+		initInfo.Instance                  = _instance.GetVkInstance();
+		initInfo.PhysicalDevice            = _device->GetPhysicalDevice().GetVkPhysicalDevice();
+		initInfo.Device                    = _device->GetVkDevice();
+		initInfo.Queue                     = _device->GetGraphicsQueue();
+		initInfo.DescriptorPool            = _imGuiDescriptorPool;
+		initInfo.MinImageCount             = 3;
+		initInfo.ImageCount                = 3;
+		initInfo.MSAASamples               = VK_SAMPLE_COUNT_1_BIT;
+
+		ImGui_ImplVulkan_Init(&initInfo, _device->GetRenderPass().GetVkRenderPass());
+
+		vk::CommandBuffer commandBuffer = _device->BeginOneshotCommands();
+
+		ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+
+		_device->EndOneshotCommands(commandBuffer);
+
+		ImGui_ImplVulkan_DestroyFontUploadObjects();
 	}
 
 	void Context::CreateDescriptorSets()
@@ -172,6 +219,7 @@ namespace ProjectThalia::Rendering::Vulkan
 																			  &clearColor);
 
 		commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+
 		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, _device->GetPipeline().GetVkPipeline());
 
 		vk::Buffer     vertexBuffers[] = {_quadModelBuffer.GetVkBuffer()};
@@ -194,6 +242,8 @@ namespace ProjectThalia::Rendering::Vulkan
 		commandBuffer
 				.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, _device->GetPipeline().GetLayout(), 0, 1, &_descriptorSets[_currentFrame], 0, nullptr);
 		commandBuffer.drawIndexed(_quadModelBuffer.GetBufferElementNum(1), 1, 0, 0, 0);
+
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
 		commandBuffer.endRenderPass();
 		commandBuffer.end();
@@ -226,6 +276,9 @@ namespace ProjectThalia::Rendering::Vulkan
 		_image.Destroy();
 
 		_device->GetVkDevice().destroySampler(_sampler);
+
+		_device->GetVkDevice().destroy(_imGuiDescriptorPool);
+		ImGui_ImplVulkan_Shutdown();
 
 		_device->Destroy();
 		_instance.Destroy();

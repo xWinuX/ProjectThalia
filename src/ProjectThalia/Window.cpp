@@ -8,7 +8,7 @@ namespace ProjectThalia
 {
 	void Window::Open()
 	{
-		const int SCREEN_WIDTH  = 500;
+		const int SCREEN_WIDTH  = 1000;
 		const int SCREEN_HEIGHT = 500;
 
 		// Create _window

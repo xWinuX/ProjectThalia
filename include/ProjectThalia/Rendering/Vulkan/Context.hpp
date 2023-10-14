@@ -60,6 +60,8 @@ namespace ProjectThalia::Rendering::Vulkan
 			std::vector<vk::Semaphore>     _renderFinishedSemaphore = std::vector<vk::Semaphore>(MAX_FRAMES_IN_FLIGHT);
 			std::vector<vk::Fence>         _inFlightFence           = std::vector<vk::Fence>(MAX_FRAMES_IN_FLIGHT);
 
+			vk::DescriptorPool _imGuiDescriptorPool;
+
 			uint32_t _currentFrame       = 0;
 			bool     _frameBufferResized = false;
 
@@ -68,5 +70,6 @@ namespace ProjectThalia::Rendering::Vulkan
 			void RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex);
 			void CreateSyncObjects();
 			void CreateDescriptorSets();
+			void InitializeImGui();
 	};
 }
