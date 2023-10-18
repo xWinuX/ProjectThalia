@@ -7,9 +7,9 @@
 #include "ProjectThalia/Window.hpp"
 
 #include <SDL2/SDL.h>
-#include <vulkan/vulkan.hpp>
 #include <optional>
 #include <vector>
+#include <vulkan/vulkan.hpp>
 
 namespace ProjectThalia::Rendering::Vulkan
 {
@@ -39,10 +39,13 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			std::unique_ptr<Device> _device;
 
+
 			Instance       _instance;
 			PhysicalDevice _physicalDevice;
 
 			Buffer _quadModelBuffer;
+
+			Buffer _modelMatrixStorageBuffer;
 
 			Image _image;
 
@@ -71,5 +74,6 @@ namespace ProjectThalia::Rendering::Vulkan
 			void CreateSyncObjects();
 			void CreateDescriptorSets();
 			void InitializeImGui();
+			void CreateAllocator();
 	};
 }

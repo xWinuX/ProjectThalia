@@ -1,6 +1,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#define VMA_IMPLEMENTATION
+#include <vk_mem_alloc.h>
+
 #include "ProjectThalia/Application.hpp"
 #include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
@@ -16,10 +19,35 @@ namespace ProjectThalia
 		Initialize();
 
 		// Main Loop
+		uint64_t currentTime = SDL_GetPerformanceCounter();
+		uint64_t previousTime;
+		float    deltaTime;
+
+		uint64_t averageFps           = 0;
+		float    averageDeltaTime     = 0.0f;
+		float    accumulatedDeltaTime = 0;
+		uint64_t accumulatedFrames    = 0;
+
 		SDL_Event e;
-		bool quit = false;
+		bool      quit = false;
 		while (!quit)
 		{
+			previousTime = currentTime;
+			currentTime  = SDL_GetPerformanceCounter();
+
+			deltaTime = (static_cast<float>((currentTime - previousTime)) * 1000.0f / static_cast<float>(SDL_GetPerformanceFrequency())) * 0.001f;
+
+			accumulatedDeltaTime += deltaTime;
+			accumulatedFrames++;
+
+			if (accumulatedDeltaTime >= 0.1f)
+			{
+				averageDeltaTime = accumulatedDeltaTime / static_cast<float>(accumulatedFrames);
+				averageFps       = static_cast<uint64_t>((1.0f / averageDeltaTime));
+
+				accumulatedDeltaTime = 0.0f;
+				accumulatedFrames    = 0;
+			}
 
 			while (SDL_PollEvent(&e))
 			{
@@ -44,7 +72,9 @@ namespace ProjectThalia
 
 			ImGui::NewFrame();
 
-			ImGui::ShowDemoWindow();
+			ImGui::Text("DT: %f", averageDeltaTime);
+			ImGui::Text("Frame Time (ms): %f", averageDeltaTime/0.001f);
+			ImGui::Text("FPS: %llu", averageFps);
 
 			ImGui::Render();
 

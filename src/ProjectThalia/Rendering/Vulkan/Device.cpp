@@ -57,6 +57,25 @@ namespace ProjectThalia::Rendering::Vulkan
 		_pipeline = Pipeline(this, name, shaderInfos, uniformBuffers);
 	}
 
+	void Device::CreateGraphicsCommandPool()
+	{
+		vk::CommandPoolCreateInfo commandPoolCreateInfo = vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+																					_physicalDevice.GetQueueFamilyIndices().GraphicsFamily.value());
+
+		_graphicsCommandPool = _vkDevice.createCommandPool(commandPoolCreateInfo);
+	}
+
+	void Device::CreateAllocator(const Instance& instance)
+	{
+		VmaAllocatorCreateInfo vmaAllocatorCreateInfo = VmaAllocatorCreateInfo();
+		vmaAllocatorCreateInfo.vulkanApiVersion       = VK_API_VERSION_1_3;
+		vmaAllocatorCreateInfo.device                 = _vkDevice;
+		vmaAllocatorCreateInfo.physicalDevice         = _physicalDevice.GetVkPhysicalDevice();
+		vmaAllocatorCreateInfo.instance               = instance.GetVkInstance();
+
+		vmaCreateAllocator(&vmaAllocatorCreateInfo, &_allocator);
+	}
+
 	const vk::Device& Device::GetVkDevice() const { return _vkDevice; }
 
 	const PhysicalDevice& Device::GetPhysicalDevice() const { return _physicalDevice; }
@@ -71,6 +90,10 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	const Pipeline& Device::GetPipeline() const { return _pipeline; }
 
+	const vk::CommandPool& Device::GetGraphicsCommandPool() const { return _graphicsCommandPool; }
+
+	const VmaAllocator& Device::GetAllocator() const { return _allocator; }
+
 	const vk::PhysicalDeviceMemoryProperties& Device::GetMemoryProperties() const { return _memoryProperties; }
 
 	void Device::Destroy()
@@ -79,18 +102,9 @@ namespace ProjectThalia::Rendering::Vulkan
 		_renderPass.Destroy();
 		_pipeline.Destroy();
 		_vkDevice.destroy(_graphicsCommandPool);
+		vmaDestroyAllocator(_allocator);
 		_vkDevice.destroy();
 	}
-
-	void Device::CreateGraphicsCommandPool()
-	{
-		vk::CommandPoolCreateInfo commandPoolCreateInfo = vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-																					_physicalDevice.GetQueueFamilyIndices().GraphicsFamily.value());
-
-		_graphicsCommandPool = _vkDevice.createCommandPool(commandPoolCreateInfo);
-	}
-
-	const vk::CommandPool& Device::GetGraphicsCommandPool() const { return _graphicsCommandPool; }
 
 	int Device::FindMemoryTypeIndex(const vk::MemoryRequirements& memoryRequirements, const vk::Flags<vk::MemoryPropertyFlagBits>& memoryPropertyFlags) const
 	{
@@ -134,5 +148,6 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		_vkDevice.freeCommandBuffers(_graphicsCommandPool, 1, &commandBuffer);
 	}
+
 
 }

@@ -20,79 +20,72 @@ namespace ProjectThalia::Rendering::Vulkan
 			nullptr,
 	};
 
-	Buffer::Buffer(const Device*                         device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
-				   vk::DeviceSize                        bufferSizeInBytes,
-				   vk::DeviceSize                        numSubBuffers,
-				   const char**                          data,
-				   const vk::DeviceSize*                 bufferSizesInBytes,
-				   const vk::DeviceSize*                 dataSizesInBytes,
-				   const vk::DeviceSize*                 dataElementSizesInBytes) :
+	Buffer::Buffer(const Device*         device,
+				   CreateInfo            createInfo,
+				   vk::DeviceSize        bufferSizeInBytes,
+				   vk::DeviceSize        numSubBuffers,
+				   const char**          data,
+				   const vk::DeviceSize* bufferSizesInBytes,
+				   const vk::DeviceSize* dataSizesInBytes,
+				   const vk::DeviceSize* dataElementSizesInBytes) :
 		DeviceObject(device)
 	{
 		InitializeSubBuffers(numSubBuffers, bufferSizesInBytes, dataSizesInBytes, dataElementSizesInBytes);
 
-		CreateBuffer(usage, sharingMode, memoryPropertyFlags, data);
+		CreateBuffer(createInfo, data);
 	}
 
-	Buffer::Buffer(const Device*                         device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
-				   const char**                          data,
-				   const Buffer&                         buffer) :
+	Buffer::Buffer(const Device* device, CreateInfo createInfo, const char** data, const Buffer& buffer) :
 		_bufferSize(buffer._bufferSize),
 		DeviceObject(device)
 	{
 		// Copy sub buffers
 		_subBuffers = buffer._subBuffers;
 
-		CreateBuffer(usage, sharingMode, memoryPropertyFlags, data);
+		CreateBuffer(createInfo, data);
 	}
 
-	void Buffer::CreateBuffer(vk::Flags<vk::BufferUsageFlagBits>&          usage,
-							  vk::SharingMode&                             sharingMode,
-							  const vk::Flags<vk::MemoryPropertyFlagBits>& memoryPropertyFlags,
-							  const char* const*                           data)
+	void Buffer::CreateBuffer(CreateInfo createInfo, const char* const* data)
 	{
-		vk::BufferCreateInfo bufferCreateInfo = vk::BufferCreateInfo({}, _bufferSize, usage, sharingMode);
+		const vk::BufferCreateInfo bufferCreateInfo = vk::BufferCreateInfo({}, _bufferSize, createInfo.Usage, createInfo.SharingMode);
 
-		_vkBuffer = GetDevice()->GetVkDevice().createBuffer(bufferCreateInfo);
+		VmaAllocationCreateInfo allocationCreateInfo = VmaAllocationCreateInfo();
+		allocationCreateInfo.usage                   = createInfo.MemoryUsage;
+		allocationCreateInfo.flags                   = createInfo.AllocationCreateFlags;
+		allocationCreateInfo.priority                = 1.0f;
 
-		vk::MemoryRequirements memoryRequirements;
-		GetDevice()->GetVkDevice().getBufferMemoryRequirements(_vkBuffer, &memoryRequirements);
+		VmaAllocationInfo allocationInfo;
 
-		// Find memory type
-		int memoryType = GetDevice()->FindMemoryTypeIndex(memoryRequirements, memoryPropertyFlags);
+		vmaCreateBuffer(GetDevice()->GetAllocator(),
+						reinterpret_cast<const VkBufferCreateInfo*>(&bufferCreateInfo),
+						&allocationCreateInfo,
+						reinterpret_cast<VkBuffer*>(&_vkBuffer),
+						&_allocation,
+						&allocationInfo);
 
-		vk::MemoryAllocateInfo memoryAllocateInfo = vk::MemoryAllocateInfo(memoryRequirements.size, memoryType);
-		_memory                                   = GetDevice()->GetVkDevice().allocateMemory(memoryAllocateInfo);
-
-		GetDevice()->GetVkDevice().bindBufferMemory(_vkBuffer, _memory, 0);
+		if (createInfo.AllocationCreateFlags == VmaAllocationCreateFlagBits::VMA_ALLOCATION_CREATE_MAPPED_BIT) { _mappedData = allocationInfo.pMappedData; }
 
 		// Copy data
 		if (data != nullptr)
 		{
-			void*  mappedData;
-			size_t offset       = 0;
-			bool   mappedBuffer = false;
+			char*  mappedData;
+			size_t offsetInBytes = 0;
+			bool   mappedBuffer  = false;
 			for (int i = 0; i < _subBuffers.size(); i++)
 			{
 				if (data[i] != nullptr)
 				{
 					if (!mappedBuffer)
 					{
-						mappedData   = Map(0, _bufferSize);
+						mappedData   = Map<char>();
 						mappedBuffer = true;
 					}
-					memcpy((char*) mappedData + offset, data[i], _subBuffers[i].sizeInBytes);
+					memcpy(mappedData + offsetInBytes, data[i], _subBuffers[i].sizeInBytes);
 				}
-				offset += _subBuffers[i].sizeInBytes;
+				offsetInBytes += _subBuffers[i].sizeInBytes;
 			}
 
-			if (mappedBuffer) { GetDevice()->GetVkDevice().unmapMemory(_memory); }
+			if (mappedBuffer) { Unmap(); }
 		}
 	}
 
@@ -113,37 +106,27 @@ namespace ProjectThalia::Rendering::Vulkan
 		}
 	}
 
-	Buffer::Buffer(const Device*                         device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
-				   vk::DeviceSize                        numSubBuffers,
-				   const char**                          data,
-				   const vk::DeviceSize*                 bufferSizesInBytes,
-				   const size_t*                         dataSizesInBytes,
-				   const vk::DeviceSize*                 dataElementSizesInBytes) :
-		Buffer(device, usage, sharingMode, memoryPropertyFlags, 0, numSubBuffers, data, bufferSizesInBytes, dataSizesInBytes, dataElementSizesInBytes)
+	Buffer::Buffer(const Device*         device,
+				   CreateInfo            createInfo,
+				   vk::DeviceSize        numSubBuffers,
+				   const char**          data,
+				   const vk::DeviceSize* bufferSizesInBytes,
+				   const size_t*         dataSizesInBytes,
+				   const vk::DeviceSize* dataElementSizesInBytes) :
+		Buffer(device, createInfo, 0, numSubBuffers, data, bufferSizesInBytes, dataSizesInBytes, dataElementSizesInBytes)
 	{}
 
-	Buffer::Buffer(const Device*                         device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
-				   vk::DeviceSize                        bufferSizeInBytes,
-				   const char*                           data,
-				   vk::DeviceSize                        dataSizeInBytes,
-				   vk::DeviceSize                        dataElementSizeInBytes) :
-		Buffer(device, usage, sharingMode, memoryPropertyFlags, bufferSizeInBytes, 1, &data, &dataSizeInBytes, &bufferSizeInBytes, &dataElementSizeInBytes)
+	Buffer::Buffer(const Device*  device,
+				   CreateInfo     createInfo,
+				   vk::DeviceSize bufferSizeInBytes,
+				   const char*    data,
+				   vk::DeviceSize dataSizeInBytes,
+				   vk::DeviceSize dataElementSizeInBytes) :
+		Buffer(device, createInfo, bufferSizeInBytes, 1, &data, &dataSizeInBytes, &bufferSizeInBytes, &dataElementSizeInBytes)
 	{}
 
-	Buffer::Buffer(const Device*                         device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   vk::Flags<vk::MemoryPropertyFlagBits> memoryPropertyFlags,
-				   const char*                           data,
-				   vk::DeviceSize                        bufferSizeInBytes,
-				   vk::DeviceSize                        dataElementSizeInBytes) :
-		Buffer(device, usage, sharingMode, memoryPropertyFlags, bufferSizeInBytes, 1, &data, &bufferSizeInBytes, &bufferSizeInBytes, &dataElementSizeInBytes)
+	Buffer::Buffer(const Device* device, CreateInfo createInfo, const char* data, vk::DeviceSize bufferSizeInBytes, vk::DeviceSize dataElementSizeInBytes) :
+		Buffer(device, createInfo, bufferSizeInBytes, 1, &data, &bufferSizeInBytes, &bufferSizeInBytes, &dataElementSizeInBytes)
 	{}
 
 	const vk::Buffer& Buffer::GetVkBuffer() const { return _vkBuffer; }
@@ -158,11 +141,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		GetDevice()->EndOneshotCommands(commandBuffer);
 	}
 
-	void Buffer::Destroy()
-	{
-		Utility::DeleteDeviceHandle(GetDevice(), _vkBuffer);
-		GetDevice()->GetVkDevice().freeMemory(_memory);
-	}
+	void Buffer::Destroy() { vmaDestroyBuffer(GetDevice()->GetAllocator(), _vkBuffer, _allocation); }
 
 	size_t Buffer::GetDataElementNum(size_t index) const { return _subBuffers[index].numElements; }
 
@@ -172,23 +151,29 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	vk::DeviceSize Buffer::GetSizeInBytes(size_t index) const { return _subBuffers[0].sizeInBytes; }
 
-	void* Buffer::Map(vk::DeviceSize offset, vk::DeviceSize size)
+	void* Buffer::Map()
 	{
-		return GetDevice()->GetVkDevice().mapMemory(_memory, offset, size == 0 ? _bufferSize : size);
+		void* mappedData;
+		vmaMapMemory(GetDevice()->GetAllocator(), _allocation, &mappedData);
+		return mappedData;
 	}
 
-	void Buffer::Unmap() { GetDevice()->GetVkDevice().unmapMemory(_memory); }
+	void Buffer::Unmap() { vmaUnmapMemory(GetDevice()->GetAllocator(), _allocation); }
 
 	void Buffer::Stage(const char** data)
 	{
 		Buffer stagingBuffer = Buffer(GetDevice(),
-									  vk::BufferUsageFlagBits::eTransferSrc,
-									  vk::SharingMode::eExclusive,
-									  vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+									  {
+											  vk::BufferUsageFlagBits::eTransferSrc,
+											  vk::SharingMode::eExclusive,
+											  VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_ONLY,
+									  },
 									  data,
 									  *this);
 
 		stagingBuffer.Copy(*this);
 		stagingBuffer.Destroy();
 	}
+
+	void* Buffer::GetMappedData() { return _mappedData; }
 }

@@ -20,22 +20,22 @@ namespace ProjectThalia::Rendering::Vulkan
 																  vk::ImageTiling::eOptimal,
 																  vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled);
 
-		_vkImage = GetDevice()->GetVkDevice().createImage(imageCreateInfo);
+		VmaAllocationCreateInfo allocationCreateInfo = VmaAllocationCreateInfo();
+		allocationCreateInfo.usage                   = VmaMemoryUsage::VMA_MEMORY_USAGE_GPU_ONLY;
+		allocationCreateInfo.flags                   = {};
+		allocationCreateInfo.priority                = 1.0f;
 
-		vk::MemoryRequirements memoryRequirements = device->GetVkDevice().getImageMemoryRequirements(_vkImage);
-
-
-		int                    memoryTypeIndex    = GetDevice()->FindMemoryTypeIndex(memoryRequirements, vk::MemoryPropertyFlagBits::eDeviceLocal);
-		vk::MemoryAllocateInfo memoryAllocateInfo = vk::MemoryAllocateInfo(memoryRequirements.size, memoryTypeIndex);
-
-		_memory = GetDevice()->GetVkDevice().allocateMemory(memoryAllocateInfo);
+		vmaCreateImage(GetDevice()->GetAllocator(),
+					   reinterpret_cast<const VkImageCreateInfo*>(&imageCreateInfo),
+					   &allocationCreateInfo,
+					   reinterpret_cast<VkImage*>(&_vkImage),
+					   &_allocation,
+					   nullptr);
 
 
 		// Copy pixel data to image
 		Buffer buffer = Buffer::CreateTransferBuffer(device, pixels, pixelsSizeInBytes);
 		buffer.CopyData(pixels, pixelsSizeInBytes, 0);
-
-		GetDevice()->GetVkDevice().bindImageMemory(_vkImage, _memory, 0);
 
 		vk::CommandBuffer commandBuffer = GetDevice()->BeginOneshotCommands();
 
@@ -110,15 +110,12 @@ namespace ProjectThalia::Rendering::Vulkan
 	void Image::Destroy()
 	{
 		GetDevice()->GetVkDevice().destroyImageView(_view);
-		GetDevice()->GetVkDevice().destroyImage(_vkImage);
-		GetDevice()->GetVkDevice().freeMemory(_memory);
+		vmaDestroyImage(GetDevice()->GetAllocator(), _vkImage, _allocation);
 	}
 
 	const vk::Image& Image::GetVkImage() const { return _vkImage; }
 
 	const vk::ImageView& Image::GetView() const { return _view; }
-
-	const vk::DeviceMemory& Image::GetMemory() const { return _memory; }
 
 	vk::Format Image::GetFormat() const { return _format; }
 

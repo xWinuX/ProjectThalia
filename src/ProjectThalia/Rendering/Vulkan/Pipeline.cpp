@@ -7,9 +7,9 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	Pipeline::Pipeline(const Device*                  device,
-					   const std::string&             name,
-					   const std::vector<ShaderInfo>& shaderInfos,
+	Pipeline::Pipeline(const Device*                                  device,
+					   const std::string&                             name,
+					   const std::vector<ShaderInfo>&                 shaderInfos,
 					   const vk::ArrayProxy<vk::DescriptorSetLayout>& uniformBuffers) :
 		DeviceObject(device)
 	{
@@ -28,8 +28,9 @@ namespace ProjectThalia::Rendering::Vulkan
 			vk::PipelineShaderStageCreateInfo shaderStageCreateInfo = vk::PipelineShaderStageCreateInfo({},
 																										shaderInfos[i].shaderStage,
 																										_shaderModules[i],
-																										"main");
-			_shaderStages[i]                                        = shaderStageCreateInfo;
+																										name.c_str());
+
+			_shaderStages[i] = shaderStageCreateInfo;
 		}
 
 		std::vector<vk::DynamicState> dynamicStates = {

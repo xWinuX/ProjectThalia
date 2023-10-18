@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ProjectThalia/Rendering/Vulkan/DeviceObject.hpp"
+#include "vk_mem_alloc.h"
 #include "vulkan/vulkan.hpp"
 
 namespace ProjectThalia::Rendering::Vulkan
@@ -18,16 +19,15 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			void Destroy() override;
 
-			[[nodiscard]] const vk::Image&        GetVkImage() const;
-			[[nodiscard]] const vk::ImageView&    GetView() const;
-			[[nodiscard]] const vk::DeviceMemory& GetMemory() const;
-			[[nodiscard]] vk::Format              GetFormat() const;
-			[[nodiscard]] vk::ImageLayout         GetLayout() const;
+			[[nodiscard]] const vk::Image&     GetVkImage() const;
+			[[nodiscard]] const vk::ImageView& GetView() const;
+			[[nodiscard]] vk::Format           GetFormat() const;
+			[[nodiscard]] vk::ImageLayout      GetLayout() const;
 
 		private:
-			vk::Image        _vkImage;
-			vk::ImageView    _view;
-			vk::DeviceMemory _memory;
+			vk::Image     _vkImage;
+			VmaAllocation _allocation = nullptr;
+			vk::ImageView _view;
 
 			vk::Format      _format = vk::Format::eR8G8B8A8Srgb;
 			vk::ImageLayout _layout = vk::ImageLayout::eUndefined;

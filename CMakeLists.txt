@@ -70,6 +70,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan)
 find_package(VulkanHeaders CONFIG)
 target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Headers)
 
+# Vulkan Memory Allocator
+find_package(VulkanMemoryAllocator CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Headers GPUOpen::VulkanMemoryAllocator)
+
 # IMGUI
 find_package(imgui CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE imgui::imgui)

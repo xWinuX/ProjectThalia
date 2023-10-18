@@ -32,7 +32,11 @@ namespace ProjectThalia::Rendering::Vulkan
 
 
 		_device->CreateGraphicsCommandPool();
+
+		_device->CreateAllocator(_instance);
+
 		CreateCommandBuffers();
+
 
 		IO::ImageFile textureImage = IO::ImageFile("res/textures/floppa.png", IO::ImageFile::RGBA);
 
@@ -60,55 +64,20 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		_quadModelBuffer = Buffer::CreateStagedModelBuffer(_device.get(), vertices, indices);
 
+		struct TransformStorageBuffer
+		{
+			public:
+				std::array<glm::mat4, 100> ModelMatrix {};
+		};
+
+		TransformStorageBuffer transformStorageBuffer {};
+		//_modelMatrixStorageBuffer = Buffer::CreateStorageBuffer(_device.get(), &transformStorageBuffer);
 
 		InitializeImGui();
 
 		_window->OnResize.Add([this](int width, int height) {
 			_frameBufferResized = true;
 		});
-	}
-
-	void Context::InitializeImGui()
-	{
-		vk::DescriptorPoolSize poolSizes[] = {{vk::DescriptorType::eSampler, 1000},
-											  {vk::DescriptorType::eCombinedImageSampler, 1000},
-											  {vk::DescriptorType::eSampledImage, 1000},
-											  {vk::DescriptorType::eStorageImage, 1000},
-											  {vk::DescriptorType::eUniformTexelBuffer, 1000},
-											  {vk::DescriptorType::eStorageTexelBuffer, 1000},
-											  {vk::DescriptorType::eUniformBuffer, 1000},
-											  {vk::DescriptorType::eStorageBuffer, 1000},
-											  {vk::DescriptorType::eUniformBufferDynamic, 1000},
-											  {vk::DescriptorType::eStorageBufferDynamic, 1000},
-											  {vk::DescriptorType::eInputAttachment, 1000}};
-
-		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo({}, 1000, poolSizes);
-
-		_imGuiDescriptorPool = _device->GetVkDevice().createDescriptorPool(descriptorPoolCreateInfo);
-
-		ImGui::CreateContext();
-
-		ImGui_ImplSDL2_InitForVulkan(_window->GetSDLWindow());
-
-		ImGui_ImplVulkan_InitInfo initInfo = {};
-		initInfo.Instance                  = _instance.GetVkInstance();
-		initInfo.PhysicalDevice            = _device->GetPhysicalDevice().GetVkPhysicalDevice();
-		initInfo.Device                    = _device->GetVkDevice();
-		initInfo.Queue                     = _device->GetGraphicsQueue();
-		initInfo.DescriptorPool            = _imGuiDescriptorPool;
-		initInfo.MinImageCount             = 3;
-		initInfo.ImageCount                = 3;
-		initInfo.MSAASamples               = VK_SAMPLE_COUNT_1_BIT;
-
-		ImGui_ImplVulkan_Init(&initInfo, _device->GetRenderPass().GetVkRenderPass());
-
-		vk::CommandBuffer commandBuffer = _device->BeginOneshotCommands();
-
-		ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
-
-		_device->EndOneshotCommands(commandBuffer);
-
-		ImGui_ImplVulkan_DestroyFontUploadObjects();
 	}
 
 	void Context::CreateDescriptorSets()
@@ -146,8 +115,19 @@ namespace ProjectThalia::Rendering::Vulkan
 																										  vk::ShaderStageFlagBits::eFragment,
 																										  nullptr);
 
-		std::vector<vk::DescriptorSetLayoutBinding> setLayoutBindings = {uniformBufferDescriptorSetLayoutBinding, samplerDescriptorSetLayoutBinding};
-		vk::DescriptorSetLayoutCreateInfo           descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo({}, setLayoutBindings);
+		vk::DescriptorSetLayoutBinding storageDescriptorSetLayoutBinding = vk::DescriptorSetLayoutBinding(2,
+																										  vk::DescriptorType::eStorageBuffer,
+																										  1,
+																										  vk::ShaderStageFlagBits::eVertex,
+																										  nullptr);
+
+		std::vector<vk::DescriptorSetLayoutBinding> setLayoutBindings = {
+				uniformBufferDescriptorSetLayoutBinding,
+				samplerDescriptorSetLayoutBinding,
+				//																 storageDescriptorSetLayoutBinding
+		};
+
+		vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo({}, setLayoutBindings);
 
 		_descriptorSetLayout = _device->GetVkDevice().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
 
@@ -156,14 +136,14 @@ namespace ProjectThalia::Rendering::Vulkan
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			_uniformBuffers[i]    = Buffer::CreateUniformBuffer<UniformBufferObject>(_device.get(), nullptr);
-			_uniformBufferData[i] = _uniformBuffers[i].FullMap<UniformBufferObject>();
+			_uniformBufferData[i] = _uniformBuffers[i].GetMappedData<UniformBufferObject>();
 		}
 
 		// Create descriptor pool
 		std::vector<vk::DescriptorPoolSize> poolSizes = {
 				vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)),
 				vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)),
-
+				//vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)),
 		};
 
 		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo({}, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT), poolSizes);
@@ -180,12 +160,15 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
-			vk::DescriptorBufferInfo descriptorBufferInfo = vk::DescriptorBufferInfo(_uniformBuffers[i].GetVkBuffer(), 0, sizeof(UniformBufferObject));
-			vk::DescriptorImageInfo  descriptorImageInfo  = vk::DescriptorImageInfo(_sampler, _image.GetView(), _image.GetLayout());
+			vk::DescriptorBufferInfo uniformDescriptorBufferInfo = vk::DescriptorBufferInfo(_uniformBuffers[i].GetVkBuffer(), 0, sizeof(UniformBufferObject));
+			//vk::DescriptorBufferInfo storageDescriptorBufferInfo = vk::DescriptorBufferInfo(_uniformBuffers[i].GetVkBuffer(), 0, sizeof(UniformBufferObject));
+			vk::DescriptorImageInfo descriptorImageInfo = vk::DescriptorImageInfo(_sampler, _image.GetView(), _image.GetLayout());
 
-			std::vector<vk::WriteDescriptorSet> writeDescriptorSets =
-					{vk::WriteDescriptorSet(_descriptorSets[i], 0, 0, vk::DescriptorType::eUniformBuffer, nullptr, descriptorBufferInfo, nullptr),
-					 vk::WriteDescriptorSet(_descriptorSets[i], 1, 0, vk::DescriptorType::eCombinedImageSampler, descriptorImageInfo, nullptr, nullptr)};
+			std::vector<vk::WriteDescriptorSet> writeDescriptorSets = {
+					vk::WriteDescriptorSet(_descriptorSets[i], 0, 0, vk::DescriptorType::eUniformBuffer, nullptr, uniformDescriptorBufferInfo, nullptr),
+					vk::WriteDescriptorSet(_descriptorSets[i], 1, 0, vk::DescriptorType::eCombinedImageSampler, descriptorImageInfo, nullptr, nullptr),
+					//vk::WriteDescriptorSet(_descriptorSets[i], 2, 0, vk::DescriptorType::eStorageBuffer, nullptr, nullptr, nullptr),
+			};
 
 
 			_device->GetVkDevice().updateDescriptorSets(writeDescriptorSets, nullptr);
@@ -258,32 +241,6 @@ namespace ProjectThalia::Rendering::Vulkan
 		_commandBuffer = _device->GetVkDevice().allocateCommandBuffers(commandBufferAllocateInfo);
 	}
 
-	void Context::Destroy()
-	{
-		_device->GetVkDevice().waitIdle();
-
-		for (const vk::Semaphore& semaphore : _imageAvailableSemaphore) { _device->GetVkDevice().destroy(semaphore); }
-		for (const vk::Semaphore& semaphore : _renderFinishedSemaphore) { _device->GetVkDevice().destroy(semaphore); }
-		for (const vk::Fence& fence : _inFlightFence) { _device->GetVkDevice().destroy(fence); }
-
-		_quadModelBuffer.Destroy();
-
-		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) { _uniformBuffers[i].Destroy(); }
-
-		_device->GetVkDevice().destroy(_descriptorSetLayout);
-		_device->GetVkDevice().destroy(_descriptorPool);
-
-		_image.Destroy();
-
-		_device->GetVkDevice().destroySampler(_sampler);
-
-		_device->GetVkDevice().destroy(_imGuiDescriptorPool);
-		ImGui_ImplVulkan_Shutdown();
-
-		_device->Destroy();
-		_instance.Destroy();
-	}
-
 	void Context::DrawFrame()
 	{
 		_device->GetVkDevice().waitForFences(1, &_inFlightFence[_currentFrame], vk::True, UINT64_MAX);
@@ -349,6 +306,32 @@ namespace ProjectThalia::Rendering::Vulkan
 		_currentFrame = (_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 
+	void Context::Destroy()
+	{
+		_device->GetVkDevice().waitIdle();
+
+		for (const vk::Semaphore& semaphore : _imageAvailableSemaphore) { _device->GetVkDevice().destroy(semaphore); }
+		for (const vk::Semaphore& semaphore : _renderFinishedSemaphore) { _device->GetVkDevice().destroy(semaphore); }
+		for (const vk::Fence& fence : _inFlightFence) { _device->GetVkDevice().destroy(fence); }
+
+		_quadModelBuffer.Destroy();
+
+		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) { _uniformBuffers[i].Destroy(); }
+
+		_device->GetVkDevice().destroy(_descriptorSetLayout);
+		_device->GetVkDevice().destroy(_descriptorPool);
+
+		_image.Destroy();
+
+		_device->GetVkDevice().destroySampler(_sampler);
+
+		_device->GetVkDevice().destroy(_imGuiDescriptorPool);
+		ImGui_ImplVulkan_Shutdown();
+
+		_device->Destroy();
+		_instance.Destroy();
+	}
+
 	void Context::CreateInstance(SDL_Window* sdlWindow)
 	{
 		uint32_t extensionCount;
@@ -371,5 +354,48 @@ namespace ProjectThalia::Rendering::Vulkan
 		if (surfaceCreationResult == SDL_FALSE) { ErrorHandler::ThrowRuntimeError("Failed to create SDL Vulkan surface!"); }
 
 		_instance.SetVkSurface(surfaceHandle);
+	}
+
+	void Context::InitializeImGui()
+	{
+		vk::DescriptorPoolSize poolSizes[] = {{vk::DescriptorType::eSampler, 1000},
+											  {vk::DescriptorType::eCombinedImageSampler, 1000},
+											  {vk::DescriptorType::eSampledImage, 1000},
+											  {vk::DescriptorType::eStorageImage, 1000},
+											  {vk::DescriptorType::eUniformTexelBuffer, 1000},
+											  {vk::DescriptorType::eStorageTexelBuffer, 1000},
+											  {vk::DescriptorType::eUniformBuffer, 1000},
+											  {vk::DescriptorType::eStorageBuffer, 1000},
+											  {vk::DescriptorType::eUniformBufferDynamic, 1000},
+											  {vk::DescriptorType::eStorageBufferDynamic, 1000},
+											  {vk::DescriptorType::eInputAttachment, 1000}};
+
+		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo({}, 1000, poolSizes);
+
+		_imGuiDescriptorPool = _device->GetVkDevice().createDescriptorPool(descriptorPoolCreateInfo);
+
+		ImGui::CreateContext();
+
+		ImGui_ImplSDL2_InitForVulkan(_window->GetSDLWindow());
+
+		ImGui_ImplVulkan_InitInfo initInfo = {};
+		initInfo.Instance                  = _instance.GetVkInstance();
+		initInfo.PhysicalDevice            = _device->GetPhysicalDevice().GetVkPhysicalDevice();
+		initInfo.Device                    = _device->GetVkDevice();
+		initInfo.Queue                     = _device->GetGraphicsQueue();
+		initInfo.DescriptorPool            = _imGuiDescriptorPool;
+		initInfo.MinImageCount             = 3;
+		initInfo.ImageCount                = 3;
+		initInfo.MSAASamples               = VK_SAMPLE_COUNT_1_BIT;
+
+		ImGui_ImplVulkan_Init(&initInfo, _device->GetRenderPass().GetVkRenderPass());
+
+		vk::CommandBuffer commandBuffer = _device->BeginOneshotCommands();
+
+		ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+
+		_device->EndOneshotCommands(commandBuffer);
+
+		ImGui_ImplVulkan_DestroyFontUploadObjects();
 	}
 }

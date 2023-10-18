@@ -1,11 +1,14 @@
 #pragma once
 
+#include "Instance.hpp"
 #include "PhysicalDevice.hpp"
 #include "Pipeline.hpp"
 #include "RenderPass.hpp"
 #include "Swapchain.hpp"
-#include "glm/glm.hpp"
-#include "vulkan/vulkan.hpp"
+
+#include <glm/glm.hpp>
+#include <vk_mem_alloc.h>
+#include <vulkan/vulkan.hpp>
 
 namespace ProjectThalia::Rendering::Vulkan
 {
@@ -14,6 +17,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		public:
 			explicit Device(PhysicalDevice& physicalDevice);
 
+			void CreateAllocator(const Instance& instance);
 			void CreateSwapchain(vk::SurfaceKHR surfaceKhr, glm::ivec2 size);
 			void CreateRenderPass();
 			void CreatePipeline(const std::string&                             name,
@@ -32,6 +36,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			[[nodiscard]] const vk::Queue&                          GetPresentQueue() const;
 			[[nodiscard]] const vk::PhysicalDeviceMemoryProperties& GetMemoryProperties() const;
 			[[nodiscard]] const vk::CommandPool&                    GetGraphicsCommandPool() const;
+			[[nodiscard]] const VmaAllocator&                       GetAllocator() const;
 
 			[[nodiscard]] int FindMemoryTypeIndex(const vk::MemoryRequirements&                memoryRequirements,
 												  const vk::Flags<vk::MemoryPropertyFlagBits>& memoryPropertyFlags) const;
@@ -43,6 +48,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		private:
 			vk::Device      _vkDevice;
 			PhysicalDevice& _physicalDevice;
+			VmaAllocator    _allocator;
 
 			Swapchain  _swapchain;
 			RenderPass _renderPass;
