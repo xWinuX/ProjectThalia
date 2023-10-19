@@ -14,7 +14,7 @@ option(SKIP_AUTOMATE_VCPKG "When ON, you will need to built the packages require
 if (NOT SKIP_AUTOMATE_VCPKG)
     vcpkg_bootstrap()
     vcpkg_install_packages_in_manifest()
-endif()
+endif ()
 
 project(ProjectThalia)
 
@@ -57,6 +57,8 @@ add_executable(${PROJECT_NAME}
         include/ProjectThalia/Rendering/Vulkan/Image.hpp
         src/ProjectThalia/IO/ImageFile.cpp
         include/ProjectThalia/IO/ImageFile.hpp
+        src/ProjectThalia/Rendering/Vulkan/DynamicBuffer.cpp
+        include/ProjectThalia/Rendering/Vulkan/DynamicBuffer.hpp
 )
 
 # add everything in include as an... well... include

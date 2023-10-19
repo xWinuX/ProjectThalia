@@ -64,14 +64,13 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		_quadModelBuffer = Buffer::CreateStagedModelBuffer(_device.get(), vertices, indices);
 
-		struct TransformStorageBuffer
-		{
-			public:
-				std::array<glm::mat4, 100> ModelMatrix {};
-		};
 
 		TransformStorageBuffer transformStorageBuffer {};
-		//_modelMatrixStorageBuffer = Buffer::CreateStorageBuffer(_device.get(), &transformStorageBuffer);
+
+		for (int i = 0; i < Device::MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			_modelMatrixStorageBuffers[i] = Buffer::CreateStorageBuffer(_device.get(), &transformStorageBuffer);
+		}
 
 		InitializeImGui();
 
@@ -121,11 +120,9 @@ namespace ProjectThalia::Rendering::Vulkan
 																										  vk::ShaderStageFlagBits::eVertex,
 																										  nullptr);
 
-		std::vector<vk::DescriptorSetLayoutBinding> setLayoutBindings = {
-				uniformBufferDescriptorSetLayoutBinding,
-				samplerDescriptorSetLayoutBinding,
-				//																 storageDescriptorSetLayoutBinding
-		};
+		std::vector<vk::DescriptorSetLayoutBinding> setLayoutBindings = {uniformBufferDescriptorSetLayoutBinding,
+																		 samplerDescriptorSetLayoutBinding,
+																		 storageDescriptorSetLayoutBinding};
 
 		vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo({}, setLayoutBindings);
 
@@ -133,7 +130,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		std::vector<vk::DescriptorSetLayout> uniformBuffers = {_descriptorSetLayout};
 
-		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		for (int i = 0; i < Device::MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			_uniformBuffers[i]    = Buffer::CreateUniformBuffer<UniformBufferObject>(_device.get(), nullptr);
 			_uniformBufferData[i] = _uniformBuffers[i].GetMappedData<UniformBufferObject>();
@@ -141,33 +138,37 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		// Create descriptor pool
 		std::vector<vk::DescriptorPoolSize> poolSizes = {
-				vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)),
-				vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)),
-				//vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)),
+				vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(Device::MAX_FRAMES_IN_FLIGHT)),
+				vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, static_cast<uint32_t>(Device::MAX_FRAMES_IN_FLIGHT)),
+				vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, static_cast<uint32_t>(Device::MAX_FRAMES_IN_FLIGHT)),
 		};
 
-		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo({}, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT), poolSizes);
+		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo({},
+																							 static_cast<uint32_t>(Device::MAX_FRAMES_IN_FLIGHT),
+																							 poolSizes);
 
 		_descriptorPool = _device->GetVkDevice().createDescriptorPool(descriptorPoolCreateInfo);
 
 
 		// Create descriptor sets
-		std::vector<vk::DescriptorSetLayout> descriptorSetLayouts      = std::vector<vk::DescriptorSetLayout>(MAX_FRAMES_IN_FLIGHT, _descriptorSetLayout);
+		std::vector<vk::DescriptorSetLayout> descriptorSetLayouts = std::vector<vk::DescriptorSetLayout>(Device::MAX_FRAMES_IN_FLIGHT, _descriptorSetLayout);
 		vk::DescriptorSetAllocateInfo        descriptorSetAllocateInfo = vk::DescriptorSetAllocateInfo(_descriptorPool, descriptorSetLayouts);
 
 		_device->GetVkDevice().allocateDescriptorSets(&descriptorSetAllocateInfo, _descriptorSets.data());
 
 
-		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		for (int i = 0; i < Device::MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			vk::DescriptorBufferInfo uniformDescriptorBufferInfo = vk::DescriptorBufferInfo(_uniformBuffers[i].GetVkBuffer(), 0, sizeof(UniformBufferObject));
-			//vk::DescriptorBufferInfo storageDescriptorBufferInfo = vk::DescriptorBufferInfo(_uniformBuffers[i].GetVkBuffer(), 0, sizeof(UniformBufferObject));
-			vk::DescriptorImageInfo descriptorImageInfo = vk::DescriptorImageInfo(_sampler, _image.GetView(), _image.GetLayout());
+			vk::DescriptorBufferInfo storageDescriptorBufferInfo = vk::DescriptorBufferInfo(_modelMatrixStorageBuffers[i].GetVkBuffer(),
+																							0,
+																							sizeof(TransformStorageBuffer));
+			vk::DescriptorImageInfo  descriptorImageInfo         = vk::DescriptorImageInfo(_sampler, _image.GetView(), _image.GetLayout());
 
 			std::vector<vk::WriteDescriptorSet> writeDescriptorSets = {
 					vk::WriteDescriptorSet(_descriptorSets[i], 0, 0, vk::DescriptorType::eUniformBuffer, nullptr, uniformDescriptorBufferInfo, nullptr),
 					vk::WriteDescriptorSet(_descriptorSets[i], 1, 0, vk::DescriptorType::eCombinedImageSampler, descriptorImageInfo, nullptr, nullptr),
-					//vk::WriteDescriptorSet(_descriptorSets[i], 2, 0, vk::DescriptorType::eStorageBuffer, nullptr, nullptr, nullptr),
+					vk::WriteDescriptorSet(_descriptorSets[i], 2, 0, vk::DescriptorType::eStorageBuffer, nullptr, storageDescriptorBufferInfo, nullptr),
 			};
 
 
@@ -180,7 +181,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		vk::SemaphoreCreateInfo semaphoreCreateInfo = vk::SemaphoreCreateInfo();
 		vk::FenceCreateInfo     fenceCreateInfo     = vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
 
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		for (size_t i = 0; i < Device::MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			_imageAvailableSemaphore[i] = _device->GetVkDevice().createSemaphore(semaphoreCreateInfo);
 			_renderFinishedSemaphore[i] = _device->GetVkDevice().createSemaphore(semaphoreCreateInfo);
@@ -303,7 +304,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		}
 		else if (presentResult != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("failed to present swap chain image!"); }
 
-		_currentFrame = (_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+		_currentFrame = (_currentFrame + 1) % Device::MAX_FRAMES_IN_FLIGHT;
 	}
 
 	void Context::Destroy()
@@ -316,7 +317,11 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		_quadModelBuffer.Destroy();
 
-		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) { _uniformBuffers[i].Destroy(); }
+		for (int i = 0; i < Device::MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			_uniformBuffers[i].Destroy();
+			_modelMatrixStorageBuffers[i].Destroy();
+		}
 
 		_device->GetVkDevice().destroy(_descriptorSetLayout);
 		_device->GetVkDevice().destroy(_descriptorPool);

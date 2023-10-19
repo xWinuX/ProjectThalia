@@ -116,8 +116,6 @@ namespace ProjectThalia::Rendering::Vulkan
 												  const TIndex*  indices,
 												  vk::DeviceSize numIndices)
 			{
-				LOG("Create Staged Model Buffer");
-
 				const char*    data[]                    = {reinterpret_cast<const char*>(vertices), reinterpret_cast<const char*>(indices)};
 				vk::DeviceSize dataSizesInBytes[]        = {numVertices * sizeof(TVertex), numIndices * sizeof(TIndex)};
 				vk::DeviceSize dataElementSizesInBytes[] = {sizeof(TVertex), sizeof(TIndex)};
@@ -143,7 +141,19 @@ namespace ProjectThalia::Rendering::Vulkan
 			template<typename T>
 			static Buffer CreateUniformBuffer(const Device* device, const T* data)
 			{
-				LOG("Create Uniform Buffer");
+				return Buffer(device,
+							  {vk::BufferUsageFlagBits::eUniformBuffer,
+							   vk::SharingMode::eExclusive,
+							   VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_TO_GPU,
+							   VmaAllocationCreateFlagBits::VMA_ALLOCATION_CREATE_MAPPED_BIT},
+							  reinterpret_cast<const char*>(data),
+							  sizeof(T),
+							  sizeof(T));
+			}
+
+			template<typename T>
+			static Buffer CreateDynamicUniformBuffer(const Device* device, const T* data)
+			{
 				return Buffer(device,
 							  {vk::BufferUsageFlagBits::eUniformBuffer,
 							   vk::SharingMode::eExclusive,
@@ -157,13 +167,11 @@ namespace ProjectThalia::Rendering::Vulkan
 			template<typename T>
 			static Buffer CreateStorageBuffer(const Device* device, const T* data)
 			{
-				LOG("Create Storage Buffer");
 				return Buffer(device,
-							  {
-									  vk::BufferUsageFlagBits::eStorageBuffer,
-									  vk::SharingMode::eExclusive,
-									  VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_TO_GPU,
-							  },
+							  {vk::BufferUsageFlagBits::eStorageBuffer,
+							   vk::SharingMode::eExclusive,
+							   VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_TO_GPU,
+							   VmaAllocationCreateFlagBits::VMA_ALLOCATION_CREATE_MAPPED_BIT},
 							  reinterpret_cast<const char*>(data),
 							  sizeof(T),
 							  sizeof(T));
@@ -172,7 +180,6 @@ namespace ProjectThalia::Rendering::Vulkan
 			template<typename T>
 			static Buffer CreateTransferBuffer(const Device* device, const T* data, vk::DeviceSize dataSizeInBytes)
 			{
-				LOG("Create TransfserBuffer");
 				return Buffer(device,
 							  {
 									  vk::BufferUsageFlagBits::eTransferSrc,

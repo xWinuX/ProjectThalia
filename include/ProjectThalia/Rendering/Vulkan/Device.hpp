@@ -15,6 +15,8 @@ namespace ProjectThalia::Rendering::Vulkan
 	class Device
 	{
 		public:
+			static const int MAX_FRAMES_IN_FLIGHT = 2;
+
 			explicit Device(PhysicalDevice& physicalDevice);
 
 			void CreateAllocator(const Instance& instance);
@@ -48,7 +50,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		private:
 			vk::Device      _vkDevice;
 			PhysicalDevice& _physicalDevice;
-			VmaAllocator    _allocator;
+			VmaAllocator    _allocator = nullptr;
 
 			Swapchain  _swapchain;
 			RenderPass _renderPass;

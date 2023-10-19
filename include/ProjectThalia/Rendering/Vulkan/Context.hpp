@@ -30,7 +30,10 @@ namespace ProjectThalia::Rendering::Vulkan
 					glm::mat4 proj;
 			};
 
-			const int MAX_FRAMES_IN_FLIGHT = 1;
+			struct TransformStorageBuffer
+			{
+					std::array<glm::mat4, 100> ModelMatrix {};
+			};
 
 			const std::vector<const char*> _validationLayers = {"VK_LAYER_KHRONOS_validation"};
 			const std::vector<const char*> _deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
@@ -45,23 +48,23 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			Buffer _quadModelBuffer;
 
-			Buffer _modelMatrixStorageBuffer;
-
 			Image _image;
 
 			vk::Sampler _sampler;
 
-			std::vector<Buffer>               _uniformBuffers    = std::vector<Buffer>(MAX_FRAMES_IN_FLIGHT);
-			std::vector<UniformBufferObject*> _uniformBufferData = std::vector<UniformBufferObject*>(MAX_FRAMES_IN_FLIGHT);
+			std::vector<Buffer>               _uniformBuffers    = std::vector<Buffer>(Device::MAX_FRAMES_IN_FLIGHT);
+			std::vector<UniformBufferObject*> _uniformBufferData = std::vector<UniformBufferObject*>(Device::MAX_FRAMES_IN_FLIGHT);
+
+			std::vector<Buffer> _modelMatrixStorageBuffers = std::vector<Buffer>(Device::MAX_FRAMES_IN_FLIGHT);
 
 			vk::DescriptorSetLayout        _descriptorSetLayout;
 			vk::DescriptorPool             _descriptorPool;
-			std::vector<vk::DescriptorSet> _descriptorSets = std::vector<vk::DescriptorSet>(MAX_FRAMES_IN_FLIGHT);
+			std::vector<vk::DescriptorSet> _descriptorSets = std::vector<vk::DescriptorSet>(Device::MAX_FRAMES_IN_FLIGHT);
 
-			std::vector<vk::CommandBuffer> _commandBuffer           = std::vector<vk::CommandBuffer>(MAX_FRAMES_IN_FLIGHT);
-			std::vector<vk::Semaphore>     _imageAvailableSemaphore = std::vector<vk::Semaphore>(MAX_FRAMES_IN_FLIGHT);
-			std::vector<vk::Semaphore>     _renderFinishedSemaphore = std::vector<vk::Semaphore>(MAX_FRAMES_IN_FLIGHT);
-			std::vector<vk::Fence>         _inFlightFence           = std::vector<vk::Fence>(MAX_FRAMES_IN_FLIGHT);
+			std::vector<vk::CommandBuffer> _commandBuffer           = std::vector<vk::CommandBuffer>(Device::MAX_FRAMES_IN_FLIGHT);
+			std::vector<vk::Semaphore>     _imageAvailableSemaphore = std::vector<vk::Semaphore>(Device::MAX_FRAMES_IN_FLIGHT);
+			std::vector<vk::Semaphore>     _renderFinishedSemaphore = std::vector<vk::Semaphore>(Device::MAX_FRAMES_IN_FLIGHT);
+			std::vector<vk::Fence>         _inFlightFence           = std::vector<vk::Fence>(Device::MAX_FRAMES_IN_FLIGHT);
 
 			vk::DescriptorPool _imGuiDescriptorPool;
 
@@ -74,6 +77,5 @@ namespace ProjectThalia::Rendering::Vulkan
 			void CreateSyncObjects();
 			void CreateDescriptorSets();
 			void InitializeImGui();
-			void CreateAllocator();
 	};
 }
