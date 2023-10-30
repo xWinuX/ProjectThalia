@@ -11,7 +11,7 @@ namespace ProjectThalia::Rendering::Vulkan
 	{
 		public:
 			RenderPass() = default;
-			explicit RenderPass(const Device* device);
+			explicit RenderPass(Device* device);
 
 			[[nodiscard]] const vk::RenderPass& GetVkRenderPass() const;
 

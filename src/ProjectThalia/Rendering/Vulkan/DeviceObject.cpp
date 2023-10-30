@@ -2,10 +2,10 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	DeviceObject::DeviceObject(const Device* device) :
+	DeviceObject::DeviceObject(Device* device) :
 		_device(device)
 	{}
 
-	const Device* DeviceObject::GetDevice() { return _device; }
+	Device* DeviceObject::GetDevice() const { return _device; }
 
 }

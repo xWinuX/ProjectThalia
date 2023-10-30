@@ -3,7 +3,7 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	RenderPass::RenderPass(const Device* device) :
+	RenderPass::RenderPass(Device* device) :
 		DeviceObject(device)
 	{
 		vk::AttachmentDescription colorAttachment = vk::AttachmentDescription({},

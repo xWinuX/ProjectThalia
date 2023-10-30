@@ -8,14 +8,14 @@ namespace ProjectThalia::Rendering::Vulkan
 	{
 		public:
 			DeviceObject() = default;
-			explicit DeviceObject(const Device* device);
+			explicit DeviceObject(Device* device);
 
 			virtual void Destroy() = 0;
 
 		protected:
-			const Device* GetDevice();
+			[[nodiscard]] Device* GetDevice() const;
 
 		private:
-			const Device* _device;
+			Device* _device = nullptr;
 	};
 }

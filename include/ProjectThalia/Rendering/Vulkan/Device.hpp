@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Allocator.hpp"
 #include "Instance.hpp"
 #include "PhysicalDevice.hpp"
 #include "Pipeline.hpp"
@@ -38,7 +39,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			[[nodiscard]] const vk::Queue&                          GetPresentQueue() const;
 			[[nodiscard]] const vk::PhysicalDeviceMemoryProperties& GetMemoryProperties() const;
 			[[nodiscard]] const vk::CommandPool&                    GetGraphicsCommandPool() const;
-			[[nodiscard]] const VmaAllocator&                       GetAllocator() const;
+			[[nodiscard]] Allocator&                                GetAllocator();
 
 			[[nodiscard]] int FindMemoryTypeIndex(const vk::MemoryRequirements&                memoryRequirements,
 												  const vk::Flags<vk::MemoryPropertyFlagBits>& memoryPropertyFlags) const;
@@ -50,7 +51,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		private:
 			vk::Device      _vkDevice;
 			PhysicalDevice& _physicalDevice;
-			VmaAllocator    _allocator = nullptr;
+			Allocator       _allocator;
 
 			Swapchain  _swapchain;
 			RenderPass _renderPass;

@@ -66,11 +66,11 @@ namespace ProjectThalia::Rendering::Vulkan
 
 
 		TransformStorageBuffer transformStorageBuffer {};
-
+		/*
 		for (int i = 0; i < Device::MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			_modelMatrixStorageBuffers[i] = Buffer::CreateStorageBuffer(_device.get(), &transformStorageBuffer);
-		}
+		}*/
 
 		InitializeImGui();
 
@@ -114,15 +114,14 @@ namespace ProjectThalia::Rendering::Vulkan
 																										  vk::ShaderStageFlagBits::eFragment,
 																										  nullptr);
 
-		vk::DescriptorSetLayoutBinding storageDescriptorSetLayoutBinding = vk::DescriptorSetLayoutBinding(2,
+		/*	vk::DescriptorSetLayoutBinding storageDescriptorSetLayoutBinding = vk::DescriptorSetLayoutBinding(2,
 																										  vk::DescriptorType::eStorageBuffer,
 																										  1,
 																										  vk::ShaderStageFlagBits::eVertex,
-																										  nullptr);
+																										  nullptr);*/
 
-		std::vector<vk::DescriptorSetLayoutBinding> setLayoutBindings = {uniformBufferDescriptorSetLayoutBinding,
-																		 samplerDescriptorSetLayoutBinding,
-																		 storageDescriptorSetLayoutBinding};
+		std::vector<vk::DescriptorSetLayoutBinding> setLayoutBindings = {uniformBufferDescriptorSetLayoutBinding, samplerDescriptorSetLayoutBinding,
+																		 /*storageDescriptorSetLayoutBinding*/};
 
 		vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo({}, setLayoutBindings);
 
@@ -140,7 +139,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		std::vector<vk::DescriptorPoolSize> poolSizes = {
 				vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(Device::MAX_FRAMES_IN_FLIGHT)),
 				vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, static_cast<uint32_t>(Device::MAX_FRAMES_IN_FLIGHT)),
-				vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, static_cast<uint32_t>(Device::MAX_FRAMES_IN_FLIGHT)),
+				//	vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, static_cast<uint32_t>(Device::MAX_FRAMES_IN_FLIGHT)),
 		};
 
 		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo({},
@@ -160,15 +159,15 @@ namespace ProjectThalia::Rendering::Vulkan
 		for (int i = 0; i < Device::MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			vk::DescriptorBufferInfo uniformDescriptorBufferInfo = vk::DescriptorBufferInfo(_uniformBuffers[i].GetVkBuffer(), 0, sizeof(UniformBufferObject));
-			vk::DescriptorBufferInfo storageDescriptorBufferInfo = vk::DescriptorBufferInfo(_modelMatrixStorageBuffers[i].GetVkBuffer(),
+			/*vk::DescriptorBufferInfo storageDescriptorBufferInfo = vk::DescriptorBufferInfo(_modelMatrixStorageBuffers[i].GetVkBuffer(),
 																							0,
-																							sizeof(TransformStorageBuffer));
-			vk::DescriptorImageInfo  descriptorImageInfo         = vk::DescriptorImageInfo(_sampler, _image.GetView(), _image.GetLayout());
+																							sizeof(TransformStorageBuffer));*/
+			vk::DescriptorImageInfo descriptorImageInfo = vk::DescriptorImageInfo(_sampler, _image.GetView(), _image.GetLayout());
 
 			std::vector<vk::WriteDescriptorSet> writeDescriptorSets = {
 					vk::WriteDescriptorSet(_descriptorSets[i], 0, 0, vk::DescriptorType::eUniformBuffer, nullptr, uniformDescriptorBufferInfo, nullptr),
 					vk::WriteDescriptorSet(_descriptorSets[i], 1, 0, vk::DescriptorType::eCombinedImageSampler, descriptorImageInfo, nullptr, nullptr),
-					vk::WriteDescriptorSet(_descriptorSets[i], 2, 0, vk::DescriptorType::eStorageBuffer, nullptr, storageDescriptorBufferInfo, nullptr),
+					//vk::WriteDescriptorSet(_descriptorSets[i], 2, 0, vk::DescriptorType::eStorageBuffer, nullptr, storageDescriptorBufferInfo, nullptr),
 			};
 
 
@@ -320,7 +319,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		for (int i = 0; i < Device::MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			_uniformBuffers[i].Destroy();
-			_modelMatrixStorageBuffers[i].Destroy();
+			/*_modelMatrixStorageBuffers[i].Destroy();*/
 		}
 
 		_device->GetVkDevice().destroy(_descriptorSetLayout);

@@ -7,7 +7,7 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	Pipeline::Pipeline(const Device*                                  device,
+	Pipeline::Pipeline(Device*                                        device,
 					   const std::string&                             name,
 					   const std::vector<ShaderInfo>&                 shaderInfos,
 					   const vk::ArrayProxy<vk::DescriptorSetLayout>& uniformBuffers) :

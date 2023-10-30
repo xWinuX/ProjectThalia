@@ -7,7 +7,7 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	Image::Image(const Device* device, const char* pixels, vk::DeviceSize pixelsSizeInBytes, vk::Extent3D extend) :
+	Image::Image(Device* device, const char* pixels, vk::DeviceSize pixelsSizeInBytes, vk::Extent3D extend) :
 		DeviceObject(device)
 	{
 		vk::ImageCreateInfo imageCreateInfo = vk::ImageCreateInfo({},
@@ -20,18 +20,13 @@ namespace ProjectThalia::Rendering::Vulkan
 																  vk::ImageTiling::eOptimal,
 																  vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled);
 
+
 		VmaAllocationCreateInfo allocationCreateInfo = VmaAllocationCreateInfo();
 		allocationCreateInfo.usage                   = VmaMemoryUsage::VMA_MEMORY_USAGE_GPU_ONLY;
 		allocationCreateInfo.flags                   = {};
 		allocationCreateInfo.priority                = 1.0f;
 
-		vmaCreateImage(GetDevice()->GetAllocator(),
-					   reinterpret_cast<const VkImageCreateInfo*>(&imageCreateInfo),
-					   &allocationCreateInfo,
-					   reinterpret_cast<VkImage*>(&_vkImage),
-					   &_allocation,
-					   nullptr);
-
+		_imageAllocation = GetDevice()->GetAllocator().CreateImage(imageCreateInfo, {Allocator::GpuOnly});
 
 		// Copy pixel data to image
 		Buffer buffer = Buffer::CreateTransferBuffer(device, pixels, pixelsSizeInBytes);
@@ -44,7 +39,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		vk::ImageSubresourceLayers imageSubresourceLayers = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
 		vk::BufferImageCopy        bufferImageCopy        = vk::BufferImageCopy(0, 0, 0, imageSubresourceLayers, {0, 0, 0}, extend);
 
-		commandBuffer.copyBufferToImage(buffer.GetVkBuffer(), _vkImage, _layout, bufferImageCopy);
+		commandBuffer.copyBufferToImage(buffer.GetVkBuffer(), GetVkImage(), _layout, bufferImageCopy);
 
 		TransitionLayout(commandBuffer, vk::ImageLayout::eShaderReadOnlyOptimal);
 
@@ -54,7 +49,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		// Create image view
 		vk::ImageSubresourceRange imageSubresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
-		vk::ImageViewCreateInfo   imageViewCreateInfo   = vk::ImageViewCreateInfo({}, _vkImage, vk::ImageViewType::e2D, _format, {}, imageSubresourceRange);
+		vk::ImageViewCreateInfo   imageViewCreateInfo   = vk::ImageViewCreateInfo({}, GetVkImage(), vk::ImageViewType::e2D, _format, {}, imageSubresourceRange);
 
 		_view = GetDevice()->GetVkDevice().createImageView(imageViewCreateInfo);
 	}
@@ -77,9 +72,8 @@ namespace ProjectThalia::Rendering::Vulkan
                                                                            newLayout,
                                                                            vk::QueueFamilyIgnored,
                                                                            vk::QueueFamilyIgnored,
-                                                                           _vkImage,
+                                                                           GetVkImage(),
                                                                            subresourceRange);
-
 
 		vk::PipelineStageFlagBits sourceStage;
 		vk::PipelineStageFlagBits destinationStage;
@@ -110,10 +104,10 @@ namespace ProjectThalia::Rendering::Vulkan
 	void Image::Destroy()
 	{
 		GetDevice()->GetVkDevice().destroyImageView(_view);
-		vmaDestroyImage(GetDevice()->GetAllocator(), _vkImage, _allocation);
+		GetDevice()->GetAllocator().DestroyImage(_imageAllocation);
 	}
 
-	const vk::Image& Image::GetVkImage() const { return _vkImage; }
+	const vk::Image& Image::GetVkImage() const { return _imageAllocation.Image; }
 
 	const vk::ImageView& Image::GetView() const { return _view; }
 

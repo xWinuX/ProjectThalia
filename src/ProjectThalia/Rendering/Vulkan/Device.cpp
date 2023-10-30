@@ -65,16 +65,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		_graphicsCommandPool = _vkDevice.createCommandPool(commandPoolCreateInfo);
 	}
 
-	void Device::CreateAllocator(const Instance& instance)
-	{
-		VmaAllocatorCreateInfo vmaAllocatorCreateInfo = VmaAllocatorCreateInfo();
-		vmaAllocatorCreateInfo.vulkanApiVersion       = VK_API_VERSION_1_3;
-		vmaAllocatorCreateInfo.device                 = _vkDevice;
-		vmaAllocatorCreateInfo.physicalDevice         = _physicalDevice.GetVkPhysicalDevice();
-		vmaAllocatorCreateInfo.instance               = instance.GetVkInstance();
-
-		vmaCreateAllocator(&vmaAllocatorCreateInfo, &_allocator);
-	}
+	void Device::CreateAllocator(const Instance& instance) { _allocator = Allocator(this, instance); }
 
 	const vk::Device& Device::GetVkDevice() const { return _vkDevice; }
 
@@ -92,7 +83,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	const vk::CommandPool& Device::GetGraphicsCommandPool() const { return _graphicsCommandPool; }
 
-	const VmaAllocator& Device::GetAllocator() const { return _allocator; }
+	Allocator& Device::GetAllocator() { return _allocator; }
 
 	const vk::PhysicalDeviceMemoryProperties& Device::GetMemoryProperties() const { return _memoryProperties; }
 
@@ -102,7 +93,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		_renderPass.Destroy();
 		_pipeline.Destroy();
 		_vkDevice.destroy(_graphicsCommandPool);
-		vmaDestroyAllocator(_allocator);
+		_allocator.Destroy();
 		_vkDevice.destroy();
 	}
 

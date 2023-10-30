@@ -15,7 +15,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		public:
 			Swapchain() = default;
 
-			explicit Swapchain(const Device* device, const vk::SurfaceKHR& surface, vk::Extent2D size);
+			explicit Swapchain(Device* device, const vk::SurfaceKHR& surface, vk::Extent2D size);
 
 			void Destroy() override;
 
