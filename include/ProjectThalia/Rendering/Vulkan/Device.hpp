@@ -20,7 +20,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			explicit Device(PhysicalDevice& physicalDevice);
 
-			void CreateAllocator(const Instance& instance);
+			void CreateAllocator(const Instance& instance, const AllocatorCreateInfo& allocatorCreateInfo = {});
 			void CreateSwapchain(vk::SurfaceKHR surfaceKhr, glm::ivec2 size);
 			void CreateRenderPass();
 			void CreatePipeline(const std::string&                             name,

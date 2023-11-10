@@ -65,7 +65,10 @@ namespace ProjectThalia::Rendering::Vulkan
 		_graphicsCommandPool = _vkDevice.createCommandPool(commandPoolCreateInfo);
 	}
 
-	void Device::CreateAllocator(const Instance& instance) { _allocator = Allocator(this, instance); }
+	void Device::CreateAllocator(const Instance& instance, const AllocatorCreateInfo& allocatorCreateInfo)
+	{
+		_allocator = Allocator(this, instance, allocatorCreateInfo);
+	}
 
 	const vk::Device& Device::GetVkDevice() const { return _vkDevice; }
 

@@ -59,6 +59,8 @@ add_executable(${PROJECT_NAME}
         include/ProjectThalia/IO/ImageFile.hpp
         src/ProjectThalia/Rendering/Vulkan/Allocator.cpp
         include/ProjectThalia/Rendering/Vulkan/Allocator.hpp
+        include/ProjectThalia/Rendering/Vulkan/DescriptorPool.cpp
+        include/ProjectThalia/Rendering/Vulkan/DescriptorPool.hpp
 )
 
 # add everything in include as an... well... include

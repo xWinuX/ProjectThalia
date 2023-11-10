@@ -33,10 +33,13 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		_device->CreateGraphicsCommandPool();
 
-		_device->CreateAllocator(_instance);
+		_device->CreateAllocator(_instance,
+								 {1000,
+								  {vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(Device::MAX_FRAMES_IN_FLIGHT)),
+								   vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, static_cast<uint32_t>(Device::MAX_FRAMES_IN_FLIGHT)),
+								   vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, static_cast<uint32_t>(Device::MAX_FRAMES_IN_FLIGHT))}});
 
 		CreateCommandBuffers();
-
 
 		IO::ImageFile textureImage = IO::ImageFile("res/textures/floppa.png", IO::ImageFile::RGBA);
 

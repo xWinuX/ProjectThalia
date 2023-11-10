@@ -2,11 +2,37 @@
 
 #include "DeviceObject.hpp"
 #include "Instance.hpp"
+
+#include <unordered_map>
 #include <vk_mem_alloc.h>
 
 namespace ProjectThalia::Rendering::Vulkan
 {
 	class Device;
+
+	/**
+	 * I would want to make this a sub struct of the allocator class, but theres a clang and gcc bug that
+	 * causes a compile error when you specify default values for member variables in sub structs and use them as an parameter with a default value.
+	 * So it has to be like this even if it's ugly af
+	 * https://github.com/llvm/llvm-project/issues/36032
+	 * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=96645
+	 */
+	struct AllocatorCreateInfo
+	{
+		public:
+			uint32_t                            MaxDescriptorSetsPerPool = 1000;
+			std::vector<vk::DescriptorPoolSize> DescriptorPoolSizes      = {{vk::DescriptorType::eSampler, 1000},
+																			{vk::DescriptorType::eCombinedImageSampler, 1000},
+																			{vk::DescriptorType::eSampledImage, 1000},
+																			{vk::DescriptorType::eStorageImage, 1000},
+																			{vk::DescriptorType::eUniformTexelBuffer, 1000},
+																			{vk::DescriptorType::eStorageTexelBuffer, 1000},
+																			{vk::DescriptorType::eUniformBuffer, 1000},
+																			{vk::DescriptorType::eStorageBuffer, 1000},
+																			{vk::DescriptorType::eUniformBufferDynamic, 1000},
+																			{vk::DescriptorType::eStorageBufferDynamic, 1000},
+																			{vk::DescriptorType::eInputAttachment, 1000}};
+	};
 
 	class Allocator : DeviceObject
 	{
@@ -60,9 +86,10 @@ namespace ProjectThalia::Rendering::Vulkan
 					vk::Flags<MemoryAllocationCreateFlagBits> Flags = MemoryAllocationCreateFlagBits::None;
 			};
 
+
 		public:
 			Allocator() = default;
-			Allocator(Device* device, const Instance& instance);
+			Allocator(Device* device, const Instance& instance, const AllocatorCreateInfo& createInfo = {});
 
 
 			void Destroy() override;
@@ -71,6 +98,7 @@ namespace ProjectThalia::Rendering::Vulkan
 														const MemoryAllocationCreateInfo& memoryAllocationCreateInfo);
 
 			[[nodiscard]] ImageAllocation CreateImage(const vk::ImageCreateInfo& imageCreateInfo, const MemoryAllocationCreateInfo& memoryAllocationCreateInfo);
+
 
 			void DestroyBuffer(const BufferAllocation& bufferAllocation);
 
@@ -81,7 +109,14 @@ namespace ProjectThalia::Rendering::Vulkan
 			void UnmapMemory(const MemoryAllocation& memoryAllocation);
 
 		private:
-			VmaAllocator                   _vmaAllocator = nullptr;
-			static VmaAllocationCreateInfo CreateVmaAllocationCreateInfo(const MemoryAllocationCreateInfo& memoryAllocationCreateInfo);
+			VmaAllocator _vmaAllocator = nullptr;
+
+
+			std::vector<vk::DescriptorPool>     _descriptorPools;
+			std::vector<vk::DescriptorPoolSize> _descriptorPoolConfiguration;
+			std::vector<std::unordered_map<vk::DescriptorType, uint32_t>> _descriptorPool
+
+					static VmaAllocationCreateInfo
+					CreateVmaAllocationCreateInfo(const MemoryAllocationCreateInfo& memoryAllocationCreateInfo);
 	};
 }
