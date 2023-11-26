@@ -1,6 +1,8 @@
 #pragma once
 
+#include "DescriptorSetManager.hpp"
 #include "DeviceObject.hpp"
+#include "spirv_common.hpp"
 
 #include <vulkan/vulkan.hpp>
 
@@ -20,20 +22,23 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		public:
 			Pipeline() = default;
-			Pipeline(Device*                                        device,
-					 const std::string&                             name,
-					 const std::vector<ShaderInfo>&                 shaderInfos,
-					 const vk::ArrayProxy<vk::DescriptorSetLayout>& uniformBuffers);
+
+			Pipeline(Device* device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos);
 
 			void Destroy() override;
 
 			[[nodiscard]] const vk::Pipeline&       GetVkPipeline() const;
 			[[nodiscard]] const vk::PipelineLayout& GetLayout() const;
+			[[nodiscard]] DescriptorSetManager&     GetDescriptorSetManager();
 
 		private:
 			vk::Pipeline       _vkPipeline;
 			vk::PipelineLayout _layout;
 
+			DescriptorSetManager _descriptorSetManager;
+
 			std::vector<vk::ShaderModule> _shaderModules;
+
+			vk::Format GetFormatFromType(const spirv_cross::SPIRType& type) const;
 	};
 }

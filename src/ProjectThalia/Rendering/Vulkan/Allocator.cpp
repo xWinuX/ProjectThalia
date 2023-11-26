@@ -4,7 +4,7 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	Allocator::Allocator(Device* device, const Instance& instance, const AllocatorCreateInfo& createInfo) :
+	Allocator::Allocator(Device* device, const Instance& instance) :
 		DeviceObject(device)
 	{
 		// Create VMA Allocator
@@ -15,9 +15,6 @@ namespace ProjectThalia::Rendering::Vulkan
 		vmaAllocatorCreateInfo.instance               = instance.GetVkInstance();
 
 		vmaCreateAllocator(&vmaAllocatorCreateInfo, &_vmaAllocator);
-
-		// Setup descriptor set allocations
-		_descriptorPoolConfiguration = createInfo.DescriptorPoolSizes;
 	}
 
 	Allocator::BufferAllocation Allocator::CreateBuffer(const vk::BufferCreateInfo&                  bufferCreateInfo,

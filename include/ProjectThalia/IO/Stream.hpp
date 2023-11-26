@@ -18,14 +18,34 @@ namespace ProjectThalia::IO
 		public:
 			explicit Stream(const std::string& filePath, StreamReadFormat readFormat = StreamReadFormat::Default);
 
-			static std::vector<char> ReadRawAndClose(const std::string& filePath, StreamReadFormat format = StreamReadFormat::Default);
+			template<typename T = char>
+			static std::vector<T> ReadRawAndClose(const std::string& filePath, StreamReadFormat format = StreamReadFormat::Default)
+			{
+				Stream         stream = Stream(filePath, format);
+				std::vector<T> buffer = stream.ReadRaw<T>();
+				stream.Close();
 
-			std::vector<char> ReadRaw();
+				return buffer;
+			}
+
+			template<typename T = char>
+			std::vector<T> ReadRaw()
+			{
+				size_t         fileSize = (size_t) _stream.tellg();
+				std::vector<T> buffer(fileSize / sizeof(T));
+
+				_stream.seekg(0);
+				_stream.read((char*) buffer.data(), static_cast<std::streamsize>(fileSize));
+
+				_stream.close();
+
+				return buffer;
+			}
 
 			void Close();
 
 		private:
-			std::ifstream _stream;
+			std::ifstream    _stream;
 			StreamReadFormat _readFormat = StreamReadFormat::Default;
 	};
 }

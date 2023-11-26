@@ -59,8 +59,10 @@ add_executable(${PROJECT_NAME}
         include/ProjectThalia/IO/ImageFile.hpp
         src/ProjectThalia/Rendering/Vulkan/Allocator.cpp
         include/ProjectThalia/Rendering/Vulkan/Allocator.hpp
-        include/ProjectThalia/Rendering/Vulkan/DescriptorPool.cpp
-        include/ProjectThalia/Rendering/Vulkan/DescriptorPool.hpp
+        src/ProjectThalia/Rendering/Material.cpp
+        include/ProjectThalia/Rendering/Material.hpp
+        src/ProjectThalia/Rendering/Vulkan/DescriptorSetManager.cpp
+        include/ProjectThalia/Rendering/Vulkan/DescriptorSetManager.hpp
 )
 
 # add everything in include as an... well... include
@@ -77,6 +79,23 @@ target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Headers)
 # Vulkan Memory Allocator
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Headers GPUOpen::VulkanMemoryAllocator)
+
+# SPIRV Cross
+find_package(spirv_cross_core CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE spirv-cross-core)
+
+find_package(spirv_cross_glsl CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE spirv-cross-glsl)
+
+find_package(spirv_cross_cpp CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE spirv-cross-cpp)
+
+
+find_package(spirv_cross_reflect CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE spirv-cross-reflect)
+
+find_package(spirv_cross_util CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE spirv-cross-util)
 
 # IMGUI
 find_package(imgui CONFIG REQUIRED)

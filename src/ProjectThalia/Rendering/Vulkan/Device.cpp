@@ -50,11 +50,9 @@ namespace ProjectThalia::Rendering::Vulkan
 		_swapchain = Swapchain(this, surfaceKhr, {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y)});
 	}
 
-	void Device::CreatePipeline(const std::string&                             name,
-								const std::vector<Pipeline::ShaderInfo>&       shaderInfos,
-								const vk::ArrayProxy<vk::DescriptorSetLayout>& uniformBuffers)
+	void Device::CreatePipeline(const std::string& name, const std::vector<Pipeline::ShaderInfo>& shaderInfos)
 	{
-		_pipeline = Pipeline(this, name, shaderInfos, uniformBuffers);
+		_pipeline = Pipeline(this, name, shaderInfos);
 	}
 
 	void Device::CreateGraphicsCommandPool()
@@ -65,10 +63,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		_graphicsCommandPool = _vkDevice.createCommandPool(commandPoolCreateInfo);
 	}
 
-	void Device::CreateAllocator(const Instance& instance, const AllocatorCreateInfo& allocatorCreateInfo)
-	{
-		_allocator = Allocator(this, instance, allocatorCreateInfo);
-	}
+	void Device::CreateAllocator(const Instance& instance) { _allocator = Allocator(this, instance); }
 
 	const vk::Device& Device::GetVkDevice() const { return _vkDevice; }
 
@@ -82,7 +77,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	const Swapchain& Device::GetSwapchain() const { return _swapchain; }
 
-	const Pipeline& Device::GetPipeline() const { return _pipeline; }
+	Pipeline& Device::GetPipeline() { return _pipeline; }
 
 	const vk::CommandPool& Device::GetGraphicsCommandPool() const { return _graphicsCommandPool; }
 

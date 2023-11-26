@@ -52,24 +52,22 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			vk::Sampler _sampler;
 
-			std::vector<Buffer>               _uniformBuffers    = std::vector<Buffer>(Device::MAX_FRAMES_IN_FLIGHT);
-			std::vector<UniformBufferObject*> _uniformBufferData = std::vector<UniformBufferObject*>(Device::MAX_FRAMES_IN_FLIGHT);
+			Buffer               _uniformBuffer;
+			UniformBufferObject* _uniformBufferData;
 
 			std::vector<Buffer> _modelMatrixStorageBuffers = std::vector<Buffer>(Device::MAX_FRAMES_IN_FLIGHT);
 
-			vk::DescriptorSetLayout        _descriptorSetLayout;
-			vk::DescriptorPool             _descriptorPool;
-			std::vector<vk::DescriptorSet> _descriptorSets = std::vector<vk::DescriptorSet>(Device::MAX_FRAMES_IN_FLIGHT);
+			//vk::DescriptorSetLayout _descriptorSetLayout;
+			DescriptorSetManager::DescriptorSetAllocation descriptorSetAllocation;
 
-			std::vector<vk::CommandBuffer> _commandBuffer           = std::vector<vk::CommandBuffer>(Device::MAX_FRAMES_IN_FLIGHT);
-			std::vector<vk::Semaphore>     _imageAvailableSemaphore = std::vector<vk::Semaphore>(Device::MAX_FRAMES_IN_FLIGHT);
-			std::vector<vk::Semaphore>     _renderFinishedSemaphore = std::vector<vk::Semaphore>(Device::MAX_FRAMES_IN_FLIGHT);
-			std::vector<vk::Fence>         _inFlightFence           = std::vector<vk::Fence>(Device::MAX_FRAMES_IN_FLIGHT);
+			vk::CommandBuffer _commandBuffer;
+			vk::Semaphore     _imageAvailableSemaphore;
+			vk::Semaphore     _renderFinishedSemaphore;
+			vk::Fence         _inFlightFence;
 
 			vk::DescriptorPool _imGuiDescriptorPool;
 
-			uint32_t _currentFrame       = 0;
-			bool     _frameBufferResized = false;
+			bool _frameBufferResized = false;
 
 			void CreateInstance(SDL_Window* sdlWindow);
 			void CreateCommandBuffers();

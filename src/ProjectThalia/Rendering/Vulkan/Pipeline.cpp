@@ -1,37 +1,100 @@
 #include "ProjectThalia/Rendering/Vulkan/Pipeline.hpp"
-#include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
 #include "ProjectThalia/IO/Stream.hpp"
-#include "ProjectThalia/Rendering/Vertex.hpp"
 #include "ProjectThalia/Rendering/Vulkan/Utility.hpp"
+#include "spirv_cross/spirv_cross.hpp"
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	Pipeline::Pipeline(Device*                                        device,
-					   const std::string&                             name,
-					   const std::vector<ShaderInfo>&                 shaderInfos,
-					   const vk::ArrayProxy<vk::DescriptorSetLayout>& uniformBuffers) :
+	Pipeline::Pipeline(Device* device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos) :
 		DeviceObject(device)
 	{
 		std::vector<vk::PipelineShaderStageCreateInfo> _shaderStages = std::vector<vk::PipelineShaderStageCreateInfo>(shaderInfos.size());
 		_shaderModules.reserve(shaderInfos.size());
 
-		for (int i = 0; i < shaderInfos.size(); ++i)
-		{
-			std::vector<char> shaderCode = IO::Stream::ReadRawAndClose(shaderInfos[i].path, IO::Binary);
+		std::vector<vk::DescriptorSetLayoutBinding> descriptorLayoutBindings;
+		std::vector<vk::DescriptorPoolSize>         descriptorPoolSizes;
 
-			vk::ShaderModuleCreateInfo createInfo = vk::ShaderModuleCreateInfo({}, shaderCode.size(), reinterpret_cast<const uint32_t*>(shaderCode.data()));
+		// Vertex Input
+		std::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions;
+		vk::PipelineVertexInputStateCreateInfo           vertexInputStateCreateInfo {};
+
+		for (int i = 0; i < shaderInfos.size(); i++)
+		{
+			std::vector<uint32_t> shaderCode = IO::Stream::ReadRawAndClose<uint32_t>(shaderInfos[i].path, IO::Binary);
+
+			// Reflect shader and create Descriptor resources
+			spirv_cross::Compiler spirvCompiler = spirv_cross::Compiler(shaderCode);
+
+			spirv_cross::ShaderResources shaderResources = spirvCompiler.get_shader_resources();
+
+			// Uniform Buffers
+			std::unordered_map<vk::DescriptorType, const spirv_cross::SmallVector<spirv_cross::Resource>&> resourceMap = {
+					{vk::DescriptorType::eUniformBuffer, shaderResources.uniform_buffers},
+					{vk::DescriptorType::eCombinedImageSampler, shaderResources.sampled_images},
+			};
+
+			// Setup descriptor layout
+			for (const auto& [type, resources] : resourceMap)
+			{
+				for (const spirv_cross::Resource& resource : resources)
+				{
+					uint32_t binding = spirvCompiler.get_decoration(resource.id, spv::DecorationBinding);
+
+					vk::DescriptorSetLayoutBinding layoutBinding = vk::DescriptorSetLayoutBinding(binding, type, 1, shaderInfos[i].shaderStage);
+					vk::DescriptorPoolSize         poolSize      = vk::DescriptorPoolSize(type, Device::MAX_FRAMES_IN_FLIGHT);
+
+					descriptorLayoutBindings.push_back(layoutBinding);
+					descriptorPoolSizes.push_back(poolSize);
+				}
+			}
+
+			// Create shader module
+			vk::ShaderModuleCreateInfo createInfo = vk::ShaderModuleCreateInfo({}, shaderCode.size() * sizeof(uint32_t), shaderCode.data());
 
 			vk::ShaderModule shaderModule = device->GetVkDevice().createShaderModule(createInfo);
 			_shaderModules.push_back(shaderModule);
 
+			// Create shader stage info
 			vk::PipelineShaderStageCreateInfo shaderStageCreateInfo = vk::PipelineShaderStageCreateInfo({},
 																										shaderInfos[i].shaderStage,
 																										_shaderModules[i],
 																										name.c_str());
 
 			_shaderStages[i] = shaderStageCreateInfo;
+
+			// Vertex shader specific init
+			if (shaderInfos[i].shaderStage == vk::ShaderStageFlagBits::eVertex)
+			{
+				// Setup vertex input attributes
+				uint32_t offset = 0;
+				for (const auto& stageInput : spirvCompiler.get_shader_resources().stage_inputs)
+				{
+					uint32_t                     location = spirvCompiler.get_decoration(stageInput.id, spv::DecorationLocation);
+					uint32_t                     binding  = spirvCompiler.get_decoration(stageInput.id, spv::DecorationBinding);
+					const spirv_cross::SPIRType& type     = spirvCompiler.get_type(stageInput.base_type_id);
+					vk::Format                   format   = GetFormatFromType(type);
+
+					vk::VertexInputAttributeDescription vertexInputAttributeDescription = vk::VertexInputAttributeDescription(location,
+																															  binding,
+																															  format,
+																															  offset);
+					vertexInputAttributeDescriptions.push_back(vertexInputAttributeDescription);
+
+					offset += (type.width * type.vecsize) / 8;
+				}
+
+				// Setup pipeline vertex input state
+				vk::VertexInputBindingDescription vertexInputBindingDescription = vk::VertexInputBindingDescription(0, offset, vk::VertexInputRate::eVertex);
+				vertexInputStateCreateInfo                                      = vk::PipelineVertexInputStateCreateInfo({},
+                                                                                    1,
+                                                                                    &vertexInputBindingDescription,
+                                                                                    vertexInputAttributeDescriptions.size(),
+                                                                                    vertexInputAttributeDescriptions.data());
+			}
 		}
+
+		_descriptorSetManager = DescriptorSetManager(GetDevice(), descriptorLayoutBindings, descriptorPoolSizes, 10);
 
 		std::vector<vk::DynamicState> dynamicStates = {
 				vk::DynamicState::eViewport,
@@ -39,15 +102,8 @@ namespace ProjectThalia::Rendering::Vulkan
 		};
 
 
-		for (auto& item : VertexPosition2DColorUV::VertexInputAttributeDescriptions) { LOG("item: {0}", std::to_string((int) item.format)); }
-
 		vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo = vk::PipelineDynamicStateCreateInfo({}, dynamicStates);
-		vk::PipelineVertexInputStateCreateInfo
-				vertexInputStateCreateInfo = vk::PipelineVertexInputStateCreateInfo({},
-																					1,
-																					&VertexPosition2DColorUV::VertexInputBindingDescription,
-																					VertexPosition2DColorUV::VertexInputAttributeDescriptions.size(),
-																					VertexPosition2DColorUV::VertexInputAttributeDescriptions.data());
+
 
 		vk::PipelineInputAssemblyStateCreateInfo assemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo({},
 																													vk::PrimitiveTopology::eTriangleList,
@@ -105,7 +161,11 @@ namespace ProjectThalia::Rendering::Vulkan
 																												&colorBlendAttachmentState,
 																												{0.0f, 0.0f, 0.0f, 0.0f});
 
-		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo({}, uniformBuffers.size(), uniformBuffers.data(), 0, nullptr);
+		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo({},
+																							 1,
+																							 &_descriptorSetManager.GetDescriptorSetLayout(),
+																							 0,
+																							 nullptr);
 
 		_layout = device->GetVkDevice().createPipelineLayout(pipelineLayoutCreateInfo);
 
@@ -133,14 +193,35 @@ namespace ProjectThalia::Rendering::Vulkan
 		_vkPipeline = graphicsPipelineResult.value;
 	}
 
+	vk::Format Pipeline::GetFormatFromType(const spirv_cross::SPIRType& type) const
+	{
+		switch (type.basetype)
+		{
+			case spirv_cross::SPIRType::Float:
+				switch (type.vecsize)
+				{
+					case 1: return vk::Format::eR32Sfloat;
+					case 2: return vk::Format::eR32G32Sfloat;
+					case 3: return vk::Format::eR32G32B32Sfloat;
+					case 4: return vk::Format::eR32G32B32A32Sfloat;
+				}
+				break;
+		}
+
+		return vk::Format::eUndefined;
+	}
+
 	const vk::Pipeline& Pipeline::GetVkPipeline() const { return _vkPipeline; }
 
 	const vk::PipelineLayout& Pipeline::GetLayout() const { return _layout; }
 
 	void Pipeline::Destroy()
 	{
+		_descriptorSetManager.Destroy();
 		for (const vk::ShaderModule& item : _shaderModules) { Utility::DeleteDeviceHandle(GetDevice(), item); }
 		Utility::DeleteDeviceHandle(GetDevice(), _layout);
 		Utility::DeleteDeviceHandle(GetDevice(), _vkPipeline);
 	}
+
+	DescriptorSetManager& Pipeline::GetDescriptorSetManager() { return _descriptorSetManager; }
 }

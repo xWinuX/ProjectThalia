@@ -30,14 +30,9 @@ namespace ProjectThalia::Rendering::Vulkan
 		_device->CreateRenderPass();
 		_device->CreateSwapchain(_instance.GetVkSurface(), _window->GetSize());
 
-
 		_device->CreateGraphicsCommandPool();
 
-		_device->CreateAllocator(_instance,
-								 {1000,
-								  {vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(Device::MAX_FRAMES_IN_FLIGHT)),
-								   vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, static_cast<uint32_t>(Device::MAX_FRAMES_IN_FLIGHT)),
-								   vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, static_cast<uint32_t>(Device::MAX_FRAMES_IN_FLIGHT))}});
+		_device->CreateAllocator(_instance);
 
 		CreateCommandBuffers();
 
@@ -48,13 +43,12 @@ namespace ProjectThalia::Rendering::Vulkan
 					   textureImage.GetTotalImageSize(),
 					   {static_cast<uint32_t>(textureImage.GetWidth()), static_cast<uint32_t>(textureImage.GetHeight()), 1});
 
-		CreateDescriptorSets();
-
 
 		_device->CreatePipeline("main",
 								{{"res/shaders/Debug.vert.spv", vk::ShaderStageFlagBits::eVertex},
-								 {"res/shaders/Debug.frag.spv", vk::ShaderStageFlagBits::eFragment}},
-								_descriptorSetLayout);
+								 {"res/shaders/Debug.frag.spv", vk::ShaderStageFlagBits::eFragment}});
+
+		CreateDescriptorSets();
 
 		CreateSyncObjects();
 
@@ -68,12 +62,12 @@ namespace ProjectThalia::Rendering::Vulkan
 		_quadModelBuffer = Buffer::CreateStagedModelBuffer(_device.get(), vertices, indices);
 
 
-		TransformStorageBuffer transformStorageBuffer {};
+		//TransformStorageBuffer transformStorageBuffer {};
 		/*
-		for (int i = 0; i < Device::MAX_FRAMES_IN_FLIGHT; ++i)
-		{
-			_modelMatrixStorageBuffers[i] = Buffer::CreateStorageBuffer(_device.get(), &transformStorageBuffer);
-		}*/
+        for (int i = 0; i < Device::MAX_FRAMES_IN_FLIGHT; ++i)
+        {
+            _modelMatrixStorageBuffers[i] = Buffer::CreateStorageBuffer(_device.get(), &transformStorageBuffer);
+        }*/
 
 		InitializeImGui();
 
@@ -102,80 +96,27 @@ namespace ProjectThalia::Rendering::Vulkan
 																		vk::BorderColor::eIntOpaqueBlack,
 																		vk::False);
 
+		descriptorSetAllocation = _device->GetPipeline().GetDescriptorSetManager().AllocateDescriptorSet();
+
 		_sampler = _device->GetVkDevice().createSampler(samplerCreateInfo);
-
-		// Create descriptor layout set
-		vk::DescriptorSetLayoutBinding uniformBufferDescriptorSetLayoutBinding = vk::DescriptorSetLayoutBinding(0,
-																												vk::DescriptorType::eUniformBuffer,
-																												1,
-																												vk::ShaderStageFlagBits::eVertex,
-																												nullptr);
-
-		vk::DescriptorSetLayoutBinding samplerDescriptorSetLayoutBinding = vk::DescriptorSetLayoutBinding(1,
-																										  vk::DescriptorType::eCombinedImageSampler,
-																										  1,
-																										  vk::ShaderStageFlagBits::eFragment,
-																										  nullptr);
-
-		/*	vk::DescriptorSetLayoutBinding storageDescriptorSetLayoutBinding = vk::DescriptorSetLayoutBinding(2,
-																										  vk::DescriptorType::eStorageBuffer,
-																										  1,
-																										  vk::ShaderStageFlagBits::eVertex,
-																										  nullptr);*/
-
-		std::vector<vk::DescriptorSetLayoutBinding> setLayoutBindings = {uniformBufferDescriptorSetLayoutBinding, samplerDescriptorSetLayoutBinding,
-																		 /*storageDescriptorSetLayoutBinding*/};
-
-		vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo({}, setLayoutBindings);
-
-		_descriptorSetLayout = _device->GetVkDevice().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
-
-		std::vector<vk::DescriptorSetLayout> uniformBuffers = {_descriptorSetLayout};
 
 		for (int i = 0; i < Device::MAX_FRAMES_IN_FLIGHT; ++i)
 		{
-			_uniformBuffers[i]    = Buffer::CreateUniformBuffer<UniformBufferObject>(_device.get(), nullptr);
-			_uniformBufferData[i] = _uniformBuffers[i].GetMappedData<UniformBufferObject>();
+			_uniformBuffer     = Buffer::CreateUniformBuffer<UniformBufferObject>(_device.get(), nullptr);
+			_uniformBufferData = _uniformBuffer.GetMappedData<UniformBufferObject>();
 		}
 
-		// Create descriptor pool
-		std::vector<vk::DescriptorPoolSize> poolSizes = {
-				vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(Device::MAX_FRAMES_IN_FLIGHT)),
-				vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, static_cast<uint32_t>(Device::MAX_FRAMES_IN_FLIGHT)),
-				//	vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer, static_cast<uint32_t>(Device::MAX_FRAMES_IN_FLIGHT)),
+		vk::DescriptorBufferInfo uniformDescriptorBufferInfo = vk::DescriptorBufferInfo(_uniformBuffer.GetVkBuffer(), 0, sizeof(UniformBufferObject));
+
+		vk::DescriptorImageInfo descriptorImageInfo = vk::DescriptorImageInfo(_sampler, _image.GetView(), _image.GetLayout());
+
+		std::vector<vk::WriteDescriptorSet> writeDescriptorSets = {
+				vk::WriteDescriptorSet(descriptorSetAllocation.DescriptorSet, 0, 0, vk::DescriptorType::eUniformBuffer, nullptr, uniformDescriptorBufferInfo, nullptr),
+				vk::WriteDescriptorSet(descriptorSetAllocation.DescriptorSet, 1, 0, vk::DescriptorType::eCombinedImageSampler, descriptorImageInfo, nullptr, nullptr),
 		};
 
-		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo({},
-																							 static_cast<uint32_t>(Device::MAX_FRAMES_IN_FLIGHT),
-																							 poolSizes);
 
-		_descriptorPool = _device->GetVkDevice().createDescriptorPool(descriptorPoolCreateInfo);
-
-
-		// Create descriptor sets
-		std::vector<vk::DescriptorSetLayout> descriptorSetLayouts = std::vector<vk::DescriptorSetLayout>(Device::MAX_FRAMES_IN_FLIGHT, _descriptorSetLayout);
-		vk::DescriptorSetAllocateInfo        descriptorSetAllocateInfo = vk::DescriptorSetAllocateInfo(_descriptorPool, descriptorSetLayouts);
-
-		_device->GetVkDevice().allocateDescriptorSets(&descriptorSetAllocateInfo, _descriptorSets.data());
-
-
-		for (int i = 0; i < Device::MAX_FRAMES_IN_FLIGHT; i++)
-		{
-			vk::DescriptorBufferInfo uniformDescriptorBufferInfo = vk::DescriptorBufferInfo(_uniformBuffers[i].GetVkBuffer(), 0, sizeof(UniformBufferObject));
-			/*vk::DescriptorBufferInfo storageDescriptorBufferInfo = vk::DescriptorBufferInfo(_modelMatrixStorageBuffers[i].GetVkBuffer(),
-																							0,
-																							sizeof(TransformStorageBuffer));*/
-			vk::DescriptorImageInfo descriptorImageInfo = vk::DescriptorImageInfo(_sampler, _image.GetView(), _image.GetLayout());
-
-			std::vector<vk::WriteDescriptorSet> writeDescriptorSets = {
-					vk::WriteDescriptorSet(_descriptorSets[i], 0, 0, vk::DescriptorType::eUniformBuffer, nullptr, uniformDescriptorBufferInfo, nullptr),
-					vk::WriteDescriptorSet(_descriptorSets[i], 1, 0, vk::DescriptorType::eCombinedImageSampler, descriptorImageInfo, nullptr, nullptr),
-					//vk::WriteDescriptorSet(_descriptorSets[i], 2, 0, vk::DescriptorType::eStorageBuffer, nullptr, storageDescriptorBufferInfo, nullptr),
-			};
-
-
-			_device->GetVkDevice().updateDescriptorSets(writeDescriptorSets, nullptr);
-		}
+		_device->GetVkDevice().updateDescriptorSets(writeDescriptorSets, nullptr);
 	}
 
 	void Context::CreateSyncObjects()
@@ -183,12 +124,9 @@ namespace ProjectThalia::Rendering::Vulkan
 		vk::SemaphoreCreateInfo semaphoreCreateInfo = vk::SemaphoreCreateInfo();
 		vk::FenceCreateInfo     fenceCreateInfo     = vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
 
-		for (size_t i = 0; i < Device::MAX_FRAMES_IN_FLIGHT; i++)
-		{
-			_imageAvailableSemaphore[i] = _device->GetVkDevice().createSemaphore(semaphoreCreateInfo);
-			_renderFinishedSemaphore[i] = _device->GetVkDevice().createSemaphore(semaphoreCreateInfo);
-			_inFlightFence[i]           = _device->GetVkDevice().createFence(fenceCreateInfo);
-		}
+		_imageAvailableSemaphore = _device->GetVkDevice().createSemaphore(semaphoreCreateInfo);
+		_renderFinishedSemaphore = _device->GetVkDevice().createSemaphore(semaphoreCreateInfo);
+		_inFlightFence           = _device->GetVkDevice().createFence(fenceCreateInfo);
 	}
 
 	void Context::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex)
@@ -225,8 +163,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		vk::Rect2D scissor = vk::Rect2D({0, 0}, _device->GetSwapchain().GetExtend());
 		commandBuffer.setScissor(0, 1, &scissor);
 
-		commandBuffer
-				.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, _device->GetPipeline().GetLayout(), 0, 1, &_descriptorSets[_currentFrame], 0, nullptr);
+		commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, _device->GetPipeline().GetLayout(), 0, 1, &descriptorSetAllocation.DescriptorSet, 0, nullptr);
 		commandBuffer.drawIndexed(_quadModelBuffer.GetBufferElementNum(1), 1, 0, 0, 0);
 
 		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
@@ -239,18 +176,18 @@ namespace ProjectThalia::Rendering::Vulkan
 	{
 		vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vk::CommandBufferAllocateInfo(_device->GetGraphicsCommandPool(),
 																								vk::CommandBufferLevel::ePrimary,
-																								_commandBuffer.size());
+																								1);
 
-		_commandBuffer = _device->GetVkDevice().allocateCommandBuffers(commandBufferAllocateInfo);
+		_commandBuffer = _device->GetVkDevice().allocateCommandBuffers(commandBufferAllocateInfo)[0];
 	}
 
 	void Context::DrawFrame()
 	{
-		_device->GetVkDevice().waitForFences(1, &_inFlightFence[_currentFrame], vk::True, UINT64_MAX);
+		_device->GetVkDevice().waitForFences(_inFlightFence, vk::True, UINT64_MAX);
 
 		vk::ResultValue<uint32_t> imageIndexResult = _device->GetVkDevice().acquireNextImageKHR(_device->GetSwapchain().GetVkSwapchain(),
 																								UINT64_MAX,
-																								_imageAvailableSemaphore[_currentFrame],
+																								_imageAvailableSemaphore,
 																								VK_NULL_HANDLE);
 
 		if (imageIndexResult.result == vk::Result::eErrorOutOfDateKHR)
@@ -265,33 +202,30 @@ namespace ProjectThalia::Rendering::Vulkan
 			ErrorHandler::ThrowRuntimeError("failed to acquire swap chain image!");
 		}
 
-		_device->GetVkDevice().resetFences(1, &_inFlightFence[_currentFrame]);
+		_device->GetVkDevice().resetFences(_inFlightFence);
 
 		static auto startTime = std::chrono::high_resolution_clock::now();
 
 		auto  currentTime = std::chrono::high_resolution_clock::now();
 		float time        = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-		_uniformBufferData[_currentFrame]->model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		_uniformBufferData[_currentFrame]->view  = glm::lookAt(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		_uniformBufferData[_currentFrame]->proj  = glm::perspective(glm::radians(45.0f),
-                                                                   static_cast<float>(_device->GetSwapchain().GetExtend().width) /
-                                                                           -static_cast<float>(_device->GetSwapchain().GetExtend().height),
-                                                                   0.1f,
-                                                                   10.0f);
+		_uniformBufferData->model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		_uniformBufferData->view  = glm::lookAt(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		_uniformBufferData->proj  = glm::perspective(glm::radians(45.0f),
+                                                    static_cast<float>(_device->GetSwapchain().GetExtend().width) /
+                                                            -static_cast<float>(_device->GetSwapchain().GetExtend().height),
+                                                    0.1f,
+                                                    10.0f);
 
-		_commandBuffer[_currentFrame].reset({});
-		RecordCommandBuffer(_commandBuffer[_currentFrame], imageIndexResult.value);
+		_commandBuffer.reset({});
+		RecordCommandBuffer(_commandBuffer, imageIndexResult.value);
 
 		vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
-		vk::SubmitInfo         submitInfo   = vk::SubmitInfo(_imageAvailableSemaphore[_currentFrame],
-                                                   waitStages,
-                                                   _commandBuffer[_currentFrame],
-                                                   _renderFinishedSemaphore[_currentFrame]);
+		vk::SubmitInfo         submitInfo   = vk::SubmitInfo(_imageAvailableSemaphore, waitStages, _commandBuffer, _renderFinishedSemaphore);
 
-		_device->GetGraphicsQueue().submit(submitInfo, _inFlightFence[_currentFrame]);
+		_device->GetGraphicsQueue().submit(submitInfo, _inFlightFence);
 
-		vk::PresentInfoKHR presentInfo = vk::PresentInfoKHR(_renderFinishedSemaphore[_currentFrame],
+		vk::PresentInfoKHR presentInfo = vk::PresentInfoKHR(_renderFinishedSemaphore,
 															_device->GetSwapchain().GetVkSwapchain(),
 															imageIndexResult.value,
 															nullptr);
@@ -305,28 +239,22 @@ namespace ProjectThalia::Rendering::Vulkan
 			_device->CreateSwapchain(_instance.GetVkSurface(), _window->GetSize());
 		}
 		else if (presentResult != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("failed to present swap chain image!"); }
-
-		_currentFrame = (_currentFrame + 1) % Device::MAX_FRAMES_IN_FLIGHT;
 	}
 
 	void Context::Destroy()
 	{
 		_device->GetVkDevice().waitIdle();
 
-		for (const vk::Semaphore& semaphore : _imageAvailableSemaphore) { _device->GetVkDevice().destroy(semaphore); }
-		for (const vk::Semaphore& semaphore : _renderFinishedSemaphore) { _device->GetVkDevice().destroy(semaphore); }
-		for (const vk::Fence& fence : _inFlightFence) { _device->GetVkDevice().destroy(fence); }
+		_device->GetVkDevice().destroy(_imageAvailableSemaphore);
+		_device->GetVkDevice().destroy(_renderFinishedSemaphore);
+		_device->GetVkDevice().destroy(_inFlightFence);
+
 
 		_quadModelBuffer.Destroy();
 
-		for (int i = 0; i < Device::MAX_FRAMES_IN_FLIGHT; ++i)
-		{
-			_uniformBuffers[i].Destroy();
-			/*_modelMatrixStorageBuffers[i].Destroy();*/
-		}
 
-		_device->GetVkDevice().destroy(_descriptorSetLayout);
-		_device->GetVkDevice().destroy(_descriptorPool);
+		_uniformBuffer.Destroy();
+
 
 		_image.Destroy();
 

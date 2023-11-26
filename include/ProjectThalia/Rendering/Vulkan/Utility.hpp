@@ -8,7 +8,8 @@ namespace ProjectThalia::Rendering::Vulkan
 	concept ValidDeviceHandles = requires(T vkHandle) {
 		requires std::same_as<T, vk::Pipeline> || std::same_as<T, vk::PipelineLayout> || std::same_as<T, vk::ShaderModule> || std::same_as<T, vk::RenderPass> ||
 						 std::same_as<T, vk::SwapchainKHR> || std::same_as<T, vk::ImageView> || std::same_as<T, vk::Framebuffer> ||
-						 std::same_as<T, vk::Buffer> || std::same_as<T, vk::DeviceMemory> || std::same_as<T, vk::Image>;
+						 std::same_as<T, vk::Buffer> || std::same_as<T, vk::DeviceMemory> || std::same_as<T, vk::Image> ||
+						 std::same_as<T, vk::DescriptorSetLayout> || std::same_as<T, vk::DescriptorPool>;
 	};
 
 	class Utility

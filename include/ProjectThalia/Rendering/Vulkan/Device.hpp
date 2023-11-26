@@ -16,23 +16,21 @@ namespace ProjectThalia::Rendering::Vulkan
 	class Device
 	{
 		public:
-			static const int MAX_FRAMES_IN_FLIGHT = 2;
+			static const int MAX_FRAMES_IN_FLIGHT = 1;
 
 			explicit Device(PhysicalDevice& physicalDevice);
 
-			void CreateAllocator(const Instance& instance, const AllocatorCreateInfo& allocatorCreateInfo = {});
+			void CreateAllocator(const Instance& instance);
 			void CreateSwapchain(vk::SurfaceKHR surfaceKhr, glm::ivec2 size);
 			void CreateRenderPass();
-			void CreatePipeline(const std::string&                             name,
-								const std::vector<Pipeline::ShaderInfo>&       shaderInfos,
-								const vk::ArrayProxy<vk::DescriptorSetLayout>& uniformBuffers = nullptr);
+			void CreatePipeline(const std::string& name, const std::vector<Pipeline::ShaderInfo>& shaderInfos);
 			void CreateGraphicsCommandPool();
 
 			void Destroy();
 
 			[[nodiscard]] const Swapchain&                          GetSwapchain() const;
 			[[nodiscard]] const RenderPass&                         GetRenderPass() const;
-			[[nodiscard]] const Pipeline&                           GetPipeline() const;
+			[[nodiscard]] Pipeline&                                 GetPipeline();
 			[[nodiscard]] const vk::Device&                         GetVkDevice() const;
 			[[nodiscard]] const PhysicalDevice&                     GetPhysicalDevice() const;
 			[[nodiscard]] const vk::Queue&                          GetGraphicsQueue() const;

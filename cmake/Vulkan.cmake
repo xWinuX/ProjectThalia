@@ -11,7 +11,7 @@ function(compile_shader target)
 
     message(${arg_SOURCES})
 
-    foreach(source ${arg_SOURCES})
+    foreach (source ${arg_SOURCES})
         # Remove absolute path
         string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}" "" source ${source})
 
@@ -21,12 +21,11 @@ function(compile_shader target)
                 DEPFILE ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.d
                 COMMAND
                 ${glslc_executable}
-                $<$<BOOL:${arg_ENV}>:--target-env=${arg_ENV}>
                 -MD -MF ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.d
                 -o ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT}  # Change output path
                 ${CMAKE_CURRENT_SOURCE_DIR}/${source}
         )
 
         target_sources(${target} PRIVATE ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT})  # Change source path
-    endforeach()
+    endforeach ()
 endfunction()
