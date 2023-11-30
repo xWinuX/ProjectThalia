@@ -42,6 +42,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 				public:
 					vk::DescriptorSet DescriptorSet = VK_NULL_HANDLE;
+					
 
 				private:
 					uint32_t _descriptorPoolIndex = -1;
@@ -53,6 +54,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			DescriptorSetManager(Device*                                     device,
 								 std::vector<vk::DescriptorSetLayoutBinding> descriptorLayoutBindings,
 								 std::vector<vk::DescriptorPoolSize>         descriptorPoolSizes,
+								 std::vector<vk::WriteDescriptorSet>         writeDescriptorSets,
 								 uint32_t                                    maxSetsPerPool);
 
 			void Destroy() override;
@@ -67,6 +69,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			vk::DescriptorSetLayout             _descriptorSetLayout;
 			std::vector<DescriptorPoolInstance> _descriptorPoolInstances;
 			std::vector<vk::DescriptorPoolSize> _descriptorPoolSizes;
+			std::vector<vk::WriteDescriptorSet> _writeDescriptorSets;
 			uint32_t                            _maxSetsPerPool;
 			void                                AllocateNewDescriptorPool();
 	};

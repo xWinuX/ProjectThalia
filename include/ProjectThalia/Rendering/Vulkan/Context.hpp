@@ -5,6 +5,7 @@
 #include "Instance.hpp"
 #include "PhysicalDevice.hpp"
 #include "ProjectThalia/Window.hpp"
+#include "Sampler.hpp"
 
 #include <SDL2/SDL.h>
 #include <optional>
@@ -23,7 +24,13 @@ namespace ProjectThalia::Rendering::Vulkan
 			void DrawFrame();
 
 		private:
+
 			struct UniformBufferObject
+			{
+
+			};
+
+			struct CameraUBO
 			{
 					glm::mat4 model;
 					glm::mat4 view;
@@ -50,10 +57,10 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			Image _image;
 
-			vk::Sampler _sampler;
+			Sampler _sampler;
 
 			Buffer               _uniformBuffer;
-			UniformBufferObject* _uniformBufferData;
+			CameraUBO* _uniformBufferData;
 
 			std::vector<Buffer> _modelMatrixStorageBuffers = std::vector<Buffer>(Device::MAX_FRAMES_IN_FLIGHT);
 

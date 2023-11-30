@@ -39,6 +39,6 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			std::vector<vk::ShaderModule> _shaderModules;
 
-			vk::Format GetFormatFromType(const spirv_cross::SPIRType& type) const;
+			[[nodiscard]] vk::Format GetFormatFromType(const spirv_cross::SPIRType& type) const;
 	};
 }

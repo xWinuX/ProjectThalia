@@ -78,43 +78,32 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	void Context::CreateDescriptorSets()
 	{
-		// Create image sampler
-		vk::SamplerCreateInfo samplerCreateInfo = vk::SamplerCreateInfo({},
-																		vk::Filter::eNearest,
-																		vk::Filter::eNearest,
-																		vk::SamplerMipmapMode::eNearest,
-																		vk::SamplerAddressMode::eRepeat,
-																		vk::SamplerAddressMode::eRepeat,
-																		vk::SamplerAddressMode::eRepeat,
-																		0,
-																		vk::True,
-																		_device->GetPhysicalDevice().GetProperties().limits.maxSamplerAnisotropy,
-																		vk::False,
-																		vk::CompareOp::eNever,
-																		0.0f,
-																		0.0f,
-																		vk::BorderColor::eIntOpaqueBlack,
-																		vk::False);
-
 		descriptorSetAllocation = _device->GetPipeline().GetDescriptorSetManager().AllocateDescriptorSet();
 
-		_sampler = _device->GetVkDevice().createSampler(samplerCreateInfo);
+		_sampler = Sampler(_device.get(), {});
 
-		for (int i = 0; i < Device::MAX_FRAMES_IN_FLIGHT; ++i)
-		{
-			_uniformBuffer     = Buffer::CreateUniformBuffer<UniformBufferObject>(_device.get(), nullptr);
-			_uniformBufferData = _uniformBuffer.GetMappedData<UniformBufferObject>();
-		}
+		_uniformBuffer     = Buffer::CreateUniformBuffer<CameraUBO>(_device.get(), nullptr);
+		_uniformBufferData = _uniformBuffer.GetMappedData<CameraUBO>();
 
-		vk::DescriptorBufferInfo uniformDescriptorBufferInfo = vk::DescriptorBufferInfo(_uniformBuffer.GetVkBuffer(), 0, sizeof(UniformBufferObject));
-
-		vk::DescriptorImageInfo descriptorImageInfo = vk::DescriptorImageInfo(_sampler, _image.GetView(), _image.GetLayout());
+		vk::DescriptorBufferInfo uniformDescriptorBufferInfo = vk::DescriptorBufferInfo(_uniformBuffer.GetVkBuffer(), 0, sizeof(CameraUBO));
+		vk::DescriptorImageInfo  descriptorImageInfo         = vk::DescriptorImageInfo(_sampler.GetVkSampler(), _image.GetView(), _image.GetLayout());
 
 		std::vector<vk::WriteDescriptorSet> writeDescriptorSets = {
-				vk::WriteDescriptorSet(descriptorSetAllocation.DescriptorSet, 0, 0, vk::DescriptorType::eUniformBuffer, nullptr, uniformDescriptorBufferInfo, nullptr),
-				vk::WriteDescriptorSet(descriptorSetAllocation.DescriptorSet, 1, 0, vk::DescriptorType::eCombinedImageSampler, descriptorImageInfo, nullptr, nullptr),
+				vk::WriteDescriptorSet(descriptorSetAllocation.DescriptorSet,
+									   0,
+									   0,
+									   vk::DescriptorType::eUniformBuffer,
+									   nullptr,
+									   uniformDescriptorBufferInfo,
+									   nullptr),
+				vk::WriteDescriptorSet(descriptorSetAllocation.DescriptorSet,
+									   1,
+									   0,
+									   vk::DescriptorType::eCombinedImageSampler,
+									   descriptorImageInfo,
+									   nullptr,
+									   nullptr),
 		};
-
 
 		_device->GetVkDevice().updateDescriptorSets(writeDescriptorSets, nullptr);
 	}
@@ -163,7 +152,13 @@ namespace ProjectThalia::Rendering::Vulkan
 		vk::Rect2D scissor = vk::Rect2D({0, 0}, _device->GetSwapchain().GetExtend());
 		commandBuffer.setScissor(0, 1, &scissor);
 
-		commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, _device->GetPipeline().GetLayout(), 0, 1, &descriptorSetAllocation.DescriptorSet, 0, nullptr);
+		commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+										 _device->GetPipeline().GetLayout(),
+										 0,
+										 1,
+										 &descriptorSetAllocation.DescriptorSet,
+										 0,
+										 nullptr);
 		commandBuffer.drawIndexed(_quadModelBuffer.GetBufferElementNum(1), 1, 0, 0, 0);
 
 		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
@@ -249,16 +244,13 @@ namespace ProjectThalia::Rendering::Vulkan
 		_device->GetVkDevice().destroy(_renderFinishedSemaphore);
 		_device->GetVkDevice().destroy(_inFlightFence);
 
-
 		_quadModelBuffer.Destroy();
-
 
 		_uniformBuffer.Destroy();
 
-
 		_image.Destroy();
 
-		_device->GetVkDevice().destroySampler(_sampler);
+		_sampler.Destroy();
 
 		_device->GetVkDevice().destroy(_imGuiDescriptorPool);
 		ImGui_ImplVulkan_Shutdown();

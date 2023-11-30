@@ -4,6 +4,7 @@
 #include "ProjectThalia/Rendering/Vulkan/Utility.hpp"
 
 #include <numeric>
+#include <utility>
 #include <vector>
 
 namespace ProjectThalia::Rendering::Vulkan
@@ -11,9 +12,11 @@ namespace ProjectThalia::Rendering::Vulkan
 	DescriptorSetManager::DescriptorSetManager(Device*                                     device,
 											   std::vector<vk::DescriptorSetLayoutBinding> descriptorLayoutBindings,
 											   std::vector<vk::DescriptorPoolSize>         descriptorPoolSizes,
+											   std::vector<vk::WriteDescriptorSet>         writeDescriptorSets,
 											   uint32_t                                    maxSetsPerPool) :
 		DeviceObject(device),
 		_descriptorPoolSizes(std::move(descriptorPoolSizes)),
+		_writeDescriptorSets(std::move(writeDescriptorSets)),
 		_maxSetsPerPool(maxSetsPerPool)
 	{
 		vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo({}, descriptorLayoutBindings);
@@ -84,6 +87,12 @@ namespace ProjectThalia::Rendering::Vulkan
 				GetDevice()->GetVkDevice().freeDescriptorSets(descriptorPoolInstance.DescriptorPool, descriptorSet);
 			}
 			Utility::DeleteDeviceHandle(GetDevice(), descriptorPoolInstance.DescriptorPool);
+		}
+
+		for (const vk::WriteDescriptorSet& writeDescriptorSet : _writeDescriptorSets)
+		{
+			delete writeDescriptorSet.pBufferInfo;
+			delete writeDescriptorSet.pImageInfo;
 		}
 	}
 

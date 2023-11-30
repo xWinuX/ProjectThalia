@@ -12,8 +12,10 @@ namespace ProjectThalia::Rendering::Vulkan
 		std::vector<vk::PipelineShaderStageCreateInfo> _shaderStages = std::vector<vk::PipelineShaderStageCreateInfo>(shaderInfos.size());
 		_shaderModules.reserve(shaderInfos.size());
 
+		// Descriptors
 		std::vector<vk::DescriptorSetLayoutBinding> descriptorLayoutBindings;
 		std::vector<vk::DescriptorPoolSize>         descriptorPoolSizes;
+		std::vector<vk::WriteDescriptorSet>         writeDescriptorSets;
 
 		// Vertex Input
 		std::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions;
@@ -43,6 +45,28 @@ namespace ProjectThalia::Rendering::Vulkan
 
 					vk::DescriptorSetLayoutBinding layoutBinding = vk::DescriptorSetLayoutBinding(binding, type, 1, shaderInfos[i].shaderStage);
 					vk::DescriptorPoolSize         poolSize      = vk::DescriptorPoolSize(type, Device::MAX_FRAMES_IN_FLIGHT);
+
+
+					vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet(VK_NULL_HANDLE, binding, 0, type, nullptr, nullptr, nullptr);
+
+					const spirv_cross::SPIRType& resourceType = spirvCompiler.get_type(resource.type_id);
+
+					switch (type)
+					{
+						case vk::DescriptorType::eUniformBuffer:
+						{
+							vk::DescriptorBufferInfo* descriptorBufferInfo = new vk::DescriptorBufferInfo(VK_NULL_HANDLE, 0, resourceType.width / 8);
+							writeDescriptorSet.pBufferInfo                 = descriptorBufferInfo;
+							break;
+						}
+						case vk::DescriptorType::eCombinedImageSampler:
+						{
+							vk::DescriptorImageInfo* descriptorImageInfo = new vk::DescriptorImageInfo({}, {}, {});
+							writeDescriptorSet.pImageInfo                = descriptorImageInfo;
+							break;
+						}
+					}
+
 
 					descriptorLayoutBindings.push_back(layoutBinding);
 					descriptorPoolSizes.push_back(poolSize);
@@ -94,7 +118,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			}
 		}
 
-		_descriptorSetManager = DescriptorSetManager(GetDevice(), descriptorLayoutBindings, descriptorPoolSizes, 10);
+		_descriptorSetManager = DescriptorSetManager(GetDevice(), descriptorLayoutBindings, descriptorPoolSizes, {}, 10);
 
 		std::vector<vk::DynamicState> dynamicStates = {
 				vk::DynamicState::eViewport,

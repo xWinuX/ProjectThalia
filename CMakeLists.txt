@@ -10,7 +10,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 include(cmake/AutomateVCPKG.cmake)
 include(cmake/Vulkan.cmake)
 
-option(SKIP_AUTOMATE_VCPKG "When ON, you will need to built the packages required by MyProject on your own or supply your own vcpkg toolchain.")
+option(SKIP_AUTOMATE_VCPKG "When ON, you will need to built the packages required on your own or supply your own vcpkg toolchain.")
 if (NOT SKIP_AUTOMATE_VCPKG)
     vcpkg_bootstrap()
     vcpkg_install_packages_in_manifest()
@@ -63,6 +63,9 @@ add_executable(${PROJECT_NAME}
         include/ProjectThalia/Rendering/Material.hpp
         src/ProjectThalia/Rendering/Vulkan/DescriptorSetManager.cpp
         include/ProjectThalia/Rendering/Vulkan/DescriptorSetManager.hpp
+        src/ProjectThalia/Rendering/Vulkan/Sampler.cpp
+        include/ProjectThalia/Rendering/Vulkan/Sampler.hpp
+        include/ProjectThalia/Rendering/Vulkan/Sampler.hpp
 )
 
 # add everything in include as an... well... include
