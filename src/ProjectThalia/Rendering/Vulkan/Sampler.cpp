@@ -3,23 +3,24 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	Sampler::Sampler(Device* device, const Sampler::CreateInfo& createInfo) :
-		DeviceObject(device)
+	Sampler::Sampler(Device* device, const TextureSettings& textureSettings) :
+		DeviceObject(device),
+		_textureSettings(textureSettings)
 	{
 		vk::SamplerCreateInfo samplerCreateInfo = vk::SamplerCreateInfo({},
-																		static_cast<vk::Filter>(createInfo.MagnificationFilter),
-																		static_cast<vk::Filter>(createInfo.MinificationFilter),
-																		static_cast<vk::SamplerMipmapMode>(createInfo.MipmapMode),
-																		static_cast<vk::SamplerAddressMode>(createInfo.WrapMode.x),
-																		static_cast<vk::SamplerAddressMode>(createInfo.WrapMode.y),
-																		static_cast<vk::SamplerAddressMode>(createInfo.WrapMode.z),
-																		createInfo.MipLodBias,
-																		createInfo.MaxAnisotropy > 0.0f,
-																		createInfo.MaxAnisotropy,
+																		static_cast<vk::Filter>(textureSettings.MagnificationFilter),
+																		static_cast<vk::Filter>(textureSettings.MinificationFilter),
+																		static_cast<vk::SamplerMipmapMode>(textureSettings.MipmapMode),
+																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.x),
+																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.y),
+																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.z),
+																		textureSettings.MipLodBias,
+																		textureSettings.MaxAnisotropy > 0.0f,
+																		textureSettings.MaxAnisotropy,
 																		vk::False,
 																		vk::CompareOp::eNever,
-																		createInfo.MinLod,
-																		createInfo.MaxLod,
+																		textureSettings.MinLod,
+																		textureSettings.MaxLod,
 																		vk::BorderColor::eIntOpaqueBlack,
 																		vk::False);
 

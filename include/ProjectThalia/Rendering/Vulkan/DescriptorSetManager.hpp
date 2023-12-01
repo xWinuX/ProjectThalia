@@ -3,6 +3,7 @@
 #include "DeviceObject.hpp"
 #include "vulkan/vulkan.hpp"
 
+#include "Buffer.hpp"
 #include "stack"
 
 namespace ProjectThalia::Rendering::Vulkan
@@ -41,8 +42,8 @@ namespace ProjectThalia::Rendering::Vulkan
 					friend DescriptorSetManager;
 
 				public:
-					vk::DescriptorSet DescriptorSet = VK_NULL_HANDLE;
-					
+					vk::DescriptorSet   DescriptorSet = VK_NULL_HANDLE;
+					std::vector<Buffer> ShaderBuffers = std::vector<Buffer>();
 
 				private:
 					uint32_t _descriptorPoolIndex = -1;

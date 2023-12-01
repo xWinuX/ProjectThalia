@@ -87,5 +87,28 @@ namespace ProjectThalia::Rendering::Vulkan
 		return allocationCreateInfo;
 	}
 
+	Allocator::SamplerAllocation Allocator::AllocateSampler(TextureSettings textureSettings)
+	{
+		for (auto& [mapTextureSetting, sampler]: _samplers)
+		{
 
+		}
+
+		vk::SamplerCreateInfo samplerCreateInfo = vk::SamplerCreateInfo({},
+																		static_cast<vk::Filter>(textureSettings.MagnificationFilter),
+																		static_cast<vk::Filter>(textureSettings.MinificationFilter),
+																		static_cast<vk::SamplerMipmapMode>(textureSettings.MipmapMode),
+																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.x),
+																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.y),
+																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.z),
+																		textureSettings.MipLodBias,
+																		textureSettings.MaxAnisotropy > 0.0f,
+																		textureSettings.MaxAnisotropy,
+																		vk::False,
+																		vk::CompareOp::eNever,
+																		textureSettings.MinLod,
+																		textureSettings.MaxLod,
+																		vk::BorderColor::eIntOpaqueBlack,
+																		vk::False);
+	}
 }

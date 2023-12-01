@@ -68,6 +68,10 @@ add_executable(${PROJECT_NAME}
         include/ProjectThalia/Rendering/Vulkan/Sampler.hpp
         src/ProjectThalia/Input.cpp
         include/ProjectThalia/Input.hpp
+        src/ProjectThalia/Rendering/Vulkan/DescriptorSetManager.cpp
+        include/ProjectThalia/Rendering/Texture2D.cpp
+        include/ProjectThalia/Rendering/Texture2D.hpp
+        include/ProjectThalia/Rendering/TextureSettings.hpp
 )
 
 # add everything in include as an... well... include

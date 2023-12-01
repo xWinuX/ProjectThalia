@@ -23,6 +23,8 @@ namespace ProjectThalia::Rendering::Vulkan
 			void Destroy();
 			void DrawFrame();
 
+			static Device* GetDevice();
+
 		private:
 
 			struct UniformBufferObject
@@ -47,7 +49,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			Window* _window = nullptr; // TODO: Move to renderer
 
-			std::unique_ptr<Device> _device;
+			static std::unique_ptr<Device> _device;
 
 
 			Instance       _instance;

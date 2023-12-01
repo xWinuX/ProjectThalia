@@ -2,6 +2,7 @@
 
 #include "DeviceObject.hpp"
 #include "Instance.hpp"
+#include "ProjectThalia/Rendering/TextureSettings.hpp"
 
 #include <unordered_map>
 #include <vk_mem_alloc.h>
@@ -87,6 +88,26 @@ namespace ProjectThalia::Rendering::Vulkan
 			VmaAllocator _vmaAllocator = nullptr;
 
 			static VmaAllocationCreateInfo CreateVmaAllocationCreateInfo(const MemoryAllocationCreateInfo& memoryAllocationCreateInfo);
+#pragma endregion
+
+#pragma region Samplers
+		public:
+			struct SamplerAllocation
+			{
+					friend Allocator;
+
+				public:
+					vk::Sampler Sampler = VK_NULL_HANDLE;
+
+				private:
+					size_t _index = -1;
+			};
+
+			SamplerAllocation AllocateSampler(TextureSettings textureSettings);
+
+		private:
+			std::unordered_map<size_t, vk::Sampler> _samplers;
+
 #pragma endregion
 	};
 }

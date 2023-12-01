@@ -52,16 +52,35 @@ namespace ProjectThalia::Rendering::Vulkan
 		vk::DescriptorSet             descriptorSet;
 		vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo = vk::DescriptorSetAllocateInfo(validDescriptorPoolInstance.DescriptorPool,
 																								_descriptorSetLayout);
+
 		GetDevice()->GetVkDevice().allocateDescriptorSets(&descriptorSetAllocateInfo, &descriptorSet);
 
 		uint32_t insertionIndex                                    = validDescriptorPoolInstance.Available.Pop();
 		validDescriptorPoolInstance.DescriptorSets[insertionIndex] = descriptorSet;
+
+		// Allocate shader buffers
+		std::vector<Buffer> shaderBuffers = std::vector<Buffer>();
+		std::vector<vk::DescriptorBufferInfo> bufferInfos = std::vector<vk::DescriptorBufferInfo>();
+		for (const vk::WriteDescriptorSet& writeDescriptorSet : _writeDescriptorSets)
+		{
+			switch (writeDescriptorSet.descriptorType)
+			{
+				case vk::DescriptorType::eUniformBuffer:
+					shaderBuffers.push_back(Buffer::CreateUniformBuffer(GetDevice(), writeDescriptorSet.pBufferInfo->range));
+					bufferInfos.push_back(vk::DescriptorBufferInfo(*writeDescriptorSet.pBufferInfo));
+					bufferInfos.back().buffer = shaderBuffers.back().GetVkBuffer();
+					break;
+
+			}
+		}
+
 
 		// Create allocation object
 		DescriptorSetAllocation descriptorSetAllocation;
 		descriptorSetAllocation.DescriptorSet        = validDescriptorPoolInstance.DescriptorSets[insertionIndex];
 		descriptorSetAllocation._descriptorPoolIndex = descriptorPoolIndex;
 		descriptorSetAllocation._descriptorSetIndex  = insertionIndex;
+		descriptorSetAllocation.ShaderBuffers = std::move(shaderBuffers);
 
 		return descriptorSetAllocation;
 	}

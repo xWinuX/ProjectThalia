@@ -38,11 +38,13 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		IO::ImageFile textureImage = IO::ImageFile("res/textures/floppa.png", IO::ImageFile::RGBA);
 
+		_sampler = Sampler(_device.get(), {});
+
 		_image = Image(_device.get(),
 					   reinterpret_cast<const char*>(textureImage.GetPixels()),
 					   textureImage.GetTotalImageSize(),
-					   {static_cast<uint32_t>(textureImage.GetWidth()), static_cast<uint32_t>(textureImage.GetHeight()), 1});
-
+					   {static_cast<uint32_t>(textureImage.GetWidth()), static_cast<uint32_t>(textureImage.GetHeight()), 1},
+					   &_sampler);
 
 		_device->CreatePipeline("main",
 								{{"res/shaders/Debug.vert.spv", vk::ShaderStageFlagBits::eVertex},
@@ -80,7 +82,6 @@ namespace ProjectThalia::Rendering::Vulkan
 	{
 		descriptorSetAllocation = _device->GetPipeline().GetDescriptorSetManager().AllocateDescriptorSet();
 
-		_sampler = Sampler(_device.get(), {});
 
 		_uniformBuffer     = Buffer::CreateUniformBuffer<CameraUBO>(_device.get(), nullptr);
 		_uniformBufferData = _uniformBuffer.GetMappedData<CameraUBO>();
@@ -325,4 +326,6 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		ImGui_ImplVulkan_DestroyFontUploadObjects();
 	}
+
+	Device* Context::GetDevice() { return _device.get(); }
 }

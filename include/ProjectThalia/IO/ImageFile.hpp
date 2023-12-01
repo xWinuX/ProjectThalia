@@ -16,6 +16,7 @@ namespace ProjectThalia::IO
 			};
 
 		public:
+			ImageFile() = default;
 			explicit ImageFile(std::string filePath, ChannelSetup channels = ChannelSetup::RGB);
 			~ImageFile();
 

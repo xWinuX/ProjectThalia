@@ -7,8 +7,9 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	Image::Image(Device* device, const char* pixels, vk::DeviceSize pixelsSizeInBytes, vk::Extent3D extend) :
-		DeviceObject(device)
+	Image::Image(Device* device, const char* pixels, vk::DeviceSize pixelsSizeInBytes, vk::Extent3D extend, const Sampler* sampler) :
+		DeviceObject(device),
+		_sampler(sampler)
 	{
 		vk::ImageCreateInfo imageCreateInfo = vk::ImageCreateInfo({},
 																  vk::ImageType::e2D,
@@ -19,7 +20,6 @@ namespace ProjectThalia::Rendering::Vulkan
 																  vk::SampleCountFlagBits::e1,
 																  vk::ImageTiling::eOptimal,
 																  vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled);
-
 
 		VmaAllocationCreateInfo allocationCreateInfo = VmaAllocationCreateInfo();
 		allocationCreateInfo.usage                   = VmaMemoryUsage::VMA_MEMORY_USAGE_GPU_ONLY;
