@@ -1,5 +1,6 @@
 #include "ProjectThalia/Rendering/Vulkan/Allocator.hpp"
 
+#include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/Rendering/Vulkan/Device.hpp"
 
 namespace ProjectThalia::Rendering::Vulkan
@@ -35,6 +36,8 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		bufferAllocation.AllocationInfo.MappedData = allocationInfo.pMappedData;
 
+		_buffersAllocated++;
+
 		return bufferAllocation;
 	}
 
@@ -52,17 +55,21 @@ namespace ProjectThalia::Rendering::Vulkan
 					   &imageAllocation.VmaAllocation,
 					   nullptr);
 
+		_imagesAllocated++;
+
 		return imageAllocation;
 	}
 
 	void Allocator::DestroyBuffer(const Allocator::BufferAllocation& bufferAllocation)
 	{
 		vmaDestroyBuffer(_vmaAllocator, bufferAllocation.Buffer, bufferAllocation.VmaAllocation);
+		_buffersAllocated--;
 	}
 
 	void Allocator::DestroyImage(const Allocator::ImageAllocation& imageAllocation)
 	{
 		vmaDestroyImage(_vmaAllocator, imageAllocation.Image, imageAllocation.VmaAllocation);
+		_imagesAllocated--;
 	}
 
 	void* Allocator::MapMemory(const Allocator::MemoryAllocation& memoryAllocation)
@@ -76,7 +83,12 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	void Allocator::UnmapMemory(const Allocator::MemoryAllocation& memoryAllocation) { vmaUnmapMemory(_vmaAllocator, memoryAllocation.VmaAllocation); }
 
-	void Allocator::Destroy() { vmaDestroyAllocator(_vmaAllocator); }
+	void Allocator::Destroy()
+	{
+		LOG("Leaked buffers {0}", _buffersAllocated);
+		LOG("Leaked images {0}", _imagesAllocated);
+		vmaDestroyAllocator(_vmaAllocator);
+	}
 
 	VmaAllocationCreateInfo Allocator::CreateVmaAllocationCreateInfo(const Allocator::MemoryAllocationCreateInfo& memoryAllocationCreateInfo)
 	{
@@ -87,28 +99,4 @@ namespace ProjectThalia::Rendering::Vulkan
 		return allocationCreateInfo;
 	}
 
-	Allocator::SamplerAllocation Allocator::AllocateSampler(TextureSettings textureSettings)
-	{
-		for (auto& [mapTextureSetting, sampler]: _samplers)
-		{
-
-		}
-
-		vk::SamplerCreateInfo samplerCreateInfo = vk::SamplerCreateInfo({},
-																		static_cast<vk::Filter>(textureSettings.MagnificationFilter),
-																		static_cast<vk::Filter>(textureSettings.MinificationFilter),
-																		static_cast<vk::SamplerMipmapMode>(textureSettings.MipmapMode),
-																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.x),
-																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.y),
-																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.z),
-																		textureSettings.MipLodBias,
-																		textureSettings.MaxAnisotropy > 0.0f,
-																		textureSettings.MaxAnisotropy,
-																		vk::False,
-																		vk::CompareOp::eNever,
-																		textureSettings.MinLod,
-																		textureSettings.MaxLod,
-																		vk::BorderColor::eIntOpaqueBlack,
-																		vk::False);
-	}
 }

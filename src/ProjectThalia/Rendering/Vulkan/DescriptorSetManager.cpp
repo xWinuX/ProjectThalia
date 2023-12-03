@@ -1,5 +1,5 @@
 #include "ProjectThalia/Rendering/Vulkan/DescriptorSetManager.hpp"
-#include "ProjectThalia/Debug/Log.hpp"
+#include "ProjectThalia/Rendering/Vulkan/Buffer.hpp"
 #include "ProjectThalia/Rendering/Vulkan/Device.hpp"
 #include "ProjectThalia/Rendering/Vulkan/Utility.hpp"
 
@@ -28,13 +28,13 @@ namespace ProjectThalia::Rendering::Vulkan
 	DescriptorSetManager::DescriptorSetAllocation DescriptorSetManager::AllocateDescriptorSet()
 	{
 		// Find pool with available space
-		DescriptorPoolInstance validDescriptorPoolInstance;
-		uint32_t               descriptorPoolIndex = -1;
-		for (uint32_t i = 0; i < _descriptorPoolInstances.size(); ++i)
+		DescriptorPoolInstance* validDescriptorPoolInstance;
+		uint32_t                descriptorPoolIndex = -1;
+		for (uint32_t i = 0; i < _descriptorPoolInstances.size(); i++)
 		{
 			if (!_descriptorPoolInstances[i].Available.IsEmpty())
 			{
-				validDescriptorPoolInstance = _descriptorPoolInstances[i];
+				validDescriptorPoolInstance = &_descriptorPoolInstances[i];
 				descriptorPoolIndex         = i;
 				break;
 			}
@@ -44,50 +44,64 @@ namespace ProjectThalia::Rendering::Vulkan
 		if (descriptorPoolIndex == -1)
 		{
 			AllocateNewDescriptorPool();
-			validDescriptorPoolInstance = _descriptorPoolInstances.back();
+			validDescriptorPoolInstance = &_descriptorPoolInstances.back();
 			descriptorPoolIndex         = _descriptorPoolInstances.size() - 1;
 		}
 
 		// Allocate descriptor set
 		vk::DescriptorSet             descriptorSet;
-		vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo = vk::DescriptorSetAllocateInfo(validDescriptorPoolInstance.DescriptorPool,
+		vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo = vk::DescriptorSetAllocateInfo(validDescriptorPoolInstance->DescriptorPool,
 																								_descriptorSetLayout);
 
 		GetDevice()->GetVkDevice().allocateDescriptorSets(&descriptorSetAllocateInfo, &descriptorSet);
 
-		uint32_t insertionIndex                                    = validDescriptorPoolInstance.Available.Pop();
-		validDescriptorPoolInstance.DescriptorSets[insertionIndex] = descriptorSet;
+		uint32_t insertionIndex                                     = validDescriptorPoolInstance->Available.Pop();
+		validDescriptorPoolInstance->DescriptorSets[insertionIndex] = descriptorSet;
 
-		// Allocate shader buffers
-		std::vector<Buffer> shaderBuffers = std::vector<Buffer>();
-		std::vector<vk::DescriptorBufferInfo> bufferInfos = std::vector<vk::DescriptorBufferInfo>();
-		for (const vk::WriteDescriptorSet& writeDescriptorSet : _writeDescriptorSets)
+		// Create descriptor resources
+		std::vector<Buffer>                    shaderBuffers = std::vector<Buffer>();
+		std::vector<vk::DescriptorBufferInfo*> bufferInfos   = std::vector<vk::DescriptorBufferInfo*>();
+		std::vector<vk::DescriptorImageInfo*>  imageInfos    = std::vector<vk::DescriptorImageInfo*>();
+		Buffer                                 buffer;
+		for (vk::WriteDescriptorSet& writeDescriptorSet : _writeDescriptorSets)
 		{
+			writeDescriptorSet.dstSet = descriptorSet;
 			switch (writeDescriptorSet.descriptorType)
 			{
 				case vk::DescriptorType::eUniformBuffer:
-					shaderBuffers.push_back(Buffer::CreateUniformBuffer(GetDevice(), writeDescriptorSet.pBufferInfo->range));
-					bufferInfos.push_back(vk::DescriptorBufferInfo(*writeDescriptorSet.pBufferInfo));
-					bufferInfos.back().buffer = shaderBuffers.back().GetVkBuffer();
+					shaderBuffers.push_back(std::move(Buffer::CreateUniformBuffer(GetDevice(), writeDescriptorSet.pBufferInfo->range)));
+					bufferInfos.push_back(new vk::DescriptorBufferInfo(*writeDescriptorSet.pBufferInfo));
+					bufferInfos.back()->buffer = shaderBuffers.back().GetVkBuffer();
+					delete writeDescriptorSet.pBufferInfo;
+					writeDescriptorSet.pBufferInfo = bufferInfos.back();
 					break;
-
+				case vk::DescriptorType::eCombinedImageSampler:
+					imageInfos.push_back(new vk::DescriptorImageInfo(GetDevice()->GetDefaultSampler(),
+																	 GetDevice()->GetDefaultImage().GetView(),
+																	 GetDevice()->GetDefaultImage().GetLayout()));
+					delete writeDescriptorSet.pImageInfo;
+					writeDescriptorSet.pImageInfo = imageInfos.back();
+					break;
 			}
 		}
 
+		GetDevice()->GetVkDevice().updateDescriptorSets(_writeDescriptorSets, nullptr);
 
 		// Create allocation object
 		DescriptorSetAllocation descriptorSetAllocation;
-		descriptorSetAllocation.DescriptorSet        = validDescriptorPoolInstance.DescriptorSets[insertionIndex];
+		descriptorSetAllocation.DescriptorSet        = validDescriptorPoolInstance->DescriptorSets[insertionIndex];
 		descriptorSetAllocation._descriptorPoolIndex = descriptorPoolIndex;
 		descriptorSetAllocation._descriptorSetIndex  = insertionIndex;
-		descriptorSetAllocation.ShaderBuffers = std::move(shaderBuffers);
+		descriptorSetAllocation.ShaderBuffers        = std::move(shaderBuffers);
 
 		return descriptorSetAllocation;
 	}
 
 	void DescriptorSetManager::AllocateNewDescriptorPool()
 	{
-		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo({}, _maxSetsPerPool, _descriptorPoolSizes);
+		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+																							 _maxSetsPerPool,
+																							 _descriptorPoolSizes);
 
 		DescriptorPoolInstance descriptorPoolInstance = {GetDevice()->GetVkDevice().createDescriptorPool(descriptorPoolCreateInfo),
 														 std::vector<vk::DescriptorSet>(_maxSetsPerPool, VK_NULL_HANDLE),
@@ -97,14 +111,10 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	void DescriptorSetManager::Destroy()
 	{
+
 		Utility::DeleteDeviceHandle(GetDevice(), _descriptorSetLayout);
 		for (const DescriptorPoolInstance& descriptorPoolInstance : _descriptorPoolInstances)
 		{
-			for (const vk::DescriptorSet& descriptorSet : descriptorPoolInstance.DescriptorSets)
-			{
-				if (descriptorSet == VK_NULL_HANDLE) { continue; }
-				GetDevice()->GetVkDevice().freeDescriptorSets(descriptorPoolInstance.DescriptorPool, descriptorSet);
-			}
 			Utility::DeleteDeviceHandle(GetDevice(), descriptorPoolInstance.DescriptorPool);
 		}
 
@@ -120,8 +130,11 @@ namespace ProjectThalia::Rendering::Vulkan
 		DescriptorPoolInstance& descriptorPoolInstance = _descriptorPoolInstances[descriptorSetAllocation._descriptorPoolIndex];
 		GetDevice()->GetVkDevice().freeDescriptorSets(descriptorPoolInstance.DescriptorPool,
 													  descriptorPoolInstance.DescriptorSets[descriptorSetAllocation._descriptorSetIndex]);
+
 		descriptorPoolInstance.DescriptorSets[descriptorSetAllocation._descriptorSetIndex] = VK_NULL_HANDLE;
 		descriptorPoolInstance.Available.Push(descriptorSetAllocation._descriptorSetIndex);
+
+		for (Buffer& buffer : descriptorSetAllocation.ShaderBuffers) { buffer.Destroy(); }
 	}
 
 	const vk::DescriptorSetLayout& DescriptorSetManager::GetDescriptorSetLayout() const { return _descriptorSetLayout; }

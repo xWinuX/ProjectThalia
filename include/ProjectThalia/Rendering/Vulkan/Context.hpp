@@ -1,11 +1,10 @@
 #pragma once
 #include "Buffer.hpp"
+#include "DescriptorSetManager.hpp"
 #include "Device.hpp"
-#include "Image.hpp"
 #include "Instance.hpp"
 #include "PhysicalDevice.hpp"
 #include "ProjectThalia/Window.hpp"
-#include "Sampler.hpp"
 
 #include <SDL2/SDL.h>
 #include <optional>
@@ -26,11 +25,8 @@ namespace ProjectThalia::Rendering::Vulkan
 			static Device* GetDevice();
 
 		private:
-
 			struct UniformBufferObject
-			{
-
-			};
+			{};
 
 			struct CameraUBO
 			{
@@ -51,23 +47,12 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			static std::unique_ptr<Device> _device;
 
-
 			Instance       _instance;
 			PhysicalDevice _physicalDevice;
 
 			Buffer _quadModelBuffer;
 
-			Image _image;
-
-			Sampler _sampler;
-
-			Buffer               _uniformBuffer;
-			CameraUBO* _uniformBufferData;
-
-			std::vector<Buffer> _modelMatrixStorageBuffers = std::vector<Buffer>(Device::MAX_FRAMES_IN_FLIGHT);
-
-			//vk::DescriptorSetLayout _descriptorSetLayout;
-			DescriptorSetManager::DescriptorSetAllocation descriptorSetAllocation;
+			DescriptorSetManager::DescriptorSetAllocation _descriptorSetAllocation;
 
 			vk::CommandBuffer _commandBuffer;
 			vk::Semaphore     _imageAvailableSemaphore;
@@ -82,7 +67,6 @@ namespace ProjectThalia::Rendering::Vulkan
 			void CreateCommandBuffers();
 			void RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex);
 			void CreateSyncObjects();
-			void CreateDescriptorSets();
 			void InitializeImGui();
 	};
 }

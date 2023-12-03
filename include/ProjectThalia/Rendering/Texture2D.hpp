@@ -10,12 +10,12 @@ namespace ProjectThalia::Rendering
 	class Texture2D
 	{
 		public:
-			explicit Texture2D(std::string filePath, TextureSettings textureSettings);
+			explicit Texture2D(std::string filePath, const TextureSettings&& textureSettings);
 			~Texture2D();
 
 		private:
-			IO::ImageFile _imageFile;
-			Vulkan::Image _image;
-			TextureSettings _textureSettings;
+			IO::ImageFile          _imageFile;
+			Vulkan::Image          _image;
+			const TextureSettings& _textureSettings;
 	};
 }

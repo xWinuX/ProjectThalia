@@ -22,9 +22,7 @@ namespace ProjectThalia::IO
 		_totalImageSize = _width * _height * numChannels;
 	}
 
-	ImageFile::~ImageFile() { Destroy(); }
-
-	void ImageFile::Destroy()
+	ImageFile::~ImageFile()
 	{
 		if (_pixels) { stbi_image_free(_pixels); }
 	}

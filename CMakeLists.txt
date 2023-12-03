@@ -59,18 +59,15 @@ add_executable(${PROJECT_NAME}
         include/ProjectThalia/IO/ImageFile.hpp
         src/ProjectThalia/Rendering/Vulkan/Allocator.cpp
         include/ProjectThalia/Rendering/Vulkan/Allocator.hpp
-        src/ProjectThalia/Rendering/Material.cpp
-        include/ProjectThalia/Rendering/Material.hpp
+        #src/ProjectThalia/Rendering/Material.cpp
+        #include/ProjectThalia/Rendering/Material.hpp
         src/ProjectThalia/Rendering/Vulkan/DescriptorSetManager.cpp
         include/ProjectThalia/Rendering/Vulkan/DescriptorSetManager.hpp
-        src/ProjectThalia/Rendering/Vulkan/Sampler.cpp
-        include/ProjectThalia/Rendering/Vulkan/Sampler.hpp
-        include/ProjectThalia/Rendering/Vulkan/Sampler.hpp
         src/ProjectThalia/Input.cpp
         include/ProjectThalia/Input.hpp
         src/ProjectThalia/Rendering/Vulkan/DescriptorSetManager.cpp
-        include/ProjectThalia/Rendering/Texture2D.cpp
-        include/ProjectThalia/Rendering/Texture2D.hpp
+        #src/ProjectThalia/Rendering/Texture2D.cpp
+        #include/ProjectThalia/Rendering/Texture2D.hpp
         include/ProjectThalia/Rendering/TextureSettings.hpp
 )
 

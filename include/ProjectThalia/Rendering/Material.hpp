@@ -5,7 +5,6 @@
 
 namespace ProjectThalia::Rendering
 {
-	template<class T>
 	class Material
 	{
 
@@ -17,5 +16,10 @@ namespace ProjectThalia::Rendering
 
 	};
 
+	template<typename T>
+	class MaterialInstance : Material
+	{
+
+	};
 
 }

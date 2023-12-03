@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Allocator.hpp"
+#include "Image.hpp"
 #include "Instance.hpp"
 #include "PhysicalDevice.hpp"
 #include "Pipeline.hpp"
@@ -25,6 +26,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			void CreateRenderPass();
 			void CreatePipeline(const std::string& name, const std::vector<Pipeline::ShaderInfo>& shaderInfos);
 			void CreateGraphicsCommandPool();
+			void CreateDefaultResources();
 
 			void Destroy();
 
@@ -38,10 +40,11 @@ namespace ProjectThalia::Rendering::Vulkan
 			[[nodiscard]] const vk::PhysicalDeviceMemoryProperties& GetMemoryProperties() const;
 			[[nodiscard]] const vk::CommandPool&                    GetGraphicsCommandPool() const;
 			[[nodiscard]] Allocator&                                GetAllocator();
+			[[nodiscard]] const Image&                              GetDefaultImage() const;
+			[[nodiscard]] const vk::Sampler&                        GetDefaultSampler() const;
 
 			[[nodiscard]] int FindMemoryTypeIndex(const vk::MemoryRequirements&                memoryRequirements,
 												  const vk::Flags<vk::MemoryPropertyFlagBits>& memoryPropertyFlags) const;
-
 
 			[[nodiscard]] vk::CommandBuffer BeginOneshotCommands() const;
 			void                            EndOneshotCommands(vk::CommandBuffer commandBuffer) const;
@@ -54,6 +57,9 @@ namespace ProjectThalia::Rendering::Vulkan
 			Swapchain  _swapchain;
 			RenderPass _renderPass;
 			Pipeline   _pipeline;
+
+			Image       _defaultImages;
+			vk::Sampler _defaultSampler;
 
 			vk::CommandPool _graphicsCommandPool;
 

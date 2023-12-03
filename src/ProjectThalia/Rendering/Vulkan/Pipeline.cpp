@@ -1,4 +1,5 @@
 #include "ProjectThalia/Rendering/Vulkan/Pipeline.hpp"
+#include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
 #include "ProjectThalia/IO/Stream.hpp"
 #include "ProjectThalia/Rendering/Vulkan/Utility.hpp"
@@ -46,16 +47,20 @@ namespace ProjectThalia::Rendering::Vulkan
 					vk::DescriptorSetLayoutBinding layoutBinding = vk::DescriptorSetLayoutBinding(binding, type, 1, shaderInfos[i].shaderStage);
 					vk::DescriptorPoolSize         poolSize      = vk::DescriptorPoolSize(type, Device::MAX_FRAMES_IN_FLIGHT);
 
-
-					vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet(VK_NULL_HANDLE, binding, 0, type, nullptr, nullptr, nullptr);
-
-					const spirv_cross::SPIRType& resourceType = spirvCompiler.get_type(resource.type_id);
+					vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet(VK_NULL_HANDLE, binding, 0,1, type, nullptr, nullptr, nullptr);
+					const spirv_cross::SPIRType& resourceType = spirvCompiler.get_type(resource.base_type_id);
 
 					switch (type)
 					{
 						case vk::DescriptorType::eUniformBuffer:
 						{
-							vk::DescriptorBufferInfo* descriptorBufferInfo = new vk::DescriptorBufferInfo(VK_NULL_HANDLE, 0, resourceType.width / 8);
+							vk::DeviceSize uniformSize = 0;
+							for (const auto& memberTypeID : resourceType.member_types)
+							{
+								const spirv_cross::SPIRType& memberType = spirvCompiler.get_type(memberTypeID);
+								uniformSize += memberType.width;
+							}
+							vk::DescriptorBufferInfo* descriptorBufferInfo = new vk::DescriptorBufferInfo(VK_NULL_HANDLE, 0, uniformSize / 8);
 							writeDescriptorSet.pBufferInfo                 = descriptorBufferInfo;
 							break;
 						}
@@ -70,6 +75,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 					descriptorLayoutBindings.push_back(layoutBinding);
 					descriptorPoolSizes.push_back(poolSize);
+					writeDescriptorSets.push_back(writeDescriptorSet);
 				}
 			}
 
@@ -118,7 +124,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			}
 		}
 
-		_descriptorSetManager = DescriptorSetManager(GetDevice(), descriptorLayoutBindings, descriptorPoolSizes, {}, 10);
+		_descriptorSetManager = DescriptorSetManager(GetDevice(), descriptorLayoutBindings, descriptorPoolSizes, writeDescriptorSets, 10);
 
 		std::vector<vk::DynamicState> dynamicStates = {
 				vk::DynamicState::eViewport,

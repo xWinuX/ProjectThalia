@@ -1,14 +1,15 @@
 #pragma once
 
 #include "DeviceObject.hpp"
-#include "vulkan/vulkan.hpp"
 
-#include "Buffer.hpp"
+#include "vulkan/vulkan.hpp"
 #include "stack"
 
 namespace ProjectThalia::Rendering::Vulkan
 {
 	class Device;
+
+	class Buffer;
 
 	class DescriptorSetManager final : DeviceObject
 	{
@@ -43,7 +44,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 				public:
 					vk::DescriptorSet   DescriptorSet = VK_NULL_HANDLE;
-					std::vector<Buffer> ShaderBuffers = std::vector<Buffer>();
+					std::vector<Buffer> ShaderBuffers;
 
 				private:
 					uint32_t _descriptorPoolIndex = -1;
@@ -71,7 +72,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			std::vector<DescriptorPoolInstance> _descriptorPoolInstances;
 			std::vector<vk::DescriptorPoolSize> _descriptorPoolSizes;
 			std::vector<vk::WriteDescriptorSet> _writeDescriptorSets;
-			uint32_t                            _maxSetsPerPool;
+			uint32_t                            _maxSetsPerPool = 10;
 			void                                AllocateNewDescriptorPool();
 	};
 }

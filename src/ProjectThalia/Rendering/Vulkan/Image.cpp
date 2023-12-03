@@ -1,5 +1,4 @@
 #include "ProjectThalia/Rendering/Vulkan/Image.hpp"
-#include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
 #include "ProjectThalia/Rendering/Vulkan/Buffer.hpp"
 #include "ProjectThalia/Rendering/Vulkan/Device.hpp"
@@ -7,9 +6,8 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	Image::Image(Device* device, const char* pixels, vk::DeviceSize pixelsSizeInBytes, vk::Extent3D extend, const Sampler* sampler) :
-		DeviceObject(device),
-		_sampler(sampler)
+	Image::Image(Device* device, const unsigned char* pixels, vk::DeviceSize pixelsSizeInBytes, vk::Extent3D extend) :
+		DeviceObject(device)
 	{
 		vk::ImageCreateInfo imageCreateInfo = vk::ImageCreateInfo({},
 																  vk::ImageType::e2D,
@@ -29,8 +27,8 @@ namespace ProjectThalia::Rendering::Vulkan
 		_imageAllocation = GetDevice()->GetAllocator().CreateImage(imageCreateInfo, {Allocator::GpuOnly});
 
 		// Copy pixel data to image
-		Buffer buffer = Buffer::CreateTransferBuffer(device, pixels, pixelsSizeInBytes);
-		buffer.CopyData(pixels, pixelsSizeInBytes, 0);
+		Buffer transferBuffer = Buffer::CreateTransferBuffer(device, pixels, pixelsSizeInBytes);
+		transferBuffer.CopyData(pixels, pixelsSizeInBytes, 0);
 
 		vk::CommandBuffer commandBuffer = GetDevice()->BeginOneshotCommands();
 
@@ -39,13 +37,13 @@ namespace ProjectThalia::Rendering::Vulkan
 		vk::ImageSubresourceLayers imageSubresourceLayers = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
 		vk::BufferImageCopy        bufferImageCopy        = vk::BufferImageCopy(0, 0, 0, imageSubresourceLayers, {0, 0, 0}, extend);
 
-		commandBuffer.copyBufferToImage(buffer.GetVkBuffer(), GetVkImage(), _layout, bufferImageCopy);
+		commandBuffer.copyBufferToImage(transferBuffer.GetVkBuffer(), GetVkImage(), _layout, bufferImageCopy);
 
 		TransitionLayout(commandBuffer, vk::ImageLayout::eShaderReadOnlyOptimal);
 
 		GetDevice()->EndOneshotCommands(commandBuffer);
 
-		buffer.Destroy();
+		transferBuffer.Destroy();
 
 		// Create image view
 		vk::ImageSubresourceRange imageSubresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
@@ -103,7 +101,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	void Image::Destroy()
 	{
-		GetDevice()->GetVkDevice().destroyImageView(_view);
+		Utility::DeleteDeviceHandle(GetDevice(), _view);
 		GetDevice()->GetAllocator().DestroyImage(_imageAllocation);
 	}
 

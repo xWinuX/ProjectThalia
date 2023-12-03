@@ -1,14 +1,14 @@
 #include "ProjectThalia/Rendering/Vulkan/Context.hpp"
+#include "ProjectThalia/Rendering/Vulkan/Device.hpp"
 
 #include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
-#include "ProjectThalia/IO/ImageFile.hpp"
 #include "ProjectThalia/IO/Stream.hpp"
 #include "ProjectThalia/Rendering/Vertex.hpp"
 
+
 #include <SDL2/SDL_vulkan.h>
 #include <chrono>
-#include <filesystem>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <imgui_impl_sdl2.h>
@@ -17,6 +17,8 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
+	std::unique_ptr<Device> Context::_device;
+
 	void Context::Initialize(Window* window)
 	{
 		_window = window; // TODO: Move to renderer
@@ -36,28 +38,20 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		CreateCommandBuffers();
 
-		IO::ImageFile textureImage = IO::ImageFile("res/textures/floppa.png", IO::ImageFile::RGBA);
-
-		_sampler = Sampler(_device.get(), {});
-
-		_image = Image(_device.get(),
-					   reinterpret_cast<const char*>(textureImage.GetPixels()),
-					   textureImage.GetTotalImageSize(),
-					   {static_cast<uint32_t>(textureImage.GetWidth()), static_cast<uint32_t>(textureImage.GetHeight()), 1},
-					   &_sampler);
-
 		_device->CreatePipeline("main",
 								{{"res/shaders/Debug.vert.spv", vk::ShaderStageFlagBits::eVertex},
 								 {"res/shaders/Debug.frag.spv", vk::ShaderStageFlagBits::eFragment}});
 
-		CreateDescriptorSets();
+		_device->CreateDefaultResources();
+
+		_descriptorSetAllocation = _device->GetPipeline().GetDescriptorSetManager().AllocateDescriptorSet();
 
 		CreateSyncObjects();
 
-		const std::vector<VertexPosition2DColorUV> vertices = {{{-0.25f, 0.25f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},  // Top Left
-															   {{0.25f, 0.25f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},   // Top Right
-															   {{-0.25f, -0.25f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Left
-															   {{0.25f, -0.25f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}}; // Bottom Right
+		const std::vector<VertexPosition2DColorUV> vertices = {{{-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},  // Top Left
+															   {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},   // Top Right
+															   {{-0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Left
+															   {{0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}}; // Bottom Right
 
 		const std::vector<uint16_t> indices = {0, 1, 2, 2, 1, 3};
 
@@ -76,37 +70,6 @@ namespace ProjectThalia::Rendering::Vulkan
 		_window->OnResize.Add([this](int width, int height) {
 			_frameBufferResized = true;
 		});
-	}
-
-	void Context::CreateDescriptorSets()
-	{
-		descriptorSetAllocation = _device->GetPipeline().GetDescriptorSetManager().AllocateDescriptorSet();
-
-
-		_uniformBuffer     = Buffer::CreateUniformBuffer<CameraUBO>(_device.get(), nullptr);
-		_uniformBufferData = _uniformBuffer.GetMappedData<CameraUBO>();
-
-		vk::DescriptorBufferInfo uniformDescriptorBufferInfo = vk::DescriptorBufferInfo(_uniformBuffer.GetVkBuffer(), 0, sizeof(CameraUBO));
-		vk::DescriptorImageInfo  descriptorImageInfo         = vk::DescriptorImageInfo(_sampler.GetVkSampler(), _image.GetView(), _image.GetLayout());
-
-		std::vector<vk::WriteDescriptorSet> writeDescriptorSets = {
-				vk::WriteDescriptorSet(descriptorSetAllocation.DescriptorSet,
-									   0,
-									   0,
-									   vk::DescriptorType::eUniformBuffer,
-									   nullptr,
-									   uniformDescriptorBufferInfo,
-									   nullptr),
-				vk::WriteDescriptorSet(descriptorSetAllocation.DescriptorSet,
-									   1,
-									   0,
-									   vk::DescriptorType::eCombinedImageSampler,
-									   descriptorImageInfo,
-									   nullptr,
-									   nullptr),
-		};
-
-		_device->GetVkDevice().updateDescriptorSets(writeDescriptorSets, nullptr);
 	}
 
 	void Context::CreateSyncObjects()
@@ -157,7 +120,7 @@ namespace ProjectThalia::Rendering::Vulkan
 										 _device->GetPipeline().GetLayout(),
 										 0,
 										 1,
-										 &descriptorSetAllocation.DescriptorSet,
+										 &_descriptorSetAllocation.DescriptorSet,
 										 0,
 										 nullptr);
 		commandBuffer.drawIndexed(_quadModelBuffer.GetBufferElementNum(1), 1, 0, 0, 0);
@@ -205,13 +168,15 @@ namespace ProjectThalia::Rendering::Vulkan
 		auto  currentTime = std::chrono::high_resolution_clock::now();
 		float time        = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-		_uniformBufferData->model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		_uniformBufferData->view  = glm::lookAt(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		_uniformBufferData->proj  = glm::perspective(glm::radians(45.0f),
-                                                    static_cast<float>(_device->GetSwapchain().GetExtend().width) /
-                                                            -static_cast<float>(_device->GetSwapchain().GetExtend().height),
-                                                    0.1f,
-                                                    10.0f);
+		CameraUBO* cameraUbo = _descriptorSetAllocation.ShaderBuffers[0].GetMappedData<CameraUBO>();
+
+		cameraUbo->model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		cameraUbo->view  = glm::lookAt(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		cameraUbo->proj  = glm::perspective(glm::radians(45.0f),
+                                           static_cast<float>(_device->GetSwapchain().GetExtend().width) /
+                                                   -static_cast<float>(_device->GetSwapchain().GetExtend().height),
+                                           0.1f,
+                                           10.0f);
 
 		_commandBuffer.reset({});
 		RecordCommandBuffer(_commandBuffer, imageIndexResult.value);
@@ -247,11 +212,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		_quadModelBuffer.Destroy();
 
-		_uniformBuffer.Destroy();
-
-		_image.Destroy();
-
-		_sampler.Destroy();
+		_device->GetPipeline().GetDescriptorSetManager().DeallocateDescriptorSet(_descriptorSetAllocation);
 
 		_device->GetVkDevice().destroy(_imGuiDescriptorPool);
 		ImGui_ImplVulkan_Shutdown();

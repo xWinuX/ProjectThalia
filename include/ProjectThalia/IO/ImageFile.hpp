@@ -20,8 +20,6 @@ namespace ProjectThalia::IO
 			explicit ImageFile(std::string filePath, ChannelSetup channels = ChannelSetup::RGB);
 			~ImageFile();
 
-			void Destroy();
-
 			[[nodiscard]] const std::string& GetFilePath() const;
 			[[nodiscard]] const stbi_uc*     GetPixels() const;
 			[[nodiscard]] int                GetWidth() const;

@@ -1,6 +1,7 @@
 #include "ProjectThalia/Rendering/Vulkan/Device.hpp"
 #include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
+#include "ProjectThalia/Rendering/TextureSettings.hpp"
 #include <set>
 
 namespace ProjectThalia::Rendering::Vulkan
@@ -38,6 +39,35 @@ namespace ProjectThalia::Rendering::Vulkan
 		_memoryProperties = _physicalDevice.GetVkPhysicalDevice().getMemoryProperties();
 		_graphicsQueue    = _vkDevice.getQueue(queueFamilyIndices.GraphicsFamily.value(), 0);
 		_presentQueue     = _vkDevice.getQueue(queueFamilyIndices.PresentFamily.value(), 0);
+	}
+
+	void Device::CreateDefaultResources()
+	{
+		// Samplers
+		TextureSettings       textureSettings {};
+		vk::SamplerCreateInfo samplerCreateInfo = vk::SamplerCreateInfo({},
+																		static_cast<vk::Filter>(textureSettings.MagnificationFilter),
+																		static_cast<vk::Filter>(textureSettings.MinificationFilter),
+																		static_cast<vk::SamplerMipmapMode>(textureSettings.MipmapMode),
+																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.x),
+																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.y),
+																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.z),
+																		textureSettings.MipLodBias,
+																		textureSettings.MaxAnisotropy > 0.0f,
+																		textureSettings.MaxAnisotropy,
+																		vk::False,
+																		vk::CompareOp::eNever,
+																		textureSettings.MinLod,
+																		textureSettings.MaxLod,
+																		vk::BorderColor::eIntOpaqueBlack,
+																		vk::False);
+
+
+		_defaultSampler = GetVkDevice().createSampler(samplerCreateInfo);
+
+		// Image
+		const unsigned char fuchsia[] = {0xFF, 0x00, 0xFF};
+		_defaultImages                = Image(this, std::begin(fuchsia), 4, {1, 1, 1});
 	}
 
 	void Device::CreateRenderPass() { _renderPass = RenderPass(this); }
@@ -85,13 +115,23 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	const vk::PhysicalDeviceMemoryProperties& Device::GetMemoryProperties() const { return _memoryProperties; }
 
+	const Image& Device::GetDefaultImage() const { return _defaultImages; }
+
 	void Device::Destroy()
 	{
 		_swapchain.Destroy();
 		_renderPass.Destroy();
 		_pipeline.Destroy();
+
 		_vkDevice.destroy(_graphicsCommandPool);
+
+		_defaultImages.Destroy();
+
+		_vkDevice.destroy(_defaultSampler);
+
 		_allocator.Destroy();
+
+
 		_vkDevice.destroy();
 	}
 
@@ -138,5 +178,6 @@ namespace ProjectThalia::Rendering::Vulkan
 		_vkDevice.freeCommandBuffers(_graphicsCommandPool, 1, &commandBuffer);
 	}
 
+	const vk::Sampler& Device::GetDefaultSampler() const { return _defaultSampler; }
 
 }
