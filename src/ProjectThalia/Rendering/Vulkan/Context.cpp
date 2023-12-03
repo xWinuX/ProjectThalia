@@ -171,7 +171,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		CameraUBO* cameraUbo = _descriptorSetAllocation.ShaderBuffers[0].GetMappedData<CameraUBO>();
 
 		cameraUbo->model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		cameraUbo->view  = glm::lookAt(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		cameraUbo->view  = glm::lookAt(glm::vec3(0.0f, 0.0f, -2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		cameraUbo->proj  = glm::perspective(glm::radians(45.0f),
                                            static_cast<float>(_device->GetSwapchain().GetExtend().width) /
                                                    -static_cast<float>(_device->GetSwapchain().GetExtend().height),

@@ -54,13 +54,9 @@ namespace ProjectThalia::Rendering::Vulkan
 					{
 						case vk::DescriptorType::eUniformBuffer:
 						{
-							vk::DeviceSize uniformSize = 0;
-							for (const auto& memberTypeID : resourceType.member_types)
-							{
-								const spirv_cross::SPIRType& memberType = spirvCompiler.get_type(memberTypeID);
-								uniformSize += memberType.width;
-							}
-							vk::DescriptorBufferInfo* descriptorBufferInfo = new vk::DescriptorBufferInfo(VK_NULL_HANDLE, 0, uniformSize / 8);
+							vk::DeviceSize uniformSize = spirvCompiler.get_declared_struct_size(resourceType);
+
+							vk::DescriptorBufferInfo* descriptorBufferInfo = new vk::DescriptorBufferInfo(VK_NULL_HANDLE, 0, uniformSize);
 							writeDescriptorSet.pBufferInfo                 = descriptorBufferInfo;
 							break;
 						}
