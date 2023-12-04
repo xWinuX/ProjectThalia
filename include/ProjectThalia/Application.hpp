@@ -13,6 +13,7 @@ namespace ProjectThalia
 	{
 		public:
 			Application() = default;
+			~Application();
 			void Run();
 
 
@@ -26,15 +27,15 @@ namespace ProjectThalia
 
 			void Initialize();
 			void UserInitialize();
-			void Destroy();
-
-			Rendering::Shader*   _shader;
-			Rendering::Material* _material;
-			Rendering::Model*    _model;
 
 			Event<int>          _event;
 			Window              _window;
 			Rendering::Renderer _renderer;
-			Rendering::Material* _material2;
+
+			std::unique_ptr<Rendering::Shader>   _shader;
+			std::unique_ptr<Rendering::Material> _material;
+			std::unique_ptr<Rendering::Material> _material2;
+
+			std::unique_ptr<Rendering::Model>    _model;
 	};
 }

@@ -13,10 +13,10 @@ namespace ProjectThalia::Rendering
 	{
 		public:
 			Renderer() = default;
+			~Renderer();
 
 			void Initialize(Window* window);
 			void Render();
-			void Destroy();
 
 			void SubmitModel(const Material* material, const Model* model);
 

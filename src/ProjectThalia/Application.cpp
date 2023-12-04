@@ -19,6 +19,26 @@
 
 namespace ProjectThalia
 {
+	void Application::Initialize()
+	{
+		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0)
+		{
+			ErrorHandler::ThrowRuntimeError(std::format("SDL could not initialize! SDL_Error: {0}\n", SDL_GetError()));
+		}
+
+		_window.Open();
+		_renderer.Initialize(&_window);
+
+		UserInitialize();
+	}
+
+	Application::~Application()
+	{
+		Rendering::Vulkan::Context::WaitForIdle();
+
+		this->_window.Close();
+	}
+
 	void Application::Run()
 	{
 		Initialize();
@@ -108,53 +128,20 @@ namespace ProjectThalia
 
 			if (!_window.IsMinimized())
 			{
-				_renderer.SubmitModel(_material, _model);
-				_renderer.SubmitModel(_material2, _model);
+				_renderer.SubmitModel(_material.get(), _model.get());
+				_renderer.SubmitModel(_material2.get(), _model.get());
 				_renderer.Render();
 			}
 		}
-
-		Destroy();
-	}
-
-	void Application::Destroy()
-	{
-		Rendering::Vulkan::Context::WaitForIdle();
-
-		delete _material;
-		delete _material2;
-		delete _shader;
-		delete _model;
-
-		this->_renderer.Destroy();
-		this->_window.Close();
-	}
-
-	void Application::Initialize()
-	{
-		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0)
-		{
-			ErrorHandler::ThrowRuntimeError(std::format("SDL could not initialize! SDL_Error: {0}\n", SDL_GetError()));
-		}
-
-		_window.Open();
-		_renderer.Initialize(&_window);
-
-		UserInitialize();
 	}
 
 	void Application::UserInitialize()
 	{
-		LOG("User init begin");
+		_shader = std::make_unique<Rendering::Shader>("res/shaders/debug");
 
-		LOG("before shader");
-		_shader = new Rendering::Shader("res/shaders/debug");
+		_material  = std::make_unique<Rendering::Material>(_shader.get());
+		_material2 = std::make_unique<Rendering::Material>(_shader.get());
 
-		LOG("before material");
-		_material  = new Rendering::Material(_shader);
-		_material2 = new Rendering::Material(_shader);
-
-		LOG("vectoreooasdj");
 		const std::vector<Rendering::VertexPosition2DColorUV> vertices = {{{-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},  // Top Left
 																		  {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},   // Top Right
 																		  {{-0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Left
@@ -162,9 +149,6 @@ namespace ProjectThalia
 
 		const std::vector<uint16_t> indices = {0, 1, 2, 2, 1, 3};
 
-		LOG("before model");
-		_model = new Rendering::Model(vertices, indices);
-		LOG("User init end");
+		_model = std::make_unique<Rendering::Model>(vertices, indices);
 	}
-
 }

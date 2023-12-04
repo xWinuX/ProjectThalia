@@ -117,6 +117,8 @@ namespace ProjectThalia::Rendering
 		for (auto& [material, models] : _modelsToRender) { models.Clear(); }
 	}
 
+	Renderer::~Renderer() { _vulkanContext.Destroy(); }
+
 	void Renderer::Initialize(Window* window)
 	{
 		_vulkanContext.Initialize(window);
@@ -127,8 +129,6 @@ namespace ProjectThalia::Rendering
 			_frameBufferResized = true;
 		});
 	}
-
-	void Renderer::Destroy() { _vulkanContext.Destroy(); }
 
 	void Renderer::SubmitModel(const Material* material, const Model* model)
 	{
