@@ -24,7 +24,6 @@ namespace ProjectThalia::Rendering::Vulkan
 			void CreateAllocator(const Instance& instance);
 			void CreateSwapchain(vk::SurfaceKHR surfaceKhr, glm::ivec2 size);
 			void CreateRenderPass();
-			void CreatePipeline(const std::string& name, const std::vector<Pipeline::ShaderInfo>& shaderInfos);
 			void CreateGraphicsCommandPool();
 			void CreateDefaultResources();
 
@@ -32,7 +31,6 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			[[nodiscard]] const Swapchain&                          GetSwapchain() const;
 			[[nodiscard]] const RenderPass&                         GetRenderPass() const;
-			[[nodiscard]] Pipeline&                                 GetPipeline();
 			[[nodiscard]] const vk::Device&                         GetVkDevice() const;
 			[[nodiscard]] const PhysicalDevice&                     GetPhysicalDevice() const;
 			[[nodiscard]] const vk::Queue&                          GetGraphicsQueue() const;
@@ -56,7 +54,6 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			Swapchain  _swapchain;
 			RenderPass _renderPass;
-			Pipeline   _pipeline;
 
 			Image       _defaultImages;
 			vk::Sampler _defaultSampler;

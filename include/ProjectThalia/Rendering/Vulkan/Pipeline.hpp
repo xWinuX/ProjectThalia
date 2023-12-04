@@ -13,11 +13,17 @@ namespace ProjectThalia::Rendering::Vulkan
 	class Pipeline final : DeviceObject
 	{
 		public:
+			enum class ShaderType
+			{
+				Vertex   = VK_SHADER_STAGE_VERTEX_BIT,
+				Fragment = VK_SHADER_STAGE_FRAGMENT_BIT
+			};
+
 			struct ShaderInfo
 			{
 				public:
-					std::string             path;
-					vk::ShaderStageFlagBits shaderStage;
+					std::string path;
+					ShaderType  shaderStage;
 			};
 
 		public:

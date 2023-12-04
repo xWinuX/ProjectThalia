@@ -53,7 +53,12 @@ namespace ProjectThalia::Rendering::Vulkan
 		vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo = vk::DescriptorSetAllocateInfo(validDescriptorPoolInstance->DescriptorPool,
 																								_descriptorSetLayout);
 
+
+		LOG("ds index {0}", descriptorPoolIndex);
+		LOG("before ds allocate");
 		GetDevice()->GetVkDevice().allocateDescriptorSets(&descriptorSetAllocateInfo, &descriptorSet);
+		LOG("after ds allocate");
+
 
 		uint32_t insertionIndex                                     = validDescriptorPoolInstance->Available.Pop();
 		validDescriptorPoolInstance->DescriptorSets[insertionIndex] = descriptorSet;
@@ -103,9 +108,15 @@ namespace ProjectThalia::Rendering::Vulkan
 																							 _maxSetsPerPool,
 																							 _descriptorPoolSizes);
 
+		AvailableStack<uint32_t> availableStack = AvailableStack<uint32_t>(_maxSetsPerPool);
+
+		// Fill from 0 to size - 1
+		std::iota(availableStack.begin(), availableStack.end(), 0);
+
 		DescriptorPoolInstance descriptorPoolInstance = {GetDevice()->GetVkDevice().createDescriptorPool(descriptorPoolCreateInfo),
 														 std::vector<vk::DescriptorSet>(_maxSetsPerPool, VK_NULL_HANDLE),
-														 AvailableStack(_maxSetsPerPool)};
+														 std::move(availableStack)};
+
 		_descriptorPoolInstances.push_back(std::move(descriptorPoolInstance));
 	}
 
@@ -139,17 +150,4 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	const vk::DescriptorSetLayout& DescriptorSetManager::GetDescriptorSetLayout() const { return _descriptorSetLayout; }
 
-	DescriptorSetManager::AvailableStack::AvailableStack(uint32_t size) :
-		_vector(std::vector<uint32_t>(size, 0)),
-		_cursor(size - 1)
-	{
-		// Fill vector with numbers ascending from 0 to vector size - 1
-		std::iota(std::begin(_vector), std::end(_vector), 0);
-	}
-
-	uint32_t DescriptorSetManager::AvailableStack::Pop() { return _vector[_cursor--]; }
-
-	void DescriptorSetManager::AvailableStack::Push(uint32_t value) { _vector[++_cursor] = value; }
-
-	bool DescriptorSetManager::AvailableStack::IsEmpty() const { return _cursor == 0; }
 }

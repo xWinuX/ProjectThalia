@@ -1,6 +1,11 @@
 #pragma once
 
-#include "ProjectThalia/Rendering/Vulkan/Context.hpp"
+#include "Material.hpp"
+#include "Model.hpp"
+
+#include "Vulkan/Context.hpp"
+
+#include "ProjectThalia/DataStructures.hpp"
 
 namespace ProjectThalia::Rendering
 {
@@ -10,10 +15,17 @@ namespace ProjectThalia::Rendering
 			Renderer() = default;
 
 			void Initialize(Window* window);
-			void DrawFrame();
+			void Render();
 			void Destroy();
 
+			void SubmitModel(const Material* material, const Model* model);
+
 		private:
+			Window*         _window;
 			Vulkan::Context _vulkanContext;
+
+			std::unordered_map<const Material*, IncrementVector<const Model*>> _modelsToRender;
+
+			bool _frameBufferResized = false;
 	};
 }

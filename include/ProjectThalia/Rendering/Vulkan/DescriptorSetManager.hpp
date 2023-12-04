@@ -1,9 +1,13 @@
 #pragma once
 
+#include "Buffer.hpp"
 #include "DeviceObject.hpp"
 
+#include "ProjectThalia/DataStructures.hpp"
 #include "vulkan/vulkan.hpp"
-#include "stack"
+
+#include <stack>
+#include <vector>
 
 namespace ProjectThalia::Rendering::Vulkan
 {
@@ -14,28 +18,12 @@ namespace ProjectThalia::Rendering::Vulkan
 	class DescriptorSetManager final : DeviceObject
 	{
 		public:
-			class AvailableStack
-			{
-				public:
-					AvailableStack() = default;
-					explicit AvailableStack(uint32_t size);
-
-					uint32_t Pop();
-					void     Push(uint32_t value);
-
-					[[nodiscard]] bool IsEmpty() const;
-
-				private:
-					std::vector<uint32_t> _vector;
-					uint32_t              _cursor = -1;
-			};
-
 			struct DescriptorPoolInstance
 			{
 				public:
 					vk::DescriptorPool             DescriptorPool;
 					std::vector<vk::DescriptorSet> DescriptorSets;
-					AvailableStack                 Available;
+					AvailableStack<uint32_t>       Available;
 			};
 
 			struct DescriptorSetAllocation
@@ -44,7 +32,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 				public:
 					vk::DescriptorSet   DescriptorSet = VK_NULL_HANDLE;
-					std::vector<Buffer> ShaderBuffers;
+					std::vector<Buffer> ShaderBuffers = std::vector<Buffer>();
 
 				private:
 					uint32_t _descriptorPoolIndex = -1;

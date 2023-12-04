@@ -44,30 +44,34 @@ namespace ProjectThalia::Rendering::Vulkan
 				{
 					uint32_t binding = spirvCompiler.get_decoration(resource.id, spv::DecorationBinding);
 
-					vk::DescriptorSetLayoutBinding layoutBinding = vk::DescriptorSetLayoutBinding(binding, type, 1, shaderInfos[i].shaderStage);
+					vk::DescriptorSetLayoutBinding layoutBinding = vk::DescriptorSetLayoutBinding(binding,
+																								  type,
+																								  1,
+																								  static_cast<vk::ShaderStageFlagBits>(
+																										  shaderInfos[i].shaderStage));
 					vk::DescriptorPoolSize         poolSize      = vk::DescriptorPoolSize(type, Device::MAX_FRAMES_IN_FLIGHT);
 
-					vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet(VK_NULL_HANDLE, binding, 0,1, type, nullptr, nullptr, nullptr);
-					const spirv_cross::SPIRType& resourceType = spirvCompiler.get_type(resource.base_type_id);
+					vk::WriteDescriptorSet       writeDescriptorSet = vk::WriteDescriptorSet(VK_NULL_HANDLE, binding, 0, 1, type, nullptr, nullptr, nullptr);
+					const spirv_cross::SPIRType& resourceType       = spirvCompiler.get_type(resource.base_type_id);
 
 					switch (type)
 					{
 						case vk::DescriptorType::eUniformBuffer:
 						{
 							vk::DeviceSize uniformSize = spirvCompiler.get_declared_struct_size(resourceType);
-
+							LOG("uniformsize: {0}", uniformSize);
 							vk::DescriptorBufferInfo* descriptorBufferInfo = new vk::DescriptorBufferInfo(VK_NULL_HANDLE, 0, uniformSize);
 							writeDescriptorSet.pBufferInfo                 = descriptorBufferInfo;
 							break;
 						}
 						case vk::DescriptorType::eCombinedImageSampler:
 						{
+							LOG("sampler");
 							vk::DescriptorImageInfo* descriptorImageInfo = new vk::DescriptorImageInfo({}, {}, {});
 							writeDescriptorSet.pImageInfo                = descriptorImageInfo;
 							break;
 						}
 					}
-
 
 					descriptorLayoutBindings.push_back(layoutBinding);
 					descriptorPoolSizes.push_back(poolSize);
@@ -83,14 +87,15 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			// Create shader stage info
 			vk::PipelineShaderStageCreateInfo shaderStageCreateInfo = vk::PipelineShaderStageCreateInfo({},
-																										shaderInfos[i].shaderStage,
+																										static_cast<vk::ShaderStageFlagBits>(
+																												shaderInfos[i].shaderStage),
 																										_shaderModules[i],
 																										name.c_str());
 
 			_shaderStages[i] = shaderStageCreateInfo;
 
 			// Vertex shader specific init
-			if (shaderInfos[i].shaderStage == vk::ShaderStageFlagBits::eVertex)
+			if (shaderInfos[i].shaderStage == ShaderType::Vertex)
 			{
 				// Setup vertex input attributes
 				uint32_t offset = 0;

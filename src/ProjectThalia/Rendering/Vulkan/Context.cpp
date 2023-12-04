@@ -38,38 +38,11 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		CreateCommandBuffers();
 
-		_device->CreatePipeline("main",
-								{{"res/shaders/Debug.vert.spv", vk::ShaderStageFlagBits::eVertex},
-								 {"res/shaders/Debug.frag.spv", vk::ShaderStageFlagBits::eFragment}});
-
 		_device->CreateDefaultResources();
-
-		_descriptorSetAllocation = _device->GetPipeline().GetDescriptorSetManager().AllocateDescriptorSet();
 
 		CreateSyncObjects();
 
-		const std::vector<VertexPosition2DColorUV> vertices = {{{-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},  // Top Left
-															   {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},   // Top Right
-															   {{-0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Left
-															   {{0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}}; // Bottom Right
-
-		const std::vector<uint16_t> indices = {0, 1, 2, 2, 1, 3};
-
-		_quadModelBuffer = Buffer::CreateStagedModelBuffer(_device.get(), vertices, indices);
-
-
-		//TransformStorageBuffer transformStorageBuffer {};
-		/*
-        for (int i = 0; i < Device::MAX_FRAMES_IN_FLIGHT; ++i)
-        {
-            _modelMatrixStorageBuffers[i] = Buffer::CreateStorageBuffer(_device.get(), &transformStorageBuffer);
-        }*/
-
 		InitializeImGui();
-
-		_window->OnResize.Add([this](int width, int height) {
-			_frameBufferResized = true;
-		});
 	}
 
 	void Context::CreateSyncObjects()
@@ -82,55 +55,6 @@ namespace ProjectThalia::Rendering::Vulkan
 		_inFlightFence           = _device->GetVkDevice().createFence(fenceCreateInfo);
 	}
 
-	void Context::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex)
-	{
-		vk::CommandBufferBeginInfo commandBufferBeginInfo = vk::CommandBufferBeginInfo({}, nullptr);
-
-		commandBuffer.begin(commandBufferBeginInfo);
-
-		vk::ClearValue          clearColor          = vk::ClearValue({0.0f, 0.2f, 0.5f, 1.0f});
-		vk::RenderPassBeginInfo renderPassBeginInfo = vk::RenderPassBeginInfo(_device->GetRenderPass().GetVkRenderPass(),
-																			  _device->GetSwapchain().GetFrameBuffers()[imageIndex],
-																			  {{0, 0}, _device->GetSwapchain().GetExtend()},
-																			  1,
-																			  &clearColor);
-
-		commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
-
-		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, _device->GetPipeline().GetVkPipeline());
-
-		vk::Buffer     vertexBuffers[] = {_quadModelBuffer.GetVkBuffer()};
-		vk::DeviceSize offsets[]       = {0};
-
-		commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
-		commandBuffer.bindIndexBuffer(_quadModelBuffer.GetVkBuffer(), _quadModelBuffer.GetSizeInBytes(0), vk::IndexType::eUint16);
-
-		vk::Viewport viewport = vk::Viewport(0,
-											 static_cast<float>(_device->GetSwapchain().GetExtend().height),
-											 static_cast<float>(_device->GetSwapchain().GetExtend().width),
-											 -static_cast<float>(_device->GetSwapchain().GetExtend().height),
-											 0.0f,
-											 1.0f);
-		commandBuffer.setViewport(0, 1, &viewport);
-
-		vk::Rect2D scissor = vk::Rect2D({0, 0}, _device->GetSwapchain().GetExtend());
-		commandBuffer.setScissor(0, 1, &scissor);
-
-		commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-										 _device->GetPipeline().GetLayout(),
-										 0,
-										 1,
-										 &_descriptorSetAllocation.DescriptorSet,
-										 0,
-										 nullptr);
-		commandBuffer.drawIndexed(_quadModelBuffer.GetBufferElementNum(1), 1, 0, 0, 0);
-
-		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
-
-		commandBuffer.endRenderPass();
-		commandBuffer.end();
-	}
-
 	void Context::CreateCommandBuffers()
 	{
 		vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vk::CommandBufferAllocateInfo(_device->GetGraphicsCommandPool(),
@@ -140,79 +64,13 @@ namespace ProjectThalia::Rendering::Vulkan
 		_commandBuffer = _device->GetVkDevice().allocateCommandBuffers(commandBufferAllocateInfo)[0];
 	}
 
-	void Context::DrawFrame()
-	{
-		_device->GetVkDevice().waitForFences(_inFlightFence, vk::True, UINT64_MAX);
-
-		vk::ResultValue<uint32_t> imageIndexResult = _device->GetVkDevice().acquireNextImageKHR(_device->GetSwapchain().GetVkSwapchain(),
-																								UINT64_MAX,
-																								_imageAvailableSemaphore,
-																								VK_NULL_HANDLE);
-
-		if (imageIndexResult.result == vk::Result::eErrorOutOfDateKHR)
-		{
-			_device->GetVkDevice().waitIdle();
-			_device->CreateSwapchain(_instance.GetVkSurface(), _window->GetSize());
-
-			return;
-		}
-		else if (imageIndexResult.result != vk::Result::eSuccess && imageIndexResult.result != vk::Result::eSuboptimalKHR)
-		{
-			ErrorHandler::ThrowRuntimeError("failed to acquire swap chain image!");
-		}
-
-		_device->GetVkDevice().resetFences(_inFlightFence);
-
-		static auto startTime = std::chrono::high_resolution_clock::now();
-
-		auto  currentTime = std::chrono::high_resolution_clock::now();
-		float time        = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-		CameraUBO* cameraUbo = _descriptorSetAllocation.ShaderBuffers[0].GetMappedData<CameraUBO>();
-
-		cameraUbo->model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		cameraUbo->view  = glm::lookAt(glm::vec3(0.0f, 0.0f, -2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		cameraUbo->proj  = glm::perspective(glm::radians(45.0f),
-                                           static_cast<float>(_device->GetSwapchain().GetExtend().width) /
-                                                   -static_cast<float>(_device->GetSwapchain().GetExtend().height),
-                                           0.1f,
-                                           10.0f);
-
-		_commandBuffer.reset({});
-		RecordCommandBuffer(_commandBuffer, imageIndexResult.value);
-
-		vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
-		vk::SubmitInfo         submitInfo   = vk::SubmitInfo(_imageAvailableSemaphore, waitStages, _commandBuffer, _renderFinishedSemaphore);
-
-		_device->GetGraphicsQueue().submit(submitInfo, _inFlightFence);
-
-		vk::PresentInfoKHR presentInfo = vk::PresentInfoKHR(_renderFinishedSemaphore,
-															_device->GetSwapchain().GetVkSwapchain(),
-															imageIndexResult.value,
-															nullptr);
-
-		vk::Result presentResult = _device->GetPresentQueue().presentKHR(presentInfo);
-
-		if (presentResult == vk::Result::eErrorOutOfDateKHR || presentResult == vk::Result::eSuboptimalKHR || _frameBufferResized)
-		{
-			_device->GetVkDevice().waitIdle();
-			_frameBufferResized = false;
-			_device->CreateSwapchain(_instance.GetVkSurface(), _window->GetSize());
-		}
-		else if (presentResult != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("failed to present swap chain image!"); }
-	}
-
 	void Context::Destroy()
 	{
-		_device->GetVkDevice().waitIdle();
+		WaitForIdle();
 
 		_device->GetVkDevice().destroy(_imageAvailableSemaphore);
 		_device->GetVkDevice().destroy(_renderFinishedSemaphore);
 		_device->GetVkDevice().destroy(_inFlightFence);
-
-		_quadModelBuffer.Destroy();
-
-		_device->GetPipeline().GetDescriptorSetManager().DeallocateDescriptorSet(_descriptorSetAllocation);
 
 		_device->GetVkDevice().destroy(_imGuiDescriptorPool);
 		ImGui_ImplVulkan_Shutdown();
@@ -220,6 +78,8 @@ namespace ProjectThalia::Rendering::Vulkan
 		_device->Destroy();
 		_instance.Destroy();
 	}
+
+	void Context::WaitForIdle()  { _device->GetVkDevice().waitIdle(); }
 
 	void Context::CreateInstance(SDL_Window* sdlWindow)
 	{
@@ -289,4 +149,14 @@ namespace ProjectThalia::Rendering::Vulkan
 	}
 
 	Device* Context::GetDevice() { return _device.get(); }
+
+	const vk::Semaphore& Context::GetImageAvailableSemaphore() const { return _imageAvailableSemaphore; }
+
+	const vk::Semaphore& Context::GetRenderFinishedSemaphore() const { return _renderFinishedSemaphore; }
+
+	const vk::Fence& Context::GetInFlightFence() const { return _inFlightFence; }
+
+	const Instance& Context::GetInstance() const { return _instance; }
+
+	const vk::CommandBuffer& Context::GetCommandBuffer() const { return _commandBuffer; }
 }

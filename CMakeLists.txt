@@ -59,8 +59,8 @@ add_executable(${PROJECT_NAME}
         include/ProjectThalia/IO/ImageFile.hpp
         src/ProjectThalia/Rendering/Vulkan/Allocator.cpp
         include/ProjectThalia/Rendering/Vulkan/Allocator.hpp
-        #src/ProjectThalia/Rendering/Material.cpp
-        #include/ProjectThalia/Rendering/Material.hpp
+        src/ProjectThalia/Rendering/Material.cpp
+        include/ProjectThalia/Rendering/Material.hpp
         src/ProjectThalia/Rendering/Vulkan/DescriptorSetManager.cpp
         include/ProjectThalia/Rendering/Vulkan/DescriptorSetManager.hpp
         src/ProjectThalia/Input.cpp
@@ -69,6 +69,12 @@ add_executable(${PROJECT_NAME}
         #src/ProjectThalia/Rendering/Texture2D.cpp
         #include/ProjectThalia/Rendering/Texture2D.hpp
         include/ProjectThalia/Rendering/TextureSettings.hpp
+        src/ProjectThalia/Rendering/Material.cpp
+        src/ProjectThalia/Rendering/Model.cpp
+        include/ProjectThalia/Rendering/Model.hpp
+        src/ProjectThalia/Rendering/Shader.cpp
+        include/ProjectThalia/Rendering/Shader.hpp
+        include/ProjectThalia/DataStructures.hpp
 )
 
 # add everything in include as an... well... include
@@ -131,6 +137,6 @@ compile_shader(${PROJECT_NAME}
         ENV vulkan1.3
         FORMAT spv
         SOURCES
-        /res/shaders/Debug.vert
-        /res/shaders/Debug.frag
+        /res/shaders/debug/Debug.vert
+        /res/shaders/debug/Debug.frag
 )

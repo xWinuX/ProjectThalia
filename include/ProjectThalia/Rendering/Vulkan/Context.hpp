@@ -19,27 +19,19 @@ namespace ProjectThalia::Rendering::Vulkan
 			Context() = default;
 
 			void Initialize(Window* window);
+			static void WaitForIdle() ;
 			void Destroy();
 			void DrawFrame();
 
 			static Device* GetDevice();
 
+			[[nodiscard]] const vk::Semaphore&     GetImageAvailableSemaphore() const;
+			[[nodiscard]] const vk::Semaphore&     GetRenderFinishedSemaphore() const;
+			[[nodiscard]] const vk::Fence&         GetInFlightFence() const;
+			[[nodiscard]] const Instance&          GetInstance() const;
+			[[nodiscard]] const vk::CommandBuffer& GetCommandBuffer() const;
+
 		private:
-			struct UniformBufferObject
-			{};
-
-			struct CameraUBO
-			{
-					glm::mat4 model;
-					glm::mat4 view;
-					glm::mat4 proj;
-			};
-
-			struct TransformStorageBuffer
-			{
-					std::array<glm::mat4, 100> ModelMatrix {};
-			};
-
 			const std::vector<const char*> _validationLayers = {"VK_LAYER_KHRONOS_validation"};
 			const std::vector<const char*> _deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
@@ -50,10 +42,6 @@ namespace ProjectThalia::Rendering::Vulkan
 			Instance       _instance;
 			PhysicalDevice _physicalDevice;
 
-			Buffer _quadModelBuffer;
-
-			DescriptorSetManager::DescriptorSetAllocation _descriptorSetAllocation;
-
 			vk::CommandBuffer _commandBuffer;
 			vk::Semaphore     _imageAvailableSemaphore;
 			vk::Semaphore     _renderFinishedSemaphore;
@@ -61,11 +49,9 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			vk::DescriptorPool _imGuiDescriptorPool;
 
-			bool _frameBufferResized = false;
 
 			void CreateInstance(SDL_Window* sdlWindow);
 			void CreateCommandBuffers();
-			void RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex);
 			void CreateSyncObjects();
 			void InitializeImGui();
 	};

@@ -80,11 +80,6 @@ namespace ProjectThalia::Rendering::Vulkan
 		_swapchain = Swapchain(this, surfaceKhr, {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y)});
 	}
 
-	void Device::CreatePipeline(const std::string& name, const std::vector<Pipeline::ShaderInfo>& shaderInfos)
-	{
-		_pipeline = Pipeline(this, name, shaderInfos);
-	}
-
 	void Device::CreateGraphicsCommandPool()
 	{
 		vk::CommandPoolCreateInfo commandPoolCreateInfo = vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
@@ -107,7 +102,6 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	const Swapchain& Device::GetSwapchain() const { return _swapchain; }
 
-	Pipeline& Device::GetPipeline() { return _pipeline; }
 
 	const vk::CommandPool& Device::GetGraphicsCommandPool() const { return _graphicsCommandPool; }
 
@@ -121,7 +115,6 @@ namespace ProjectThalia::Rendering::Vulkan
 	{
 		_swapchain.Destroy();
 		_renderPass.Destroy();
-		_pipeline.Destroy();
 
 		_vkDevice.destroy(_graphicsCommandPool);
 
@@ -130,7 +123,6 @@ namespace ProjectThalia::Rendering::Vulkan
 		_vkDevice.destroy(_defaultSampler);
 
 		_allocator.Destroy();
-
 
 		_vkDevice.destroy();
 	}
