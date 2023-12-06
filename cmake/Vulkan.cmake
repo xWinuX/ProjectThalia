@@ -20,8 +20,9 @@ function(compile_shader target)
                 DEPENDS ${source}
                 DEPFILE ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.d
                 COMMAND
-                ${glslc_executable}
-                -MD -MF ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.d
+                glslangValidator
+                -e main
+                -V
                 -o ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT}  # Change output path
                 ${CMAKE_CURRENT_SOURCE_DIR}/${source}
         )

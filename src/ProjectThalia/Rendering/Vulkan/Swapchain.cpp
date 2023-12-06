@@ -6,7 +6,8 @@ namespace ProjectThalia::Rendering::Vulkan
 	Swapchain::Swapchain(Device* device, const vk::SurfaceKHR& surface, vk::Extent2D size) :
 		DeviceObject(device)
 	{
-		const PhysicalDevice& physicalDevice = device->GetPhysicalDevice();
+
+		const PhysicalDevice& physicalDevice = GetDevice()->GetPhysicalDevice();
 
 		// Select surface format
 		const PhysicalDevice::SwapchainSupportDetails& swapchainSupportDetails = physicalDevice.GetSwapchainSupportDetails();
@@ -63,8 +64,8 @@ namespace ProjectThalia::Rendering::Vulkan
 		swapChainCreateInfo.setClipped(vk::True);
 		swapChainCreateInfo.setOldSwapchain(VK_NULL_HANDLE);
 
-		_vkSwapchain = device->GetVkDevice().createSwapchainKHR(swapChainCreateInfo);
-		_images      = device->GetVkDevice().getSwapchainImagesKHR(_vkSwapchain);
+		_vkSwapchain = GetDevice()->GetVkDevice().createSwapchainKHR(swapChainCreateInfo);
+		_images      = GetDevice()->GetVkDevice().getSwapchainImagesKHR(_vkSwapchain);
 
 		// Create image views
 		_imageViews.resize(_images.size());
@@ -81,22 +82,33 @@ namespace ProjectThalia::Rendering::Vulkan
 																				   vk::ComponentSwizzle::eIdentity},
 																				  {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
 
-			_imageViews[i] = device->GetVkDevice().createImageView(imageViewCreateInfo);
+			_imageViews[i] = GetDevice()->GetVkDevice().createImageView(imageViewCreateInfo);
 		}
+
+
+		// Create depth image
+		Image::CreateInfo imageCreateInfo {};
+		imageCreateInfo.Usage            = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+		imageCreateInfo.TransitionLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+		imageCreateInfo.AspectMask       = vk::ImageAspectFlagBits::eDepth;
+		imageCreateInfo.Format           = GetDevice()->GetPhysicalDevice().GetDepthImageFormat();
+		imageCreateInfo.RequiredFlags    = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+		_depthImage = Image(GetDevice(), nullptr, 0, {_extend.width, _extend.height, 1}, imageCreateInfo);
+
 
 		// Create frame buffers
 		_frameBuffers.resize(_imageViews.size());
-
 		for (size_t i = 0; i < _imageViews.size(); i++)
 		{
+			std::vector<vk::ImageView> attachments = {_imageViews[i], _depthImage.GetView()};
+
 			vk::FramebufferCreateInfo framebufferInfo = vk::FramebufferCreateInfo({},
 																				  device->GetRenderPass().GetVkRenderPass(),
-																				  1,
-																				  &_imageViews[i],
+																				  attachments,
 																				  _extend.width,
 																				  _extend.height,
 																				  1);
-
 			_frameBuffers[i] = device->GetVkDevice().createFramebuffer(framebufferInfo);
 		}
 	}
@@ -117,5 +129,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		for (const vk::ImageView& imageView : _imageViews) { Utility::DeleteDeviceHandle(GetDevice(), imageView); }
 		for (const vk::Framebuffer& frameBuffer : _frameBuffers) { Utility::DeleteDeviceHandle(GetDevice(), frameBuffer); }
+
+		//if (_depthImage) { _depthImage->Destroy(); }
 	}
 }

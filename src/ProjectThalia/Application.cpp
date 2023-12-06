@@ -9,9 +9,11 @@
 #include "ProjectThalia/ErrorHandler.hpp"
 #include "ProjectThalia/Rendering/Vulkan/Context.hpp"
 
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <format>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/random.hpp>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_vulkan.h>
 
@@ -114,22 +116,11 @@ namespace ProjectThalia
                                                0.1f,
                                                10.0f);
 
-			CameraUBO* cameraUbo2 = _material2->GetDescriptorSetAllocation().ShaderBuffers[0].GetMappedData<CameraUBO>();
-
-			cameraUbo2->model = glm::translate(glm::rotate(glm::mat4(1.0f), (currentTime / 10000000.0f) * glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
-											   glm::vec3(1.0, 0.0, 0.0));
-			cameraUbo2->view  = glm::lookAt(glm::vec3(0.0f, 0.0f, -2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-			cameraUbo2->proj  = glm::perspective(glm::radians(45.0f),
-                                                static_cast<float>(Rendering::Vulkan::Context::GetDevice()->GetSwapchain().GetExtend().width) /
-                                                        -static_cast<float>(Rendering::Vulkan::Context::GetDevice()->GetSwapchain().GetExtend().height),
-                                                0.1f,
-                                                10.0f);
 
 
 			if (!_window.IsMinimized())
 			{
 				_renderer.SubmitModel(_material.get(), _model.get());
-				_renderer.SubmitModel(_material2.get(), _model.get());
 				_renderer.Render();
 			}
 		}
@@ -139,13 +130,18 @@ namespace ProjectThalia
 	{
 		_shader = std::make_unique<Rendering::Shader>("res/shaders/debug");
 
-		_material  = std::make_unique<Rendering::Material>(_shader.get());
-		_material2 = std::make_unique<Rendering::Material>(_shader.get());
+		_material                  = std::make_unique<Rendering::Material>(_shader.get());
+		ObjectBuffer* objectBuffer = _material->GetDescriptorSetAllocation().ShaderBuffers[1].GetMappedData<ObjectBuffer>();
 
-		const std::vector<Rendering::VertexPosition2DColorUV> vertices = {{{-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},  // Top Left
-																		  {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},   // Top Right
-																		  {{-0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Left
-																		  {{0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}}; // Bottom Right
+
+		for (ObjectData& objectData : objectBuffer->objects) { objectData.model = glm::translate(glm::mat4(1.0), glm::ballRand(0.7f)); }
+
+		//_material2 = std::make_unique<Rendering::Material>(_shader.get());
+
+		const std::vector<Rendering::VertexPosition2DColorUV> vertices = {{{-0.0005f, 0.0005f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},  // Top Left
+																		  {{0.0005f, 0.0005f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},   // Top Right
+																		  {{-0.0005f, -0.0005f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Left
+																		  {{0.0005f, -0.0005f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}}; // Bottom Right
 
 		const std::vector<uint16_t> indices = {0, 1, 2, 2, 1, 3};
 

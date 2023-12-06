@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DeviceObject.hpp"
+#include "Image.hpp"
 
 #include <SDL_video.h>
 #include <optional>
@@ -26,8 +27,11 @@ namespace ProjectThalia::Rendering::Vulkan
 			[[nodiscard]] const std::vector<vk::Framebuffer>& GetFrameBuffers() const;
 
 		private:
-			vk::SwapchainKHR             _vkSwapchain;
-			std::vector<vk::Image>       _images;
+			vk::SwapchainKHR       _vkSwapchain;
+			std::vector<vk::Image> _images;
+
+			Image _depthImage;
+
 			std::vector<vk::ImageView>   _imageViews;
 			std::vector<vk::Framebuffer> _frameBuffers;
 

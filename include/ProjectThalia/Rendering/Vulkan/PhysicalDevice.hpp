@@ -39,6 +39,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			[[nodiscard]] const std::vector<const char*>&     GetExtensions() const;
 			[[nodiscard]] const std::vector<const char*>&     GetValidationLayers() const;
 			[[nodiscard]] const vk::SurfaceFormatKHR&         GetImageFormat() const;
+			[[nodiscard]] const vk::Format                    GetDepthImageFormat() const;
 			[[nodiscard]] const vk::PhysicalDeviceProperties& GetProperties() const;
 
 		private:
@@ -46,6 +47,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			QueueFamilyIndices           _queueFamilyIndices;
 			SwapchainSupportDetails      _swapchainSupportDetails;
 			vk::SurfaceFormatKHR         _imageFormat; // TODO: Does this really belong here?
+			vk::Format                   _depthImageFormat;
 			std::vector<const char*>     _extensions;
 			std::vector<const char*>     _validationLayers;
 			vk::PhysicalDeviceProperties _properties;

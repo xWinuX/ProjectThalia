@@ -21,7 +21,6 @@ namespace ProjectThalia::Rendering::Vulkan
 			void Initialize(Window* window);
 			static void WaitForIdle() ;
 			void Destroy();
-			void DrawFrame();
 
 			static Device* GetDevice();
 

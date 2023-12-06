@@ -8,8 +8,8 @@ namespace ProjectThalia
 {
 	void Window::Open()
 	{
-		const int SCREEN_WIDTH  = 1000;
-		const int SCREEN_HEIGHT = 500;
+		const int SCREEN_WIDTH  = 2000;
+		const int SCREEN_HEIGHT = 1000;
 
 		// Create _window
 		_window = SDL_CreateWindow("Project Thalia",

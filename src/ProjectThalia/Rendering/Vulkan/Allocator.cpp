@@ -95,6 +95,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		VmaAllocationCreateInfo allocationCreateInfo = VmaAllocationCreateInfo();
 		allocationCreateInfo.usage                   = static_cast<VmaMemoryUsage>(memoryAllocationCreateInfo.Usage);
 		allocationCreateInfo.flags                   = static_cast<VmaAllocationCreateFlags>(memoryAllocationCreateInfo.Flags);
+		allocationCreateInfo.requiredFlags           = static_cast<VkMemoryPropertyFlags>(memoryAllocationCreateInfo.RequiredFlags);
 		allocationCreateInfo.priority                = 1.0f;
 		return allocationCreateInfo;
 	}

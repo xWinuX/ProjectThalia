@@ -67,7 +67,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		// Image
 		const unsigned char fuchsia[] = {0xFF, 0x00, 0xFF};
-		_defaultImages                = Image(this, std::begin(fuchsia), 4, {1, 1, 1});
+		_defaultImages                = Image(this, std::begin(fuchsia), 4, {1, 1, 1}, {});
 	}
 
 	void Device::CreateRenderPass() { _renderPass = RenderPass(this); }

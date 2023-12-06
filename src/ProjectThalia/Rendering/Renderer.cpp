@@ -42,12 +42,15 @@ namespace ProjectThalia::Rendering
 
 		commandBuffer.begin(commandBufferBeginInfo);
 
-		vk::ClearValue          clearColor          = vk::ClearValue({0.0f, 0.2f, 0.5f, 1.0f});
+		vk::ClearValue clearColor      = vk::ClearValue({0.0f, 0.2f, 0.5f, 1.0f});
+		vk::ClearValue depthClearColor = vk::ClearValue({1.0f, 0});
+
+		std::vector<vk::ClearValue> clearValues = {clearColor, depthClearColor};
+
 		vk::RenderPassBeginInfo renderPassBeginInfo = vk::RenderPassBeginInfo(_device->GetRenderPass().GetVkRenderPass(),
 																			  _device->GetSwapchain().GetFrameBuffers()[imageIndexResult.value],
 																			  {{0, 0}, _device->GetSwapchain().GetExtend()},
-																			  1,
-																			  &clearColor);
+																			  clearValues);
 
 		commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 
@@ -81,7 +84,8 @@ namespace ProjectThalia::Rendering
 												 &material->GetDescriptorSetAllocation().DescriptorSet,
 												 0,
 												 nullptr);
-				commandBuffer.drawIndexed(model->GetModelBuffer().GetBufferElementNum(1), 1, 0, 0, 0);
+
+				commandBuffer.drawIndexed(model->GetModelBuffer().GetBufferElementNum(1), 100000, 0, 0, 0);
 			}
 		}
 
@@ -89,6 +93,7 @@ namespace ProjectThalia::Rendering
 
 		commandBuffer.endRenderPass();
 		commandBuffer.end();
+
 
 		vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
 		vk::SubmitInfo         submitInfo   = vk::SubmitInfo(_vulkanContext.GetImageAvailableSemaphore(),

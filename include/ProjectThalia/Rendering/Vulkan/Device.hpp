@@ -41,6 +41,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			[[nodiscard]] const Image&                              GetDefaultImage() const;
 			[[nodiscard]] const vk::Sampler&                        GetDefaultSampler() const;
 
+
 			[[nodiscard]] int FindMemoryTypeIndex(const vk::MemoryRequirements&                memoryRequirements,
 												  const vk::Flags<vk::MemoryPropertyFlagBits>& memoryPropertyFlags) const;
 

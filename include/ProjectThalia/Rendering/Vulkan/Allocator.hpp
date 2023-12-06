@@ -33,6 +33,11 @@ namespace ProjectThalia::Rendering::Vulkan
 				CpuOnly  = VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_ONLY,
 			};
 
+			enum MemoryPropertyFlagBits : uint32_t
+			{
+				LocalDevice = VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			};
+
 			struct MemoryAllocationInfo
 			{
 				public:
@@ -66,7 +71,8 @@ namespace ProjectThalia::Rendering::Vulkan
 			{
 				public:
 					MemoryUsage                               Usage;
-					vk::Flags<MemoryAllocationCreateFlagBits> Flags = MemoryAllocationCreateFlagBits::None;
+					vk::Flags<MemoryAllocationCreateFlagBits> Flags         = MemoryAllocationCreateFlagBits::None;
+					vk::Flags<MemoryPropertyFlagBits>         RequiredFlags = {};
 			};
 
 			[[nodiscard]] BufferAllocation CreateBuffer(const vk::BufferCreateInfo&       bufferCreateInfo,
@@ -87,7 +93,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			VmaAllocator _vmaAllocator = nullptr;
 
 			size_t _buffersAllocated = 0;
-			size_t _imagesAllocated = 0;
+			size_t _imagesAllocated  = 0;
 
 			static VmaAllocationCreateInfo CreateVmaAllocationCreateInfo(const MemoryAllocationCreateInfo& memoryAllocationCreateInfo);
 #pragma endregion

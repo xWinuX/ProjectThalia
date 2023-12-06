@@ -7,6 +7,8 @@
 #include "ProjectThalia/Rendering/Renderer.hpp"
 #include "Window.hpp"
 
+#include <array>
+
 namespace ProjectThalia
 {
 	class Application
@@ -23,6 +25,16 @@ namespace ProjectThalia
 					glm::mat4 model;
 					glm::mat4 view;
 					glm::mat4 proj;
+			};
+
+			struct ObjectData
+			{
+					glm::mat4 model;
+			};
+
+			struct ObjectBuffer
+			{
+					std::array<ObjectData, 100000> objects;
 			};
 
 			void Initialize();

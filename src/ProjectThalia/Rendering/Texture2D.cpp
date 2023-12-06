@@ -12,7 +12,8 @@ namespace ProjectThalia::Rendering
 		_image     = Vulkan::Image(Vulkan::Context::GetDevice(),
                                _imageFile.GetPixels(),
                                _imageFile.GetTotalImageSize(),
-								   {static_cast<uint32_t>(_imageFile.GetWidth()), static_cast<uint32_t>(_imageFile.GetHeight()), 1});
+								   {static_cast<uint32_t>(_imageFile.GetWidth()), static_cast<uint32_t>(_imageFile.GetHeight()), 1},
+								   {});
 	}
 
 	Texture2D::~Texture2D() { _image.Destroy(); }

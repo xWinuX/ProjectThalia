@@ -6,48 +6,61 @@
 
 namespace ProjectThalia::Rendering::Vulkan
 {
-	Image::Image(Device* device, const unsigned char* pixels, vk::DeviceSize pixelsSizeInBytes, vk::Extent3D extend) :
+	Image::Image(Device* device, const unsigned char* pixels, vk::DeviceSize pixelsSizeInBytes, vk::Extent3D extend, CreateInfo createInfo) :
 		DeviceObject(device)
 	{
 		vk::ImageCreateInfo imageCreateInfo = vk::ImageCreateInfo({},
 																  vk::ImageType::e2D,
-																  _format,
+																  createInfo.Format,
 																  extend,
 																  1,
 																  1,
 																  vk::SampleCountFlagBits::e1,
 																  vk::ImageTiling::eOptimal,
-																  vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled);
+																  createInfo.Usage);
 
-		VmaAllocationCreateInfo allocationCreateInfo = VmaAllocationCreateInfo();
-		allocationCreateInfo.usage                   = VmaMemoryUsage::VMA_MEMORY_USAGE_GPU_ONLY;
-		allocationCreateInfo.flags                   = {};
-		allocationCreateInfo.priority                = 1.0f;
+		Allocator::MemoryAllocationCreateInfo allocationCreateInfo {};
+		allocationCreateInfo.Usage         = Allocator::GpuOnly;
+		allocationCreateInfo.RequiredFlags = Allocator::LocalDevice;
 
-		_imageAllocation = GetDevice()->GetAllocator().CreateImage(imageCreateInfo, {Allocator::GpuOnly});
+		_imageAllocation = GetDevice()->GetAllocator().CreateImage(imageCreateInfo, allocationCreateInfo);
+
+		vk::CommandBuffer commandBuffer;
+		if (createInfo.TransitionLayout != vk::ImageLayout::eDepthStencilAttachmentOptimal) { commandBuffer = GetDevice()->BeginOneshotCommands(); }
 
 		// Copy pixel data to image
-		Buffer transferBuffer = Buffer::CreateTransferBuffer(device, pixels, pixelsSizeInBytes);
-		transferBuffer.CopyData(pixels, pixelsSizeInBytes, 0);
+		Buffer transferBuffer;
+		if (pixels)
+		{
+			transferBuffer = Buffer::CreateTransferBuffer(device, pixels, pixelsSizeInBytes);
+			transferBuffer.CopyData(pixels, pixelsSizeInBytes, 0);
 
-		vk::CommandBuffer commandBuffer = GetDevice()->BeginOneshotCommands();
+			TransitionLayout(commandBuffer, vk::ImageLayout::eTransferDstOptimal);
 
-		TransitionLayout(commandBuffer, vk::ImageLayout::eTransferDstOptimal);
+			vk::ImageSubresourceLayers imageSubresourceLayers = vk::ImageSubresourceLayers(createInfo.AspectMask, 0, 0, 1);
+			vk::BufferImageCopy        bufferImageCopy        = vk::BufferImageCopy(0, 0, 0, imageSubresourceLayers, {0, 0, 0}, extend);
 
-		vk::ImageSubresourceLayers imageSubresourceLayers = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
-		vk::BufferImageCopy        bufferImageCopy        = vk::BufferImageCopy(0, 0, 0, imageSubresourceLayers, {0, 0, 0}, extend);
+			commandBuffer.copyBufferToImage(transferBuffer.GetVkBuffer(), GetVkImage(), _layout, bufferImageCopy);
+		}
 
-		commandBuffer.copyBufferToImage(transferBuffer.GetVkBuffer(), GetVkImage(), _layout, bufferImageCopy);
 
-		TransitionLayout(commandBuffer, vk::ImageLayout::eShaderReadOnlyOptimal);
+		if (createInfo.TransitionLayout != vk::ImageLayout::eDepthStencilAttachmentOptimal)
+		{
+			TransitionLayout(commandBuffer, createInfo.TransitionLayout);
 
-		GetDevice()->EndOneshotCommands(commandBuffer);
 
-		transferBuffer.Destroy();
+			GetDevice()->EndOneshotCommands(commandBuffer);
+			transferBuffer.Destroy();
+		}
 
 		// Create image view
-		vk::ImageSubresourceRange imageSubresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
-		vk::ImageViewCreateInfo   imageViewCreateInfo   = vk::ImageViewCreateInfo({}, GetVkImage(), vk::ImageViewType::e2D, _format, {}, imageSubresourceRange);
+		vk::ImageSubresourceRange imageSubresourceRange = vk::ImageSubresourceRange(createInfo.AspectMask, 0, 1, 0, 1);
+		vk::ImageViewCreateInfo   imageViewCreateInfo   = vk::ImageViewCreateInfo({},
+                                                                              GetVkImage(),
+                                                                              vk::ImageViewType::e2D,
+                                                                              createInfo.Format,
+																				  {},
+                                                                              imageSubresourceRange);
 
 		_view = GetDevice()->GetVkDevice().createImageView(imageViewCreateInfo);
 	}
@@ -63,6 +76,8 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	void Image::TransitionLayout(const vk::CommandBuffer& commandBuffer, vk::ImageLayout newLayout)
 	{
+		if (newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal) { return; }
+
 		vk::ImageSubresourceRange subresourceRange   = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
 		vk::ImageMemoryBarrier    imageMemoryBarrier = vk::ImageMemoryBarrier({},
 																			  {},
@@ -92,6 +107,14 @@ namespace ProjectThalia::Rendering::Vulkan
 			sourceStage      = vk::PipelineStageFlagBits::eTransfer;
 			destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
 		}
+		else if (_layout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal)
+		{
+			imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eNone;
+			imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+
+			sourceStage      = vk::PipelineStageFlagBits::eTopOfPipe;
+			destinationStage = vk::PipelineStageFlagBits::eEarlyFragmentTests;
+		}
 		else { ErrorHandler::ThrowRuntimeError("Unsupported image layout transition"); }
 
 		commandBuffer.pipelineBarrier(sourceStage, destinationStage, {}, nullptr, nullptr, imageMemoryBarrier);
@@ -108,8 +131,6 @@ namespace ProjectThalia::Rendering::Vulkan
 	const vk::Image& Image::GetVkImage() const { return _imageAllocation.Image; }
 
 	const vk::ImageView& Image::GetView() const { return _view; }
-
-	vk::Format Image::GetFormat() const { return _format; }
 
 	vk::ImageLayout Image::GetLayout() const { return _layout; }
 }

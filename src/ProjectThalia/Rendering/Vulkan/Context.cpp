@@ -29,14 +29,15 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		_device = std::make_unique<Device>(Device(_physicalDevice));
 
-		_device->CreateRenderPass();
-		_device->CreateSwapchain(_instance.GetVkSurface(), _window->GetSize());
+		_device->CreateAllocator(_instance);
 
 		_device->CreateGraphicsCommandPool();
 
-		_device->CreateAllocator(_instance);
-
 		CreateCommandBuffers();
+
+		_device->CreateRenderPass();
+
+		_device->CreateSwapchain(_instance.GetVkSurface(), _window->GetSize());
 
 		_device->CreateDefaultResources();
 

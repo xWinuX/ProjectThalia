@@ -34,6 +34,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			// Uniform Buffers
 			std::unordered_map<vk::DescriptorType, const spirv_cross::SmallVector<spirv_cross::Resource>&> resourceMap = {
 					{vk::DescriptorType::eUniformBuffer, shaderResources.uniform_buffers},
+					{vk::DescriptorType::eStorageBuffer, shaderResources.storage_buffers},
 					{vk::DescriptorType::eCombinedImageSampler, shaderResources.sampled_images},
 			};
 
@@ -56,17 +57,16 @@ namespace ProjectThalia::Rendering::Vulkan
 
 					switch (type)
 					{
+						case vk::DescriptorType::eStorageBuffer:
 						case vk::DescriptorType::eUniformBuffer:
 						{
-							vk::DeviceSize uniformSize = spirvCompiler.get_declared_struct_size(resourceType);
-							LOG("uniformsize: {0}", uniformSize);
+							vk::DeviceSize            uniformSize          = spirvCompiler.get_declared_struct_size(resourceType);
 							vk::DescriptorBufferInfo* descriptorBufferInfo = new vk::DescriptorBufferInfo(VK_NULL_HANDLE, 0, uniformSize);
 							writeDescriptorSet.pBufferInfo                 = descriptorBufferInfo;
 							break;
 						}
 						case vk::DescriptorType::eCombinedImageSampler:
 						{
-							LOG("sampler");
 							vk::DescriptorImageInfo* descriptorImageInfo = new vk::DescriptorImageInfo({}, {}, {});
 							writeDescriptorSet.pImageInfo                = descriptorImageInfo;
 							break;
@@ -192,6 +192,17 @@ namespace ProjectThalia::Rendering::Vulkan
 																												&colorBlendAttachmentState,
 																												{0.0f, 0.0f, 0.0f, 0.0f});
 
+		vk::PipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo = vk::PipelineDepthStencilStateCreateInfo({},
+																													  vk::True,
+																													  vk::True,
+																													  vk::CompareOp::eLess,
+																													  vk::False,
+																													  vk::False,
+																													  {},
+																													  {},
+																													  0.0,
+																													  1.0f);
+
 		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo({},
 																							 1,
 																							 &_descriptorSetManager.GetDescriptorSetLayout(),
@@ -209,7 +220,7 @@ namespace ProjectThalia::Rendering::Vulkan
 																								   &viewportStateCreateInfo,
 																								   &rasterizationStateCreateInfo,
 																								   &multisampleStateCreateInfo,
-																								   nullptr,
+																								   &depthStencilStateCreateInfo,
 																								   &colorBlendStateCreateInfo,
 																								   &dynamicStateCreateInfo,
 																								   _layout,

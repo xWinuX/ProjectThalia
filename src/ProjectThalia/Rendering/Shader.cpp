@@ -59,11 +59,7 @@ namespace ProjectThalia::Rendering
 		_pipeline = Vulkan::Pipeline(Vulkan::Context::GetDevice(), "main", shaderInfos);
 	}
 
-	Vulkan::Pipeline& Shader::GetPipeline()  { return _pipeline; }
+	Vulkan::Pipeline& Shader::GetPipeline() { return _pipeline; }
 
-	Shader::~Shader()
-	{
-		LOG("shader destroy");
-		_pipeline.Destroy();
-	}
+	Shader::~Shader() { _pipeline.Destroy(); }
 }

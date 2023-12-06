@@ -54,10 +54,7 @@ namespace ProjectThalia::Rendering::Vulkan
 																								_descriptorSetLayout);
 
 
-		LOG("ds index {0}", descriptorPoolIndex);
-		LOG("before ds allocate");
 		GetDevice()->GetVkDevice().allocateDescriptorSets(&descriptorSetAllocateInfo, &descriptorSet);
-		LOG("after ds allocate");
 
 
 		uint32_t insertionIndex                                     = validDescriptorPoolInstance->Available.Pop();
@@ -73,6 +70,13 @@ namespace ProjectThalia::Rendering::Vulkan
 			writeDescriptorSet.dstSet = descriptorSet;
 			switch (writeDescriptorSet.descriptorType)
 			{
+				case vk::DescriptorType::eStorageBuffer:
+					shaderBuffers.push_back(std::move(Buffer::CreateStorageBuffer(GetDevice(), writeDescriptorSet.pBufferInfo->range)));
+					bufferInfos.push_back(new vk::DescriptorBufferInfo(*writeDescriptorSet.pBufferInfo));
+					bufferInfos.back()->buffer = shaderBuffers.back().GetVkBuffer();
+					delete writeDescriptorSet.pBufferInfo;
+					writeDescriptorSet.pBufferInfo = bufferInfos.back();
+					break;
 				case vk::DescriptorType::eUniformBuffer:
 					shaderBuffers.push_back(std::move(Buffer::CreateUniformBuffer(GetDevice(), writeDescriptorSet.pBufferInfo->range)));
 					bufferInfos.push_back(new vk::DescriptorBufferInfo(*writeDescriptorSet.pBufferInfo));

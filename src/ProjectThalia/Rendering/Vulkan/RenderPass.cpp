@@ -16,18 +16,37 @@ namespace ProjectThalia::Rendering::Vulkan
 																			  vk::ImageLayout::eUndefined,
 																			  vk::ImageLayout::ePresentSrcKHR);
 
+
+		vk::AttachmentDescription depthAttachment = vk::AttachmentDescription({},
+																			  device->GetPhysicalDevice().GetDepthImageFormat(),
+																			  vk::SampleCountFlagBits::e1,
+																			  vk::AttachmentLoadOp::eClear,
+																			  vk::AttachmentStoreOp::eDontCare,
+																			  vk::AttachmentLoadOp::eDontCare,
+																			  vk::AttachmentStoreOp::eDontCare,
+																			  vk::ImageLayout::eUndefined,
+																			  vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
 		vk::AttachmentReference colorAttachmentReference = vk::AttachmentReference(0, vk::ImageLayout::eColorAttachmentOptimal);
-		vk::SubpassDescription  subpass                  = vk::SubpassDescription({}, vk::PipelineBindPoint::eGraphics, {}, {}, 1, &colorAttachmentReference);
+		vk::AttachmentReference depthAttachmentReference = vk::AttachmentReference(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+		vk::SubpassDescription subpass = vk::SubpassDescription({},
+																vk::PipelineBindPoint::eGraphics,
+																{},
+																colorAttachmentReference,
+																{},
+																&depthAttachmentReference);
 
 
 		vk::SubpassDependency subpassDependency = vk::SubpassDependency(vk::SubpassExternal,
 																		{},
-																		vk::PipelineStageFlagBits::eColorAttachmentOutput,
-																		vk::PipelineStageFlagBits::eColorAttachmentOutput,
+																		vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests,
+																		vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests,
 																		{},
-																		vk::AccessFlagBits::eColorAttachmentWrite);
+																		vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite);
 
-		vk::RenderPassCreateInfo renderPassCreateInfo = vk::RenderPassCreateInfo({}, 1, &colorAttachment, 1, &subpass, 1, &subpassDependency);
+		std::vector<vk::AttachmentDescription> attachments          = {colorAttachment, depthAttachment};
+		vk::RenderPassCreateInfo               renderPassCreateInfo = vk::RenderPassCreateInfo({}, attachments,  subpass, subpassDependency);
 
 		_vkRenderPass = device->GetVkDevice().createRenderPass(renderPassCreateInfo);
 	}

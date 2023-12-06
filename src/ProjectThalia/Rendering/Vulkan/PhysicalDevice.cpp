@@ -77,7 +77,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			ErrorHandler::ThrowRuntimeError("This device does not have any gpus meeting the applications requirements");
 		}
 
-		// Select Image format
+		// Select image format
 		_imageFormat = _swapchainSupportDetails.Formats[0];
 		for (const auto& availableFormat : _swapchainSupportDetails.Formats)
 		{
@@ -86,6 +86,19 @@ namespace ProjectThalia::Rendering::Vulkan
 				_imageFormat = availableFormat;
 			}
 		}
+
+		// Select depth image format
+		_depthImageFormat =vk::Format::eD32Sfloat;
+		/*for (vk::Format format : {vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint})
+		{
+			vk::FormatProperties props = _vkPhysicalDevice.getFormatProperties(format);
+
+			if ((props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment) == vk::FormatFeatureFlagBits::eDepthStencilAttachment)
+			{
+				_depthImageFormat = format;
+				break;
+			}
+		}*/
 	}
 
 	const vk::PhysicalDevice& PhysicalDevice::GetVkPhysicalDevice() const { return _vkPhysicalDevice; }
@@ -101,4 +114,6 @@ namespace ProjectThalia::Rendering::Vulkan
 	const vk::SurfaceFormatKHR& PhysicalDevice::GetImageFormat() const { return _imageFormat; }
 
 	const vk::PhysicalDeviceProperties& PhysicalDevice::GetProperties() const { return _properties; }
+
+	const vk::Format PhysicalDevice::GetDepthImageFormat() const { return _depthImageFormat; }
 }

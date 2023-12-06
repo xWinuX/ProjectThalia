@@ -167,6 +167,17 @@ namespace ProjectThalia::Rendering::Vulkan
 							  dataSizeInBytes);
 			}
 
+			static Buffer CreateStorageBuffer(Device* device, size_t dataSizeInBytes, const char* data = nullptr)
+			{
+				return Buffer(device,
+							  vk::BufferUsageFlagBits::eStorageBuffer,
+							  vk::SharingMode::eExclusive,
+							  {Allocator::CpuToGpu, Allocator::PersistentMap},
+							  reinterpret_cast<const char*>(data),
+							  dataSizeInBytes,
+							  dataSizeInBytes);
+			}
+
 			template<typename T>
 			static Buffer CreateDynamicUniformBuffer(Device* device, const T* data)
 			{
