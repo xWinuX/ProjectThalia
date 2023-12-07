@@ -18,7 +18,6 @@ namespace ProjectThalia::Rendering
 			~Material();
 
 			void SetTexture(size_t index, const Texture2D& texture);
-			void SetTexture(size_t index, const Vulkan::Image& texture);
 
 			void Update();
 

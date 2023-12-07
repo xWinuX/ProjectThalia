@@ -91,7 +91,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		vmaDestroyAllocator(_vmaAllocator);
 		for (const SamplerEntry& samplerEntry : _samplers)
 		{
-			Utility::DeleteDeviceHandle(GetDevice(), samplerEntry.Sampler);
+			//Utility::DeleteDeviceHandle(GetDevice(), samplerEntry.Sampler);
 		}
 	}
 

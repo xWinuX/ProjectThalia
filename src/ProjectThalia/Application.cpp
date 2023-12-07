@@ -39,7 +39,7 @@ namespace ProjectThalia
 	{
 		Rendering::Vulkan::Context::WaitForIdle();
 
-		this->_window.Close();
+		_window.Close();
 	}
 
 	void Application::Run()

@@ -11,6 +11,7 @@ namespace ProjectThalia::Rendering
 
 	Material::~Material()
 	{
+		LOG("Mat destroy start");
 		if (_descriptorSetAllocation.DescriptorSet != VK_NULL_HANDLE)
 		{
 			_shader->GetPipeline().GetDescriptorSetManager().DeallocateDescriptorSet(_descriptorSetAllocation);
@@ -25,12 +26,20 @@ namespace ProjectThalia::Rendering
 
 	void Material::SetTexture(size_t index, const Texture2D& texture)
 	{
-		LOG("sdasd {0}", _descriptorSetAllocation.ImageWriteDescriptorSets.size());
-
 		delete _descriptorSetAllocation.ImageWriteDescriptorSets[index].pImageInfo;
 		_descriptorSetAllocation.ImageWriteDescriptorSets[index].pImageInfo = new vk::DescriptorImageInfo(*texture.GetSampler(),
 																										  texture.GetImage().GetView(),
 																										  texture.GetImage().GetLayout());
+
+		// if theres already a set in updates overwrite image info
+		for (vk::WriteDescriptorSet& writeDescriptorSet : _updateImageWriteDescriptorSets)
+		{
+			if (writeDescriptorSet.dstBinding == _descriptorSetAllocation.ImageWriteDescriptorSets[index].dstBinding)
+			{
+				writeDescriptorSet.pImageInfo = _descriptorSetAllocation.ImageWriteDescriptorSets[index].pImageInfo;
+				return;
+			}
+		}
 
 		_updateImageWriteDescriptorSets.push_back(_descriptorSetAllocation.ImageWriteDescriptorSets[index]);
 	}

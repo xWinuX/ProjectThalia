@@ -56,7 +56,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			Swapchain  _swapchain;
 			RenderPass _renderPass;
 
-			Image              _defaultImages;
+			Image              _defaultImage;
 			const vk::Sampler* _defaultSampler;
 
 			vk::CommandPool _graphicsCommandPool;

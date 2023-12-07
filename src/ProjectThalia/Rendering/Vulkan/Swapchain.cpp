@@ -94,14 +94,13 @@ namespace ProjectThalia::Rendering::Vulkan
 		imageCreateInfo.Format           = GetDevice()->GetPhysicalDevice().GetDepthImageFormat();
 		imageCreateInfo.RequiredFlags    = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-		_depthImage = Image(GetDevice(), nullptr, 0, {_extend.width, _extend.height, 1}, imageCreateInfo);
-
+		_depthImage.reset(new Image(GetDevice(), nullptr, 0, {_extend.width, _extend.height, 1}, imageCreateInfo));
 
 		// Create frame buffers
 		_frameBuffers.resize(_imageViews.size());
 		for (size_t i = 0; i < _imageViews.size(); i++)
 		{
-			std::vector<vk::ImageView> attachments = {_imageViews[i], _depthImage.GetView()};
+			std::vector<vk::ImageView> attachments = {_imageViews[i], _depthImage->GetView()};
 
 			vk::FramebufferCreateInfo framebufferInfo = vk::FramebufferCreateInfo({},
 																				  device->GetRenderPass().GetVkRenderPass(),
@@ -109,7 +108,7 @@ namespace ProjectThalia::Rendering::Vulkan
 																				  _extend.width,
 																				  _extend.height,
 																				  1);
-			_frameBuffers[i] = device->GetVkDevice().createFramebuffer(framebufferInfo);
+			_frameBuffers[i]                          = device->GetVkDevice().createFramebuffer(framebufferInfo);
 		}
 	}
 
@@ -130,6 +129,9 @@ namespace ProjectThalia::Rendering::Vulkan
 		for (const vk::ImageView& imageView : _imageViews) { Utility::DeleteDeviceHandle(GetDevice(), imageView); }
 		for (const vk::Framebuffer& frameBuffer : _frameBuffers) { Utility::DeleteDeviceHandle(GetDevice(), frameBuffer); }
 
-		//if (_depthImage) { _depthImage->Destroy(); }
+		if (_depthImage)
+		{
+			_depthImage->Destroy();
+		}
 	}
 }

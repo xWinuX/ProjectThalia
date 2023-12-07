@@ -48,7 +48,6 @@ namespace ProjectThalia::Rendering::Vulkan
 		{
 			TransitionLayout(commandBuffer, createInfo.TransitionLayout);
 
-
 			GetDevice()->EndOneshotCommands(commandBuffer);
 			transferBuffer.Destroy();
 		}

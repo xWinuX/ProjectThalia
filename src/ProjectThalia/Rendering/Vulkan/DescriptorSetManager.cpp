@@ -101,11 +101,11 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		// Create allocation object
 		DescriptorSetAllocation descriptorSetAllocation;
-		descriptorSetAllocation.DescriptorSet             = validDescriptorPoolInstance->DescriptorSets[insertionIndex];
-		descriptorSetAllocation._descriptorPoolIndex      = descriptorPoolIndex;
-		descriptorSetAllocation._descriptorSetIndex       = insertionIndex;
-		descriptorSetAllocation.ShaderBuffers             = std::move(shaderBuffers);
-		descriptorSetAllocation.ImageWriteDescriptorSets  = std::move(imageWriteDescriptorSets);
+		descriptorSetAllocation.DescriptorSet            = validDescriptorPoolInstance->DescriptorSets[insertionIndex];
+		descriptorSetAllocation._descriptorPoolIndex     = descriptorPoolIndex;
+		descriptorSetAllocation._descriptorSetIndex      = insertionIndex;
+		descriptorSetAllocation.ShaderBuffers            = std::move(shaderBuffers);
+		descriptorSetAllocation.ImageWriteDescriptorSets = std::move(imageWriteDescriptorSets);
 
 		return descriptorSetAllocation;
 	}
@@ -140,7 +140,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		for (const vk::WriteDescriptorSet& writeDescriptorSet : _writeDescriptorSets)
 		{
 			delete writeDescriptorSet.pBufferInfo;
-			delete writeDescriptorSet.pImageInfo;
+			//delete writeDescriptorSet.pImageInfo;
 		}
 	}
 
@@ -150,8 +150,11 @@ namespace ProjectThalia::Rendering::Vulkan
 		GetDevice()->GetVkDevice().freeDescriptorSets(descriptorPoolInstance.DescriptorPool,
 													  descriptorPoolInstance.DescriptorSets[descriptorSetAllocation._descriptorSetIndex]);
 
+
 		descriptorPoolInstance.DescriptorSets[descriptorSetAllocation._descriptorSetIndex] = VK_NULL_HANDLE;
 		descriptorPoolInstance.Available.Push(descriptorSetAllocation._descriptorSetIndex);
+
+		for (vk::WriteDescriptorSet& writeDescriptorSet : descriptorSetAllocation.ImageWriteDescriptorSets) { delete writeDescriptorSet.pImageInfo; }
 
 		for (Buffer& buffer : descriptorSetAllocation.ShaderBuffers) { buffer.Destroy(); }
 	}

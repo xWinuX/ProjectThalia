@@ -30,7 +30,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			vk::SwapchainKHR       _vkSwapchain;
 			std::vector<vk::Image> _images;
 
-			Image _depthImage;
+			std::unique_ptr<Image> _depthImage;
 
 			std::vector<vk::ImageView>   _imageViews;
 			std::vector<vk::Framebuffer> _frameBuffers;

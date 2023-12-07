@@ -18,7 +18,6 @@ namespace ProjectThalia::Rendering
 
 	Texture2D::~Texture2D()
 	{
-		LOG("Texture destroy");
 		_image.Destroy();
 	}
 

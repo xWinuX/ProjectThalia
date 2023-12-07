@@ -48,7 +48,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		// Image
 		const unsigned char fuchsia[] = {0xFF, 0x00, 0xFF};
 
-		_defaultImages                = Image(this, std::begin(fuchsia), 4, {1, 1, 1}, {});
+		_defaultImage = Image(this, std::begin(fuchsia), 4, {1, 1, 1}, {});
 	}
 
 	void Device::CreateRenderPass() { _renderPass = RenderPass(this); }
@@ -90,7 +90,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	const vk::PhysicalDeviceMemoryProperties& Device::GetMemoryProperties() const { return _memoryProperties; }
 
-	const Image& Device::GetDefaultImage() const { return _defaultImages; }
+	const Image& Device::GetDefaultImage() const { return _defaultImage; }
 
 	void Device::Destroy()
 	{
@@ -99,7 +99,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		_vkDevice.destroy(_graphicsCommandPool);
 
-		_defaultImages.Destroy();
+		_defaultImage.Destroy();
 
 		_vkDevice.destroy(*_defaultSampler);
 

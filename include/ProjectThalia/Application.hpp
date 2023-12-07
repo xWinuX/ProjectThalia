@@ -48,7 +48,6 @@ namespace ProjectThalia
 
 			std::unique_ptr<Rendering::Shader>    _shader;
 			std::unique_ptr<Rendering::Material>  _material;
-			std::unique_ptr<Rendering::Material>  _material2;
 			std::unique_ptr<Rendering::Texture2D> _floppaTexture;
 			std::unique_ptr<Rendering::Texture2D> _evilFloppaTexture;
 
