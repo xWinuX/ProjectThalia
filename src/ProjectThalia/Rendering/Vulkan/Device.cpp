@@ -43,30 +43,11 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	void Device::CreateDefaultResources()
 	{
-		// Samplers
-		TextureSettings       textureSettings {};
-		vk::SamplerCreateInfo samplerCreateInfo = vk::SamplerCreateInfo({},
-																		static_cast<vk::Filter>(textureSettings.MagnificationFilter),
-																		static_cast<vk::Filter>(textureSettings.MinificationFilter),
-																		static_cast<vk::SamplerMipmapMode>(textureSettings.MipmapMode),
-																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.x),
-																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.y),
-																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.z),
-																		textureSettings.MipLodBias,
-																		textureSettings.MaxAnisotropy > 0.0f,
-																		textureSettings.MaxAnisotropy,
-																		vk::False,
-																		vk::CompareOp::eNever,
-																		textureSettings.MinLod,
-																		textureSettings.MaxLod,
-																		vk::BorderColor::eIntOpaqueBlack,
-																		vk::False);
-
-
-		_defaultSampler = GetVkDevice().createSampler(samplerCreateInfo);
+		_defaultSampler = GetAllocator().AllocateSampler({});
 
 		// Image
 		const unsigned char fuchsia[] = {0xFF, 0x00, 0xFF};
+
 		_defaultImages                = Image(this, std::begin(fuchsia), 4, {1, 1, 1}, {});
 	}
 
@@ -120,7 +101,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		_defaultImages.Destroy();
 
-		_vkDevice.destroy(_defaultSampler);
+		_vkDevice.destroy(*_defaultSampler);
 
 		_allocator.Destroy();
 
@@ -170,6 +151,6 @@ namespace ProjectThalia::Rendering::Vulkan
 		_vkDevice.freeCommandBuffers(_graphicsCommandPool, 1, &commandBuffer);
 	}
 
-	const vk::Sampler& Device::GetDefaultSampler() const { return _defaultSampler; }
+	const vk::Sampler* Device::GetDefaultSampler() const { return _defaultSampler; }
 
 }

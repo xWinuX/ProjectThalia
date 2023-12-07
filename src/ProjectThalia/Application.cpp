@@ -1,12 +1,10 @@
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
 
 #include "ProjectThalia/Application.hpp"
 #include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
+#include "ProjectThalia/Input.hpp"
 #include "ProjectThalia/Rendering/Vulkan/Context.hpp"
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -18,6 +16,9 @@
 #include <imgui_impl_vulkan.h>
 
 #include <chrono>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 namespace ProjectThalia
 {
@@ -76,13 +77,16 @@ namespace ProjectThalia
 				accumulatedFrames    = 0;
 			}
 
+			Input::Reset();
+
 			while (SDL_PollEvent(&e))
 			{
 				ImGui_ImplSDL2_ProcessEvent(&e);
 
 				switch (e.type)
 				{
-					case SDL_KEYDOWN: _event.Invoke(0); break;
+					case SDL_KEYDOWN:
+					case SDL_KEYUP: Input::Update(e); break;
 					case SDL_QUIT: quit = true; break;
 				}
 
@@ -102,6 +106,7 @@ namespace ProjectThalia
 			ImGui::Text("DT: %f", averageDeltaTime);
 			ImGui::Text("Frame Time (ms): %f", averageDeltaTime / 0.001f);
 			ImGui::Text("FPS: %llu", averageFps);
+			ImGui::Text("Num Quads: %llu", _numQuads);
 
 			ImGui::Render();
 
@@ -116,7 +121,8 @@ namespace ProjectThalia
                                                0.1f,
                                                10.0f);
 
-
+			if (Input::GetPressed(SDL_KeyCode::SDLK_g)) { _material->SetTexture(0, *_floppaTexture); }
+			if (Input::GetPressed(SDL_KeyCode::SDLK_h)) { _material->SetTexture(0, *_evilFloppaTexture); }
 
 			if (!_window.IsMinimized())
 			{
@@ -130,18 +136,25 @@ namespace ProjectThalia
 	{
 		_shader = std::make_unique<Rendering::Shader>("res/shaders/debug");
 
+		Rendering::TextureSettings textureSettings {};
+		_floppaTexture     = std::make_unique<Rendering::Texture2D>("res/textures/floppa.png", textureSettings);
+		_evilFloppaTexture = std::make_unique<Rendering::Texture2D>("res/textures/evil_floppa.png", textureSettings);
+
 		_material                  = std::make_unique<Rendering::Material>(_shader.get());
 		ObjectBuffer* objectBuffer = _material->GetDescriptorSetAllocation().ShaderBuffers[1].GetMappedData<ObjectBuffer>();
 
+		_numQuads = objectBuffer->objects.max_size();
+
+		//_material->SetTexture(0, *_floppaTexture);
 
 		for (ObjectData& objectData : objectBuffer->objects) { objectData.model = glm::translate(glm::mat4(1.0), glm::ballRand(0.7f)); }
 
 		//_material2 = std::make_unique<Rendering::Material>(_shader.get());
 
-		const std::vector<Rendering::VertexPosition2DColorUV> vertices = {{{-0.0005f, 0.0005f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},  // Top Left
-																		  {{0.0005f, 0.0005f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},   // Top Right
-																		  {{-0.0005f, -0.0005f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Left
-																		  {{0.0005f, -0.0005f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}}; // Bottom Right
+		const std::vector<Rendering::VertexPosition2DColorUV> vertices = {{{-0.05f, 0.05f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},  // Top Left
+																		  {{0.05f, 0.05f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},   // Top Right
+																		  {{-0.05f, -0.05f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Left
+																		  {{0.05f, -0.05f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}}; // Bottom Right
 
 		const std::vector<uint16_t> indices = {0, 1, 2, 2, 1, 3};
 

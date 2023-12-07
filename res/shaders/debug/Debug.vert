@@ -11,7 +11,7 @@ struct ObjectData {
 };
 
 layout(std140, set = 0, binding = 2) readonly buffer ObjectBuffer {
-    ObjectData objects[100000];
+    ObjectData objects[1000000];
 } objectBuffer;
 
 layout(location = 0) in vec2 inPosition;

@@ -34,20 +34,24 @@ namespace ProjectThalia
 
 			struct ObjectBuffer
 			{
-					std::array<ObjectData, 100000> objects;
+					std::array<ObjectData, 5> objects;
 			};
 
 			void Initialize();
 			void UserInitialize();
 
+			size_t _numQuads;
+
 			Event<int>          _event;
 			Window              _window;
 			Rendering::Renderer _renderer;
 
-			std::unique_ptr<Rendering::Shader>   _shader;
-			std::unique_ptr<Rendering::Material> _material;
-			std::unique_ptr<Rendering::Material> _material2;
+			std::unique_ptr<Rendering::Shader>    _shader;
+			std::unique_ptr<Rendering::Material>  _material;
+			std::unique_ptr<Rendering::Material>  _material2;
+			std::unique_ptr<Rendering::Texture2D> _floppaTexture;
+			std::unique_ptr<Rendering::Texture2D> _evilFloppaTexture;
 
-			std::unique_ptr<Rendering::Model>    _model;
+			std::unique_ptr<Rendering::Model> _model;
 	};
 }

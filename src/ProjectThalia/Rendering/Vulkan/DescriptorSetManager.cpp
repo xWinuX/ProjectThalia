@@ -61,10 +61,12 @@ namespace ProjectThalia::Rendering::Vulkan
 		validDescriptorPoolInstance->DescriptorSets[insertionIndex] = descriptorSet;
 
 		// Create descriptor resources
-		std::vector<Buffer>                    shaderBuffers = std::vector<Buffer>();
-		std::vector<vk::DescriptorBufferInfo*> bufferInfos   = std::vector<vk::DescriptorBufferInfo*>();
-		std::vector<vk::DescriptorImageInfo*>  imageInfos    = std::vector<vk::DescriptorImageInfo*>();
-		Buffer                                 buffer;
+		std::vector<Buffer>                    shaderBuffers            = std::vector<Buffer>();
+		std::vector<vk::DescriptorBufferInfo*> bufferInfos              = std::vector<vk::DescriptorBufferInfo*>();
+		std::vector<vk::DescriptorImageInfo*>  imageInfos               = std::vector<vk::DescriptorImageInfo*>();
+		std::vector<vk::WriteDescriptorSet>    imageWriteDescriptorSets = std::vector<vk::WriteDescriptorSet>();
+
+		Buffer buffer;
 		for (vk::WriteDescriptorSet& writeDescriptorSet : _writeDescriptorSets)
 		{
 			writeDescriptorSet.dstSet = descriptorSet;
@@ -85,11 +87,12 @@ namespace ProjectThalia::Rendering::Vulkan
 					writeDescriptorSet.pBufferInfo = bufferInfos.back();
 					break;
 				case vk::DescriptorType::eCombinedImageSampler:
-					imageInfos.push_back(new vk::DescriptorImageInfo(GetDevice()->GetDefaultSampler(),
+					imageInfos.push_back(new vk::DescriptorImageInfo(*GetDevice()->GetDefaultSampler(),
 																	 GetDevice()->GetDefaultImage().GetView(),
 																	 GetDevice()->GetDefaultImage().GetLayout()));
 					delete writeDescriptorSet.pImageInfo;
 					writeDescriptorSet.pImageInfo = imageInfos.back();
+					imageWriteDescriptorSets.push_back(writeDescriptorSet);
 					break;
 			}
 		}
@@ -98,10 +101,11 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		// Create allocation object
 		DescriptorSetAllocation descriptorSetAllocation;
-		descriptorSetAllocation.DescriptorSet        = validDescriptorPoolInstance->DescriptorSets[insertionIndex];
-		descriptorSetAllocation._descriptorPoolIndex = descriptorPoolIndex;
-		descriptorSetAllocation._descriptorSetIndex  = insertionIndex;
-		descriptorSetAllocation.ShaderBuffers        = std::move(shaderBuffers);
+		descriptorSetAllocation.DescriptorSet             = validDescriptorPoolInstance->DescriptorSets[insertionIndex];
+		descriptorSetAllocation._descriptorPoolIndex      = descriptorPoolIndex;
+		descriptorSetAllocation._descriptorSetIndex       = insertionIndex;
+		descriptorSetAllocation.ShaderBuffers             = std::move(shaderBuffers);
+		descriptorSetAllocation.ImageWriteDescriptorSets  = std::move(imageWriteDescriptorSets);
 
 		return descriptorSetAllocation;
 	}

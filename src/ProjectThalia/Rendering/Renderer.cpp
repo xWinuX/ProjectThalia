@@ -54,7 +54,7 @@ namespace ProjectThalia::Rendering
 
 		commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 
-		for (const auto& [material, models] : _modelsToRender)
+		for (auto& [material, models] : _modelsToRender)
 		{
 			commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, material->GetShader()->GetPipeline().GetVkPipeline());
 
@@ -77,6 +77,8 @@ namespace ProjectThalia::Rendering
 				vk::Rect2D scissor = vk::Rect2D({0, 0}, _device->GetSwapchain().GetExtend());
 				commandBuffer.setScissor(0, 1, &scissor);
 
+				material->Update();
+
 				commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
 												 material->GetShader()->GetPipeline().GetLayout(),
 												 0,
@@ -85,7 +87,7 @@ namespace ProjectThalia::Rendering
 												 0,
 												 nullptr);
 
-				commandBuffer.drawIndexed(model->GetModelBuffer().GetBufferElementNum(1), 100000, 0, 0, 0);
+				commandBuffer.drawIndexed(model->GetModelBuffer().GetBufferElementNum(1), 1'000'000, 0, 0, 0);
 			}
 		}
 
@@ -135,7 +137,7 @@ namespace ProjectThalia::Rendering
 		});
 	}
 
-	void Renderer::SubmitModel(const Material* material, const Model* model)
+	void Renderer::SubmitModel(Material* material, const Model* model)
 	{
 		if (!_modelsToRender.contains(material)) { _modelsToRender[material] = IncrementVector<const Model*>(100); }
 

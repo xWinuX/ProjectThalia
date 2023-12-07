@@ -37,5 +37,17 @@ namespace ProjectThalia::Rendering
 			float                 MinLod              = 0.0f;
 			float                 MaxLod              = 0.0f;
 			float                 MaxAnisotropy       = 0.0f;
+
+            bool operator==(const TextureSettings& other) const
+            {
+                return MagnificationFilter == other.MagnificationFilter &&
+                       MinificationFilter == other.MinificationFilter &&
+                       MipmapMode == other.MipmapMode &&
+                       WrapMode == other.WrapMode &&
+					   MipLodBias == other.MipLodBias &&
+					   MinLod == other.MinLod &&
+					   MaxLod == other.MaxLod &&
+					   MaxAnisotropy == other.MaxAnisotropy;
+            }
 	};
 }

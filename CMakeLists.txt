@@ -66,8 +66,8 @@ add_executable(${PROJECT_NAME}
         src/ProjectThalia/Input.cpp
         include/ProjectThalia/Input.hpp
         src/ProjectThalia/Rendering/Vulkan/DescriptorSetManager.cpp
-        #src/ProjectThalia/Rendering/Texture2D.cpp
-        #include/ProjectThalia/Rendering/Texture2D.hpp
+        src/ProjectThalia/Rendering/Texture2D.cpp
+        include/ProjectThalia/Rendering/Texture2D.hpp
         include/ProjectThalia/Rendering/TextureSettings.hpp
         src/ProjectThalia/Rendering/Material.cpp
         src/ProjectThalia/Rendering/Model.cpp
@@ -75,6 +75,7 @@ add_executable(${PROJECT_NAME}
         src/ProjectThalia/Rendering/Shader.cpp
         include/ProjectThalia/Rendering/Shader.hpp
         include/ProjectThalia/DataStructures.hpp
+        src/ProjectThalia/Rendering/Texture2D.cpp
 )
 
 # add everything in include as an... well... include

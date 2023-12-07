@@ -132,5 +132,5 @@ namespace ProjectThalia::Rendering::Vulkan
 
 	const vk::ImageView& Image::GetView() const { return _view; }
 
-	vk::ImageLayout Image::GetLayout() const { return _layout; }
+	const vk::ImageLayout& Image::GetLayout() const { return _layout; }
 }

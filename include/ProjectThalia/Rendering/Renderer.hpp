@@ -18,13 +18,13 @@ namespace ProjectThalia::Rendering
 			void Initialize(Window* window);
 			void Render();
 
-			void SubmitModel(const Material* material, const Model* model);
+			void SubmitModel(Material* material, const Model* model);
 
 		private:
 			Window*         _window;
 			Vulkan::Context _vulkanContext;
 
-			std::unordered_map<const Material*, IncrementVector<const Model*>> _modelsToRender;
+			std::unordered_map<Material*, IncrementVector<const Model*>> _modelsToRender;
 
 			bool _frameBufferResized = false;
 	};

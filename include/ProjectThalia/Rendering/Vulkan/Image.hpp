@@ -30,9 +30,9 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			void Destroy() override;
 
-			[[nodiscard]] const vk::Image&     GetVkImage() const;
-			[[nodiscard]] const vk::ImageView& GetView() const;
-			[[nodiscard]] vk::ImageLayout      GetLayout() const;
+			[[nodiscard]] const vk::Image&       GetVkImage() const;
+			[[nodiscard]] const vk::ImageView&   GetView() const;
+			[[nodiscard]] const vk::ImageLayout& GetLayout() const;
 
 		private:
 			Allocator::ImageAllocation _imageAllocation;

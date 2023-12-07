@@ -2,6 +2,7 @@
 
 #include "DeviceObject.hpp"
 #include "Instance.hpp"
+#include "ProjectThalia/Rendering/TextureSettings.hpp"
 
 #include <unordered_map>
 #include <vk_mem_alloc.h>
@@ -97,5 +98,20 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			static VmaAllocationCreateInfo CreateVmaAllocationCreateInfo(const MemoryAllocationCreateInfo& memoryAllocationCreateInfo);
 #pragma endregion
+
+#pragma region Memory
+
+		public:
+			const vk::Sampler* AllocateSampler(TextureSettings textureSettings);
+
+		private:
+			struct SamplerEntry {
+					TextureSettings TextureSettings;
+					vk::Sampler Sampler;
+			};
+
+			std::vector<SamplerEntry> _samplers;
 	};
+
+#pragma endregion
 }

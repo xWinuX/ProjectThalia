@@ -2,6 +2,7 @@
 
 #include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/Rendering/Vulkan/Device.hpp"
+#include "ProjectThalia/Rendering/Vulkan/Utility.hpp"
 
 namespace ProjectThalia::Rendering::Vulkan
 {
@@ -88,6 +89,10 @@ namespace ProjectThalia::Rendering::Vulkan
 		LOG("Leaked buffers {0}", _buffersAllocated);
 		LOG("Leaked images {0}", _imagesAllocated);
 		vmaDestroyAllocator(_vmaAllocator);
+		for (const SamplerEntry& samplerEntry : _samplers)
+		{
+			Utility::DeleteDeviceHandle(GetDevice(), samplerEntry.Sampler);
+		}
 	}
 
 	VmaAllocationCreateInfo Allocator::CreateVmaAllocationCreateInfo(const Allocator::MemoryAllocationCreateInfo& memoryAllocationCreateInfo)
@@ -98,6 +103,35 @@ namespace ProjectThalia::Rendering::Vulkan
 		allocationCreateInfo.requiredFlags           = static_cast<VkMemoryPropertyFlags>(memoryAllocationCreateInfo.RequiredFlags);
 		allocationCreateInfo.priority                = 1.0f;
 		return allocationCreateInfo;
+	}
+
+	const vk::Sampler* Allocator::AllocateSampler(TextureSettings textureSettings)
+	{
+		for (const SamplerEntry& samplerEntry : _samplers)
+		{
+			if (samplerEntry.TextureSettings == textureSettings) { return &samplerEntry.Sampler; }
+		}
+
+		vk::SamplerCreateInfo samplerCreateInfo = vk::SamplerCreateInfo({},
+																		static_cast<vk::Filter>(textureSettings.MagnificationFilter),
+																		static_cast<vk::Filter>(textureSettings.MinificationFilter),
+																		static_cast<vk::SamplerMipmapMode>(textureSettings.MipmapMode),
+																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.x),
+																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.y),
+																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.z),
+																		textureSettings.MipLodBias,
+																		textureSettings.MaxAnisotropy > 0.0f,
+																		textureSettings.MaxAnisotropy,
+																		vk::False,
+																		vk::CompareOp::eNever,
+																		textureSettings.MinLod,
+																		textureSettings.MaxLod,
+																		vk::BorderColor::eIntOpaqueBlack,
+																		vk::False);
+
+		_samplers.push_back({textureSettings, GetDevice()->GetVkDevice().createSampler(samplerCreateInfo)});
+
+		return &_samplers.back().Sampler;
 	}
 
 }

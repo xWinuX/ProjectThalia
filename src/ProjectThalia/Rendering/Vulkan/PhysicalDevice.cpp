@@ -16,6 +16,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		std::vector<vk::PhysicalDevice> physicalDevices = instance.enumeratePhysicalDevices();
 		for (const vk::PhysicalDevice& physicalDevice : physicalDevices)
 		{
+			LOG("{0}", _properties.deviceName.data());
 			// Check device type
 			_properties = physicalDevice.getProperties();
 			if (_properties.deviceType != vk::PhysicalDeviceType::eDiscreteGpu) { continue; }
@@ -88,8 +89,8 @@ namespace ProjectThalia::Rendering::Vulkan
 		}
 
 		// Select depth image format
-		_depthImageFormat =vk::Format::eD32Sfloat;
-		/*for (vk::Format format : {vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint})
+		_depthImageFormat = vk::Format::eD32Sfloat;
+		for (vk::Format format : {vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint})
 		{
 			vk::FormatProperties props = _vkPhysicalDevice.getFormatProperties(format);
 
@@ -98,7 +99,7 @@ namespace ProjectThalia::Rendering::Vulkan
 				_depthImageFormat = format;
 				break;
 			}
-		}*/
+		}
 	}
 
 	const vk::PhysicalDevice& PhysicalDevice::GetVkPhysicalDevice() const { return _vkPhysicalDevice; }

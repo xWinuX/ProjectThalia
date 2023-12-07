@@ -39,7 +39,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			[[nodiscard]] const vk::CommandPool&                    GetGraphicsCommandPool() const;
 			[[nodiscard]] Allocator&                                GetAllocator();
 			[[nodiscard]] const Image&                              GetDefaultImage() const;
-			[[nodiscard]] const vk::Sampler&                        GetDefaultSampler() const;
+			[[nodiscard]] const vk::Sampler*                        GetDefaultSampler() const;
 
 
 			[[nodiscard]] int FindMemoryTypeIndex(const vk::MemoryRequirements&                memoryRequirements,
@@ -56,8 +56,8 @@ namespace ProjectThalia::Rendering::Vulkan
 			Swapchain  _swapchain;
 			RenderPass _renderPass;
 
-			Image       _defaultImages;
-			vk::Sampler _defaultSampler;
+			Image              _defaultImages;
+			const vk::Sampler* _defaultSampler;
 
 			vk::CommandPool _graphicsCommandPool;
 

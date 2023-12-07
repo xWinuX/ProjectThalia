@@ -2,6 +2,7 @@
 
 #include "ProjectThalia/Rendering/Vulkan/Buffer.hpp"
 #include "ProjectThalia/Rendering/Vulkan/Pipeline.hpp"
+#include "ProjectThalia/Rendering/Texture2D.hpp"
 
 #include "Shader.hpp"
 
@@ -16,6 +17,11 @@ namespace ProjectThalia::Rendering
 
 			~Material();
 
+			void SetTexture(size_t index, const Texture2D& texture);
+			void SetTexture(size_t index, const Vulkan::Image& texture);
+
+			void Update();
+
 			[[nodiscard]] Shader* GetShader() const;
 
 			[[nodiscard]] Vulkan::DescriptorSetManager::DescriptorSetAllocation&       GetDescriptorSetAllocation();
@@ -23,6 +29,8 @@ namespace ProjectThalia::Rendering
 
 		private:
 			Shader* _shader = nullptr;
+
+			std::vector<vk::WriteDescriptorSet> _updateImageWriteDescriptorSets;
 
 			Vulkan::DescriptorSetManager::DescriptorSetAllocation _descriptorSetAllocation;
 
