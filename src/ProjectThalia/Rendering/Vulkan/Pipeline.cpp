@@ -1,5 +1,4 @@
 #include "ProjectThalia/Rendering/Vulkan/Pipeline.hpp"
-#include "ProjectThalia/Debug/Log.hpp"
 #include "ProjectThalia/ErrorHandler.hpp"
 #include "ProjectThalia/IO/Stream.hpp"
 #include "ProjectThalia/Rendering/Vulkan/Utility.hpp"
@@ -14,12 +13,12 @@ namespace ProjectThalia::Rendering::Vulkan
 		_shaderModules.reserve(shaderInfos.size());
 
 		// Descriptors
-		std::vector<vk::DescriptorSetLayoutBinding> descriptorLayoutBindings;
-		std::vector<vk::DescriptorPoolSize>         descriptorPoolSizes;
-		std::vector<vk::WriteDescriptorSet>         writeDescriptorSets;
+		std::vector<vk::DescriptorSetLayoutBinding> descriptorLayoutBindings = std::vector<vk::DescriptorSetLayoutBinding>(0);
+		std::vector<vk::DescriptorPoolSize>         descriptorPoolSizes      = std::vector<vk::DescriptorPoolSize>(0);
+		std::vector<vk::WriteDescriptorSet>         writeDescriptorSets      = std::vector<vk::WriteDescriptorSet>(0);
 
 		// Vertex Input
-		std::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions;
+		std::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions = std::vector<vk::VertexInputAttributeDescription>(0);
 		vk::PipelineVertexInputStateCreateInfo           vertexInputStateCreateInfo {};
 
 		for (int i = 0; i < shaderInfos.size(); i++)
@@ -41,8 +40,10 @@ namespace ProjectThalia::Rendering::Vulkan
 			// Setup descriptor layout
 			for (const auto& [type, resources] : resourceMap)
 			{
+
 				for (const spirv_cross::Resource& resource : resources)
 				{
+
 					uint32_t binding = spirvCompiler.get_decoration(resource.id, spv::DecorationBinding);
 
 					vk::DescriptorSetLayoutBinding layoutBinding = vk::DescriptorSetLayoutBinding(binding,
@@ -50,25 +51,27 @@ namespace ProjectThalia::Rendering::Vulkan
 																								  1,
 																								  static_cast<vk::ShaderStageFlagBits>(
 																										  shaderInfos[i].shaderStage));
-					vk::DescriptorPoolSize         poolSize      = vk::DescriptorPoolSize(type, Device::MAX_FRAMES_IN_FLIGHT);
 
-					vk::WriteDescriptorSet       writeDescriptorSet = vk::WriteDescriptorSet(VK_NULL_HANDLE, binding, 0, 1, type, nullptr, nullptr, nullptr);
-					const spirv_cross::SPIRType& resourceType       = spirvCompiler.get_type(resource.base_type_id);
+
+					vk::DescriptorPoolSize poolSize = vk::DescriptorPoolSize(type, 1);
+
+					vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet(VK_NULL_HANDLE, binding, 0, 1, type, nullptr, nullptr, nullptr);
+
+					const spirv_cross::SPIRType& resourceType = spirvCompiler.get_type(resource.base_type_id);
+
 
 					switch (type)
 					{
 						case vk::DescriptorType::eStorageBuffer:
 						case vk::DescriptorType::eUniformBuffer:
 						{
-							vk::DeviceSize            uniformSize          = spirvCompiler.get_declared_struct_size(resourceType);
-							vk::DescriptorBufferInfo* descriptorBufferInfo = new vk::DescriptorBufferInfo(VK_NULL_HANDLE, 0, uniformSize);
-							writeDescriptorSet.pBufferInfo                 = descriptorBufferInfo;
+							vk::DeviceSize uniformSize     = spirvCompiler.get_declared_struct_size(resourceType);
+							writeDescriptorSet.pBufferInfo = new vk::DescriptorBufferInfo(VK_NULL_HANDLE, 0, uniformSize);
 							break;
 						}
 						case vk::DescriptorType::eCombinedImageSampler:
 						{
-							vk::DescriptorImageInfo* descriptorImageInfo = new vk::DescriptorImageInfo({}, {}, {});
-							writeDescriptorSet.pImageInfo                = descriptorImageInfo;
+							writeDescriptorSet.pImageInfo = new vk::DescriptorImageInfo(VK_NULL_HANDLE);
 							break;
 						}
 					}
@@ -132,9 +135,7 @@ namespace ProjectThalia::Rendering::Vulkan
 				vk::DynamicState::eScissor,
 		};
 
-
 		vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo = vk::PipelineDynamicStateCreateInfo({}, dynamicStates);
-
 
 		vk::PipelineInputAssemblyStateCreateInfo assemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo({},
 																													vk::PrimitiveTopology::eTriangleList,
