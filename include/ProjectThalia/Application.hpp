@@ -34,7 +34,7 @@ namespace ProjectThalia
 
 			struct ObjectBuffer
 			{
-					std::array<ObjectData, 5> objects;
+					std::array<ObjectData, 1'000'000> objects;
 			};
 
 			void Initialize();
