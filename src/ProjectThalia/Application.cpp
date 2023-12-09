@@ -15,7 +15,9 @@
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_vulkan.h>
 
+#include <algorithm>
 #include <chrono>
+#include <execution>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -125,11 +127,12 @@ namespace ProjectThalia
 			if (Input::GetPressed(SDL_KeyCode::SDLK_h)) { _material->SetTexture(0, *_evilFloppaTexture); }
 
 			//_material->GetDescriptorSetAllocation().ShaderBuffers[1].Invalidate();
-			
+
 			ObjectBuffer* objectBuffer = _material->GetDescriptorSetAllocation().ShaderBuffers[1].GetMappedData<ObjectBuffer>();
 
-			for (ObjectData& objectData : objectBuffer->objects) { objectData.position += glm::vec4(0.0001f, 0.0001f, 0.0001f, 0.0f) ; }
-
+			std::for_each(std::execution::par, objectBuffer->objects.begin(), objectBuffer->objects.end(), [](ObjectData& objectData) {
+				objectData.position += glm::vec4(0.0001f, 0.0001f, 0.0001f, 0.0f);
+			});
 
 			//_material->GetDescriptorSetAllocation().ShaderBuffers[1].Flush();
 
@@ -157,19 +160,13 @@ namespace ProjectThalia
 
 		for (ObjectData& objectData : objectBuffer->objects) { objectData.position = glm::vec4(glm::ballRand(0.7f), 0.0f); }
 
-		//_material->GetDescriptorSetAllocation().ShaderBuffers[1].Invalidate();
-		//_material->GetDescriptorSetAllocation().ShaderBuffers[1].Flush();
 
+		const std::vector<Rendering::VertexPosition2DColorUV> quad = {{{-0.0005f, 0.0005f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},  // Top Left
+																	  {{0.0005f, 0.0005f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},   // Top Right
+																	  {{-0.0005f, -0.0005f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Left
+																	  {{0.0005f, -0.0005f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}}; // Bottom Right
 
-		//_material->SetTexture(0, *_floppaTexture);
-		//for (ObjectData& objectData : objectBuffer->objects) { objectData.model = glm::translate(glm::mat4(1.0), glm::ballRand(0.7f)); }
-		//_material2 = std::make_unique<Rendering::Material>(_shader.get());
-
-		const std::vector<Rendering::VertexPosition2DColorUV> quad        = {{{-0.0005f, 0.0005f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},  // Top Left
-																			 {{0.0005f, 0.0005f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},   // Top Right
-																			 {{-0.0005f, -0.0005f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Left
-																			 {{0.0005f, -0.0005f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}}; // Bottom Right
-		const std::vector<uint16_t>                           quadIndices = {0, 1, 2, 2, 1, 3};
+		const std::vector<uint16_t> quadIndices = {0, 1, 2, 2, 1, 3};
 
 		std::vector<Rendering::VertexPosition2DColorUV> vertices;
 		vertices.reserve(1024 * 4);
