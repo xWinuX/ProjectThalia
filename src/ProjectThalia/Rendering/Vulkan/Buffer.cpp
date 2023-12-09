@@ -179,4 +179,8 @@ namespace ProjectThalia::Rendering::Vulkan
 	}
 
 	void* Buffer::GetMappedData() { return _bufferAllocation.AllocationInfo.MappedData; }
+
+	void Buffer::Invalidate() { GetDevice()->GetAllocator().InvalidateBuffer(_bufferAllocation); }
+
+	void Buffer::Flush() { GetDevice()->GetAllocator().FlushBuffer(_bufferAllocation); }
 }

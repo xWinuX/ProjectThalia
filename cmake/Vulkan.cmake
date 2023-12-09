@@ -22,6 +22,7 @@ function(compile_shader target)
                 COMMAND
                 glslangValidator
                 -e main
+                -gVS
                 -V
                 -o ${CMAKE_BINARY_DIR}/bin/${config_folder}/${source}.${arg_FORMAT}  # Change output path
                 ${CMAKE_CURRENT_SOURCE_DIR}/${source}

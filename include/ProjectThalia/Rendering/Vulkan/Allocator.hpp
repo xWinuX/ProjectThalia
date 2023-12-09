@@ -23,8 +23,10 @@ namespace ProjectThalia::Rendering::Vulkan
 		public:
 			enum MemoryAllocationCreateFlagBits : uint32_t
 			{
-				None          = 0,
-				PersistentMap = VmaAllocationCreateFlagBits::VMA_ALLOCATION_CREATE_MAPPED_BIT,
+				None              = 0,
+				PersistentMap     = VmaAllocationCreateFlagBits::VMA_ALLOCATION_CREATE_MAPPED_BIT,
+				WriteSequentially = VmaAllocationCreateFlagBits::VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+				RandomAccess      = VmaAllocationCreateFlagBits::VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT
 			};
 
 			enum MemoryUsage
@@ -32,11 +34,14 @@ namespace ProjectThalia::Rendering::Vulkan
 				CpuToGpu = VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_TO_GPU,
 				GpuOnly  = VmaMemoryUsage::VMA_MEMORY_USAGE_GPU_ONLY,
 				CpuOnly  = VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_ONLY,
+				Auto     = VmaMemoryUsage::VMA_MEMORY_USAGE_AUTO
 			};
 
 			enum MemoryPropertyFlagBits : uint32_t
 			{
 				LocalDevice = VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+				HostCached  = VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+				HostVisible = VkMemoryPropertyFlagBits ::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
 			};
 
 			struct MemoryAllocationInfo
@@ -81,6 +86,9 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			[[nodiscard]] ImageAllocation CreateImage(const vk::ImageCreateInfo& imageCreateInfo, const MemoryAllocationCreateInfo& memoryAllocationCreateInfo);
 
+			void InvalidateBuffer(const BufferAllocation& bufferAllocation);
+
+			void FlushBuffer(const BufferAllocation& bufferAllocation);
 
 			void DestroyBuffer(const BufferAllocation& bufferAllocation);
 
@@ -105,9 +113,10 @@ namespace ProjectThalia::Rendering::Vulkan
 			const vk::Sampler* AllocateSampler(TextureSettings textureSettings);
 
 		private:
-			struct SamplerEntry {
+			struct SamplerEntry
+			{
 					TextureSettings TextureSettings;
-					vk::Sampler Sampler;
+					vk::Sampler     Sampler;
 			};
 
 			std::vector<SamplerEntry> _samplers;

@@ -7,11 +7,11 @@ layout(binding = 0) uniform UniformBufferObject {
 } ubo;
 
 struct ObjectData {
-    mat4 model;
+    vec4 position;
 };
 
 layout(std140, set = 0, binding = 2) readonly buffer ObjectBuffer {
-    ObjectData objects[1000000];
+    ObjectData objects[1024000];
 } objectBuffer;
 
 layout(location = 0) in vec2 inPosition;
@@ -22,7 +22,8 @@ layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 fragTexCoord;
 
 void main() {
-    gl_Position = ubo.proj * ubo.view * objectBuffer.objects[gl_InstanceIndex].model * vec4(inPosition, 0.0, 1.0);
+    vec4 position = objectBuffer.objects[gl_InstanceIndex*1024 + (gl_VertexIndex / 6)].position;
+    gl_Position = ubo.proj * ubo.view *  vec4(inPosition + position.xy, position.z, 1.0);
     fragColor = inColor;
     fragTexCoord = inTexCoord;
 }

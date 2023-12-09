@@ -87,7 +87,7 @@ namespace ProjectThalia::Rendering
 												 0,
 												 nullptr);
 
-				commandBuffer.drawIndexed(model->GetModelBuffer().GetBufferElementNum(1), 1'000'000, 0, 0, 0);
+				commandBuffer.drawIndexed(model->GetModelBuffer().GetBufferElementNum(1),  1'024'000/5000, 0, 0, 0);
 			}
 		}
 
@@ -95,7 +95,6 @@ namespace ProjectThalia::Rendering
 
 		commandBuffer.endRenderPass();
 		commandBuffer.end();
-
 
 		vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
 		vk::SubmitInfo         submitInfo   = vk::SubmitInfo(_vulkanContext.GetImageAvailableSemaphore(),

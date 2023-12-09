@@ -29,12 +29,12 @@ namespace ProjectThalia
 
 			struct ObjectData
 			{
-					glm::mat4 model;
+					glm::vec4 position;
 			};
 
 			struct ObjectBuffer
 			{
-					std::array<ObjectData, 1'000'000> objects;
+					std::array<ObjectData, 1'024'000> objects;
 			};
 
 			void Initialize();

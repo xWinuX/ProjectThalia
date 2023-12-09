@@ -134,4 +134,13 @@ namespace ProjectThalia::Rendering::Vulkan
 		return &_samplers.back().Sampler;
 	}
 
+	void Allocator::InvalidateBuffer(const Allocator::BufferAllocation& bufferAllocation)
+	{
+		vmaInvalidateAllocation(_vmaAllocator, bufferAllocation.VmaAllocation, 0, VK_WHOLE_SIZE);
+	}
+
+	void Allocator::FlushBuffer(const Allocator::BufferAllocation& bufferAllocation)
+	{
+		vmaFlushAllocation(_vmaAllocator, bufferAllocation.VmaAllocation, 0, VK_WHOLE_SIZE);
+	}
 }

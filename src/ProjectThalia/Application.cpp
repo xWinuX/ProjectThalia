@@ -124,6 +124,15 @@ namespace ProjectThalia
 			if (Input::GetPressed(SDL_KeyCode::SDLK_g)) { _material->SetTexture(0, *_floppaTexture); }
 			if (Input::GetPressed(SDL_KeyCode::SDLK_h)) { _material->SetTexture(0, *_evilFloppaTexture); }
 
+			//_material->GetDescriptorSetAllocation().ShaderBuffers[1].Invalidate();
+			
+			ObjectBuffer* objectBuffer = _material->GetDescriptorSetAllocation().ShaderBuffers[1].GetMappedData<ObjectBuffer>();
+
+			for (ObjectData& objectData : objectBuffer->objects) { objectData.position += glm::vec4(0.0001f, 0.0001f, 0.0001f, 0.0f) ; }
+
+
+			//_material->GetDescriptorSetAllocation().ShaderBuffers[1].Flush();
+
 			if (!_window.IsMinimized())
 			{
 				_renderer.SubmitModel(_material.get(), _model.get());
@@ -145,18 +154,33 @@ namespace ProjectThalia
 
 		_numQuads = objectBuffer->objects.max_size();
 
+
+		for (ObjectData& objectData : objectBuffer->objects) { objectData.position = glm::vec4(glm::ballRand(0.7f), 0.0f); }
+
+		//_material->GetDescriptorSetAllocation().ShaderBuffers[1].Invalidate();
+		//_material->GetDescriptorSetAllocation().ShaderBuffers[1].Flush();
+
+
 		//_material->SetTexture(0, *_floppaTexture);
-
-		for (ObjectData& objectData : objectBuffer->objects) { objectData.model = glm::translate(glm::mat4(1.0), glm::ballRand(0.7f)); }
-
+		//for (ObjectData& objectData : objectBuffer->objects) { objectData.model = glm::translate(glm::mat4(1.0), glm::ballRand(0.7f)); }
 		//_material2 = std::make_unique<Rendering::Material>(_shader.get());
 
-		const std::vector<Rendering::VertexPosition2DColorUV> vertices = {{{-0.05f, 0.05f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},  // Top Left
-																		  {{0.05f, 0.05f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},   // Top Right
-																		  {{-0.05f, -0.05f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Left
-																		  {{0.05f, -0.05f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}}; // Bottom Right
+		const std::vector<Rendering::VertexPosition2DColorUV> quad        = {{{-0.0005f, 0.0005f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},  // Top Left
+																			 {{0.0005f, 0.0005f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},   // Top Right
+																			 {{-0.0005f, -0.0005f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Left
+																			 {{0.0005f, -0.0005f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}}; // Bottom Right
+		const std::vector<uint16_t>                           quadIndices = {0, 1, 2, 2, 1, 3};
 
-		const std::vector<uint16_t> indices = {0, 1, 2, 2, 1, 3};
+		std::vector<Rendering::VertexPosition2DColorUV> vertices;
+		vertices.reserve(1024 * 4);
+		std::vector<uint16_t> indices;
+		indices.reserve(1024 * 6);
+		for (size_t i = 0; i < 1024; i++)
+		{
+			for (const Rendering::VertexPosition2DColorUV& vertex : quad) { vertices.push_back(vertex); }
+
+			for (uint16_t index : quadIndices) { indices.push_back(index + (i * 6)); }
+		}
 
 		_model = std::make_unique<Rendering::Model>(vertices, indices);
 	}

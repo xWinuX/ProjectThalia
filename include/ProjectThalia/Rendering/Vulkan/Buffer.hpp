@@ -82,6 +82,10 @@ namespace ProjectThalia::Rendering::Vulkan
 
 			void Stage(const char** data);
 
+			void Invalidate();
+
+			void Flush();
+
 			[[nodiscard]] const vk::Buffer& GetVkBuffer() const;
 			[[nodiscard]] size_t            GetNumSubBuffers() const;
 			[[nodiscard]] size_t            GetBufferElementNum(size_t index = 0) const;
@@ -93,7 +97,7 @@ namespace ProjectThalia::Rendering::Vulkan
 			{
 				char* mappedData = GetMappedData() == nullptr ? Map<char>() : static_cast<char*>(GetMappedData());
 				memcpy(mappedData + _subBuffers[subBufferIndex].OffsetInBytes, data, dataSizeInBytes);
-				Unmap();
+				//Unmap();
 			}
 
 			template<typename T>
@@ -150,7 +154,7 @@ namespace ProjectThalia::Rendering::Vulkan
 				return Buffer(device,
 							  vk::BufferUsageFlagBits::eUniformBuffer,
 							  vk::SharingMode::eExclusive,
-							  {Allocator::CpuToGpu, Allocator::PersistentMap},
+							  {Allocator::Auto, vk::Flags<Allocator::MemoryAllocationCreateFlagBits>(Allocator::WriteSequentially | Allocator::PersistentMap)},
 							  reinterpret_cast<const char*>(data),
 							  sizeof(T),
 							  sizeof(T));
@@ -161,7 +165,7 @@ namespace ProjectThalia::Rendering::Vulkan
 				return Buffer(device,
 							  vk::BufferUsageFlagBits::eUniformBuffer,
 							  vk::SharingMode::eExclusive,
-							  {Allocator::CpuToGpu, Allocator::PersistentMap},
+							  {Allocator::Auto, vk::Flags<Allocator::MemoryAllocationCreateFlagBits>(Allocator::WriteSequentially | Allocator::PersistentMap)},
 							  reinterpret_cast<const char*>(data),
 							  dataSizeInBytes,
 							  dataSizeInBytes);
@@ -172,7 +176,7 @@ namespace ProjectThalia::Rendering::Vulkan
 				return Buffer(device,
 							  vk::BufferUsageFlagBits::eStorageBuffer,
 							  vk::SharingMode::eExclusive,
-							  {Allocator::CpuToGpu, Allocator::PersistentMap},
+							  {Allocator::Auto, vk::Flags<Allocator::MemoryAllocationCreateFlagBits>(Allocator::RandomAccess | Allocator::PersistentMap)},
 							  reinterpret_cast<const char*>(data),
 							  dataSizeInBytes,
 							  dataSizeInBytes);
@@ -184,7 +188,7 @@ namespace ProjectThalia::Rendering::Vulkan
 				return Buffer(device,
 							  vk::BufferUsageFlagBits::eUniformBuffer,
 							  vk::SharingMode::eExclusive,
-							  {Allocator::CpuToGpu, Allocator::PersistentMap},
+							  {Allocator::Auto, vk::Flags<Allocator::MemoryAllocationCreateFlagBits>(Allocator::WriteSequentially | Allocator::PersistentMap)},
 							  reinterpret_cast<const char*>(data),
 							  sizeof(T),
 							  sizeof(T));
@@ -196,7 +200,9 @@ namespace ProjectThalia::Rendering::Vulkan
 				return Buffer(device,
 							  vk::BufferUsageFlagBits::eStorageBuffer,
 							  vk::SharingMode::eExclusive,
-							  {Allocator::CpuToGpu, Allocator::PersistentMap},
+							  {Allocator::CpuToGpu,
+							   vk::Flags<Allocator::MemoryAllocationCreateFlagBits>(Allocator::PersistentMap | Allocator::RandomAccess),
+							   vk::Flags<Allocator::MemoryPropertyFlagBits>(Allocator::HostCached)},
 							  reinterpret_cast<const char*>(data),
 							  sizeof(T),
 							  sizeof(T));
@@ -208,7 +214,7 @@ namespace ProjectThalia::Rendering::Vulkan
 				return Buffer(device,
 							  vk::BufferUsageFlagBits::eTransferSrc,
 							  vk::SharingMode::eExclusive,
-							  {Allocator::CpuToGpu},
+							  {Allocator::Auto, vk::Flags<Allocator::MemoryAllocationCreateFlagBits>(Allocator::WriteSequentially | Allocator::PersistentMap)},
 							  reinterpret_cast<const char*>(data),
 							  dataSizeInBytes,
 							  sizeof(T));
