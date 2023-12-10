@@ -9,5 +9,5 @@ layout(location = 2) in flat int textureIndex;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    outColor = texture(texSampler[textureID], fragTexCoord);
+    outColor = texture(texSampler[textureIndex], fragTexCoord);
 }
