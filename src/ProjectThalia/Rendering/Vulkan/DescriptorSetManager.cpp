@@ -61,14 +61,16 @@ namespace ProjectThalia::Rendering::Vulkan
 		validDescriptorPoolInstance->DescriptorSets[insertionIndex] = descriptorSet;
 
 		// Create descriptor resources
-		std::vector<Buffer>                    shaderBuffers            = std::vector<Buffer>();
-		std::vector<vk::DescriptorBufferInfo*> bufferInfos              = std::vector<vk::DescriptorBufferInfo*>();
-		std::vector<vk::DescriptorImageInfo*>  imageInfos               = std::vector<vk::DescriptorImageInfo*>();
-		std::vector<vk::WriteDescriptorSet>    imageWriteDescriptorSets = std::vector<vk::WriteDescriptorSet>();
+		std::vector<Buffer>                               shaderBuffers            = std::vector<Buffer>();
+		std::vector<vk::DescriptorBufferInfo*>            bufferInfos              = std::vector<vk::DescriptorBufferInfo*>();
+		std::vector<vk::WriteDescriptorSet>               imageWriteDescriptorSets = std::vector<vk::WriteDescriptorSet>();
+		std::vector<std::vector<vk::DescriptorImageInfo>> descriptorImageInfos;
 
 		Buffer buffer;
 		for (vk::WriteDescriptorSet& writeDescriptorSet : _writeDescriptorSets)
 		{
+			std::vector<vk::DescriptorImageInfo> imageInfos = std::vector<vk::DescriptorImageInfo>(0);
+
 			writeDescriptorSet.dstSet = descriptorSet;
 			switch (writeDescriptorSet.descriptorType)
 			{
@@ -79,6 +81,7 @@ namespace ProjectThalia::Rendering::Vulkan
 					delete writeDescriptorSet.pBufferInfo;
 					writeDescriptorSet.pBufferInfo = bufferInfos.back();
 					break;
+
 				case vk::DescriptorType::eUniformBuffer:
 					shaderBuffers.push_back(std::move(Buffer::CreateUniformBuffer(GetDevice(), writeDescriptorSet.pBufferInfo->range)));
 					bufferInfos.push_back(new vk::DescriptorBufferInfo(*writeDescriptorSet.pBufferInfo));
@@ -86,15 +89,21 @@ namespace ProjectThalia::Rendering::Vulkan
 					delete writeDescriptorSet.pBufferInfo;
 					writeDescriptorSet.pBufferInfo = bufferInfos.back();
 					break;
+
 				case vk::DescriptorType::eCombinedImageSampler:
-					imageInfos.push_back(new vk::DescriptorImageInfo(*GetDevice()->GetDefaultSampler(),
-																	 GetDevice()->GetDefaultImage().GetView(),
-																	 GetDevice()->GetDefaultImage().GetLayout()));
-					delete writeDescriptorSet.pImageInfo;
-					writeDescriptorSet.pImageInfo = imageInfos.back();
+					for (int i = 0; i < writeDescriptorSet.descriptorCount; ++i)
+					{
+						imageInfos.emplace_back(*GetDevice()->GetDefaultSampler(),
+												GetDevice()->GetDefaultImage().GetView(),
+												GetDevice()->GetDefaultImage().GetLayout());
+					}
+
+					writeDescriptorSet.pImageInfo = imageInfos.data();
 					imageWriteDescriptorSets.push_back(writeDescriptorSet);
 					break;
 			}
+
+			descriptorImageInfos.push_back(std::move(imageInfos));
 		}
 
 		GetDevice()->GetVkDevice().updateDescriptorSets(_writeDescriptorSets, nullptr);
@@ -106,6 +115,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		descriptorSetAllocation._descriptorSetIndex      = insertionIndex;
 		descriptorSetAllocation.ShaderBuffers            = std::move(shaderBuffers);
 		descriptorSetAllocation.ImageWriteDescriptorSets = std::move(imageWriteDescriptorSets);
+		descriptorSetAllocation.ImageInfos               = std::move(descriptorImageInfos);
 
 		return descriptorSetAllocation;
 	}
@@ -153,8 +163,6 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		descriptorPoolInstance.DescriptorSets[descriptorSetAllocation._descriptorSetIndex] = VK_NULL_HANDLE;
 		descriptorPoolInstance.Available.Push(descriptorSetAllocation._descriptorSetIndex);
-
-		for (vk::WriteDescriptorSet& writeDescriptorSet : descriptorSetAllocation.ImageWriteDescriptorSets) { delete writeDescriptorSet.pImageInfo; }
 
 		for (Buffer& buffer : descriptorSetAllocation.ShaderBuffers) { buffer.Destroy(); }
 	}

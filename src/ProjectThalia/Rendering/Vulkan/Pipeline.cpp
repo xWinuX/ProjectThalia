@@ -60,30 +60,34 @@ namespace ProjectThalia::Rendering::Vulkan
 						continue;
 					}
 
+					const spirv_cross::SPIRType& resourceBaseType = spirvCompiler.get_type(resource.base_type_id);
+					const spirv_cross::SPIRType& resourceType     = spirvCompiler.get_type(resource.type_id);
+
+					uint32_t descriptorCount = 1;
+					if (!resourceType.array.empty())
+					{
+						descriptorCount = resourceType.array[0];
+					}
+
+					LOG("descriptor count {0}", descriptorCount);
+
 					vk::DescriptorSetLayoutBinding layoutBinding = vk::DescriptorSetLayoutBinding(binding,
 																								  type,
-																								  1,
+																								  descriptorCount,
 																								  static_cast<vk::ShaderStageFlagBits>(
 																										  shaderInfos[i].shaderStage));
 
-					vk::DescriptorPoolSize poolSize = vk::DescriptorPoolSize(type, 1);
+					vk::DescriptorPoolSize poolSize = vk::DescriptorPoolSize(type, descriptorCount);
 
-					vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet(VK_NULL_HANDLE, binding, 0, 1, type, nullptr, nullptr, nullptr);
-
-					const spirv_cross::SPIRType& resourceType = spirvCompiler.get_type(resource.base_type_id);
+					vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet(VK_NULL_HANDLE, binding, 0, descriptorCount, type, nullptr, nullptr, nullptr);
 
 					switch (type)
 					{
 						case vk::DescriptorType::eStorageBuffer:
 						case vk::DescriptorType::eUniformBuffer:
 						{
-							vk::DeviceSize uniformSize     = spirvCompiler.get_declared_struct_size(resourceType);
+							vk::DeviceSize uniformSize     = spirvCompiler.get_declared_struct_size(resourceBaseType);
 							writeDescriptorSet.pBufferInfo = new vk::DescriptorBufferInfo(VK_NULL_HANDLE, 0, uniformSize);
-							break;
-						}
-						case vk::DescriptorType::eCombinedImageSampler:
-						{
-							writeDescriptorSet.pImageInfo = new vk::DescriptorImageInfo(VK_NULL_HANDLE);
 							break;
 						}
 					}

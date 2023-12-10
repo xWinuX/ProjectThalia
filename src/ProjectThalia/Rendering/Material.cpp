@@ -26,19 +26,30 @@ namespace ProjectThalia::Rendering
 
 	void Material::SetTexture(size_t index, const Texture2D& texture)
 	{
-		delete _descriptorSetAllocation.ImageWriteDescriptorSets[index].pImageInfo;
-		_descriptorSetAllocation.ImageWriteDescriptorSets[index].pImageInfo = new vk::DescriptorImageInfo(*texture.GetSampler(),
-																										  texture.GetImage().GetView(),
-																										  texture.GetImage().GetLayout());
+		_descriptorSetAllocation.ImageInfos[index][0] = vk::DescriptorImageInfo(*texture.GetSampler(),
+																				texture.GetImage().GetView(),
+																				texture.GetImage().GetLayout());
+		SetWriteDescriptorSetDirty(index);
+	}
 
-		// if theres already a set in updates overwrite image info
+	void Material::SetTextures(size_t index, size_t offset, const std::vector<Texture2D*>& textures)
+	{
+		for (int i = 0; i < textures.size(); ++i)
+		{
+			_descriptorSetAllocation.ImageInfos[index][i + offset] = vk::DescriptorImageInfo(*textures[i]->GetSampler(),
+																							 textures[i]->GetImage().GetView(),
+																							 textures[i]->GetImage().GetLayout());
+		}
+
+		SetWriteDescriptorSetDirty(index);
+	}
+
+	void Material::SetWriteDescriptorSetDirty(size_t index)
+	{
+		// if there's already a set in updates overwrite image info
 		for (vk::WriteDescriptorSet& writeDescriptorSet : _updateImageWriteDescriptorSets)
 		{
-			if (writeDescriptorSet.dstBinding == _descriptorSetAllocation.ImageWriteDescriptorSets[index].dstBinding)
-			{
-				writeDescriptorSet.pImageInfo = _descriptorSetAllocation.ImageWriteDescriptorSets[index].pImageInfo;
-				return;
-			}
+			if (writeDescriptorSet.dstBinding == _descriptorSetAllocation.ImageWriteDescriptorSets[index].dstBinding) { return; }
 		}
 
 		_updateImageWriteDescriptorSets.push_back(_descriptorSetAllocation.ImageWriteDescriptorSets[index]);
@@ -53,4 +64,5 @@ namespace ProjectThalia::Rendering
 
 		_updateImageWriteDescriptorSets.clear();
 	}
+
 }

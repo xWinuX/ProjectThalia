@@ -32,7 +32,7 @@ namespace ProjectThalia::Rendering::Vulkan
 
 		private:
 			const std::vector<const char*> _validationLayers = {"VK_LAYER_KHRONOS_validation"};
-			const std::vector<const char*> _deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+			const std::vector<const char*> _deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME};
 
 			Window* _window = nullptr; // TODO: Move to renderer
 

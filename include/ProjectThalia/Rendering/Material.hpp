@@ -18,6 +18,7 @@ namespace ProjectThalia::Rendering
 			~Material();
 
 			void SetTexture(size_t index, const Texture2D& texture);
+			void SetTextures(size_t index, size_t offset, const std::vector<Texture2D*>& textures);
 
 			void Update();
 
@@ -38,5 +39,7 @@ namespace ProjectThalia::Rendering
 			{
 				return _descriptorSetAllocation.ShaderBuffers[uniformBufferIndex].GetMappedData<T>();
 			}
+
+			void SetWriteDescriptorSetDirty(size_t index);
 	};
 }

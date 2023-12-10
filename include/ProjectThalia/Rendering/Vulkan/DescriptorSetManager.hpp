@@ -31,7 +31,24 @@ namespace ProjectThalia::Rendering::Vulkan
 					friend DescriptorSetManager;
 
 				public:
-					vk::DescriptorSet                   DescriptorSet            = VK_NULL_HANDLE;
+					vk::DescriptorSet                                 DescriptorSet            = VK_NULL_HANDLE;
+					std::vector<Buffer>                               ShaderBuffers            = std::vector<Buffer>();
+					std::vector<vk::WriteDescriptorSet>               ImageWriteDescriptorSets = std::vector<vk::WriteDescriptorSet>();
+					std::vector<std::vector<vk::DescriptorImageInfo>> ImageInfos;
+
+				private:
+					uint32_t _descriptorPoolIndex = -1;
+					uint32_t _descriptorSetIndex  = -1;
+			};
+
+			struct NewDescriptorSetAllocation
+			{
+					friend DescriptorSetManager;
+
+				public:
+					vk::DescriptorSet DescriptorSet = VK_NULL_HANDLE;
+
+
 					std::vector<Buffer>                 ShaderBuffers            = std::vector<Buffer>();
 					std::vector<vk::WriteDescriptorSet> ImageWriteDescriptorSets = std::vector<vk::WriteDescriptorSet>();
 

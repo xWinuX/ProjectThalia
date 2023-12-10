@@ -112,7 +112,6 @@ namespace ProjectThalia
 
 			ImGui::Render();
 
-
 			CameraUBO* cameraUbo = _material->GetDescriptorSetAllocation().ShaderBuffers[0].GetMappedData<CameraUBO>();
 
 			cameraUbo->model = glm::rotate(glm::mat4(1.0f), (currentTime / 10000000.0f) * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -123,18 +122,11 @@ namespace ProjectThalia
                                                0.1f,
                                                10.0f);
 
-			if (Input::GetPressed(SDL_KeyCode::SDLK_g)) { _material->SetTexture(0, *_floppaTexture); }
-			if (Input::GetPressed(SDL_KeyCode::SDLK_h)) { _material->SetTexture(0, *_evilFloppaTexture); }
-
-			//_material->GetDescriptorSetAllocation().ShaderBuffers[1].Invalidate();
-
 			ObjectBuffer* objectBuffer = _material->GetDescriptorSetAllocation().ShaderBuffers[1].GetMappedData<ObjectBuffer>();
 
 			std::for_each(std::execution::par, objectBuffer->objects.begin(), objectBuffer->objects.end(), [](ObjectData& objectData) {
 				objectData.position += glm::vec4(0.0001f, 0.0001f, 0.0001f, 0.0f);
 			});
-
-			//_material->GetDescriptorSetAllocation().ShaderBuffers[1].Flush();
 
 			if (!_window.IsMinimized())
 			{
@@ -152,19 +144,21 @@ namespace ProjectThalia
 		_floppaTexture     = std::make_unique<Rendering::Texture2D>("res/textures/floppa.png", textureSettings);
 		_evilFloppaTexture = std::make_unique<Rendering::Texture2D>("res/textures/evil_floppa.png", textureSettings);
 
+		std::vector<Rendering::Texture2D*> textures = {_floppaTexture.get(), _evilFloppaTexture.get()};
+
 		_material                  = std::make_unique<Rendering::Material>(_shader.get());
 		ObjectBuffer* objectBuffer = _material->GetDescriptorSetAllocation().ShaderBuffers[1].GetMappedData<ObjectBuffer>();
 
+		_material->SetTextures(0, 0, textures);
+
 		_numQuads = objectBuffer->objects.max_size();
 
+		for (ObjectData& objectData : objectBuffer->objects) { objectData.position = glm::vec4(glm::ballRand(0.7f), round(glm::linearRand(0.0f, 1.0f))); }
 
-		for (ObjectData& objectData : objectBuffer->objects) { objectData.position = glm::vec4(glm::ballRand(0.7f), 0.0f); }
-
-
-		const std::vector<Rendering::VertexPosition2DColorUV> quad = {{{-0.0005f, 0.0005f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},  // Top Left
-																	  {{0.0005f, 0.0005f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},   // Top Right
-																	  {{-0.0005f, -0.0005f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Left
-																	  {{0.0005f, -0.0005f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}}; // Bottom Right
+		const std::vector<Rendering::VertexPosition2DColorUV> quad = {{{-0.005f, 0.005f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},  // Top Left
+																	  {{0.005f, 0.005f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},   // Top Right
+																	  {{-0.005f, -0.005f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // Bottom Left
+																	  {{0.005f, -0.005f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}}; // Bottom Right
 
 		const std::vector<uint16_t> quadIndices = {0, 1, 2, 2, 1, 3};
 
