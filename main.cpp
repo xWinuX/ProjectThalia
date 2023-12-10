@@ -1,8 +1,8 @@
-#include "ProjectThalia/Application.hpp"
+#include "SplitEngine/Application.hpp"
 
 int main()
 {
-	ProjectThalia::Application application = ProjectThalia::Application();
+	SplitEngine::Application application = SplitEngine::Application();
 
 	application.Run();
 
