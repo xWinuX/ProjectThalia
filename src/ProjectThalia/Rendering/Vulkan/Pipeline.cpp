@@ -4,6 +4,8 @@
 #include "ProjectThalia/Rendering/Vulkan/Utility.hpp"
 #include "spirv_cross/spirv_cross.hpp"
 
+#include <set>
+
 namespace ProjectThalia::Rendering::Vulkan
 {
 	Pipeline::Pipeline(Device* device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos) :
@@ -13,6 +15,7 @@ namespace ProjectThalia::Rendering::Vulkan
 		_shaderModules.reserve(shaderInfos.size());
 
 		// Descriptors
+		std::set<uint32_t>                          alreadyCoveredBindings   = std::set<uint32_t>();
 		std::vector<vk::DescriptorSetLayoutBinding> descriptorLayoutBindings = std::vector<vk::DescriptorSetLayoutBinding>(0);
 		std::vector<vk::DescriptorPoolSize>         descriptorPoolSizes      = std::vector<vk::DescriptorPoolSize>(0);
 		std::vector<vk::WriteDescriptorSet>         writeDescriptorSets      = std::vector<vk::WriteDescriptorSet>(0);
@@ -40,11 +43,22 @@ namespace ProjectThalia::Rendering::Vulkan
 			// Setup descriptor layout
 			for (const auto& [type, resources] : resourceMap)
 			{
-
 				for (const spirv_cross::Resource& resource : resources)
 				{
-
+					// Check if we already have a layout binding with the same binding index if true add the current shader stage to its shader stage mask
 					uint32_t binding = spirvCompiler.get_decoration(resource.id, spv::DecorationBinding);
+					if (alreadyCoveredBindings.contains(binding))
+					{
+						for (vk::DescriptorSetLayoutBinding& descriptorLayoutBinding : descriptorLayoutBindings)
+						{
+							if (descriptorLayoutBinding.binding == binding)
+							{
+								descriptorLayoutBinding.stageFlags |= static_cast<vk::ShaderStageFlagBits>(shaderInfos[i].shaderStage);
+								break;
+							}
+						}
+						continue;
+					}
 
 					vk::DescriptorSetLayoutBinding layoutBinding = vk::DescriptorSetLayoutBinding(binding,
 																								  type,
@@ -52,13 +66,11 @@ namespace ProjectThalia::Rendering::Vulkan
 																								  static_cast<vk::ShaderStageFlagBits>(
 																										  shaderInfos[i].shaderStage));
 
-
 					vk::DescriptorPoolSize poolSize = vk::DescriptorPoolSize(type, 1);
 
 					vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet(VK_NULL_HANDLE, binding, 0, 1, type, nullptr, nullptr, nullptr);
 
 					const spirv_cross::SPIRType& resourceType = spirvCompiler.get_type(resource.base_type_id);
-
 
 					switch (type)
 					{
@@ -79,6 +91,7 @@ namespace ProjectThalia::Rendering::Vulkan
 					descriptorLayoutBindings.push_back(layoutBinding);
 					descriptorPoolSizes.push_back(poolSize);
 					writeDescriptorSets.push_back(writeDescriptorSet);
+					alreadyCoveredBindings.insert(binding);
 				}
 			}
 
