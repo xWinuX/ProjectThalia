@@ -1,8 +1,5 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
-
-
-
 #include "SplitEngine/Application.hpp"
 #include "SplitEngine/ErrorHandler.hpp"
 #include "SplitEngine/Input.hpp"
@@ -70,7 +67,6 @@ namespace SplitEngine
 				accumulatedFrames    = 0;
 			}
 
-
 			while (SDL_PollEvent(&event))
 			{
 				switch (event.type)
@@ -86,7 +82,6 @@ namespace SplitEngine
 
 			// TODO: Run ECS here
 			LOG("Update");
-
 
 #ifndef SE_HEADLESS
 			ImGui::Text("DT: %f", averageDeltaTime);

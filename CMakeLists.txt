@@ -6,9 +6,7 @@ option(SKIP_AUTOMATE_VCPKG "When ON, you will need to built the packages require
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 include(cmake/AutomateVCPKG.cmake)
 include(cmake/Vulkan.cmake)
@@ -40,7 +38,6 @@ set(SOURCE_FILES
         src/SplitEngine/Input.cpp
         src/SplitEngine/IO/ImageFile.cpp
         src/SplitEngine/IO/Stream.cpp
-        main.cpp
 )
 
 if (NOT HEADLESS)
@@ -91,7 +88,7 @@ if (NOT HEADLESS)
     list(APPEND SOURCE_FILES ${RENDERING_FILES})
 endif ()
 
-add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+add_library(${PROJECT_NAME} ${SOURCE_FILES})
 
 # add everything in include as an... well... include
 target_include_directories(${PROJECT_NAME} PRIVATE include)

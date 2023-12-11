@@ -16,10 +16,11 @@ namespace SplitEngine::Rendering::Vulkan
 		std::vector<vk::PhysicalDevice> physicalDevices = instance.enumeratePhysicalDevices();
 		for (const vk::PhysicalDevice& physicalDevice : physicalDevices)
 		{
-			LOG("{0}", _properties.deviceName.data());
 			// Check device type
 			_properties = physicalDevice.getProperties();
 			if (_properties.deviceType != vk::PhysicalDeviceType::eDiscreteGpu) { continue; }
+
+			LOG("{0}", _properties.deviceName.data());
 
 			// Check Extensions
 			std::vector<vk::ExtensionProperties> availableExtensions = physicalDevice.enumerateDeviceExtensionProperties();
