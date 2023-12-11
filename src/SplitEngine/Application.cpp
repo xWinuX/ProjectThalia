@@ -1,18 +1,21 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define STB_IMAGE_IMPLEMENTATION
+
+
+
 
 #include "SplitEngine/Application.hpp"
 #include "SplitEngine/ErrorHandler.hpp"
 #include "SplitEngine/Input.hpp"
+#include "SplitEngine/Debug/Log.hpp"
 
 #include <format>
 
 #include <chrono>
 #include <utility>
 
-//#ifndef SE_HEADLESS
+#ifndef SE_HEADLESS
 	#include <imgui.h>
-//#endif
+#endif
 
 namespace SplitEngine
 {
@@ -27,12 +30,10 @@ namespace SplitEngine
 			ErrorHandler::ThrowRuntimeError(std::format("SDL could not initialize! SDL_Error: {0}\n", SDL_GetError()));
 		}
 
-//#ifndef SE_HEADLESS
+#ifndef SE_HEADLESS
 		_renderer.Initialize();
-//#endif
+#endif
 	}
-
-	Application::~Application() { Rendering::Vulkan::Context::WaitForIdle(); }
 
 	void Application::Run()
 	{
@@ -78,19 +79,22 @@ namespace SplitEngine
 					case SDL_KEYUP: Input::Update(event); break;
 					case SDL_QUIT: quit = true; break;
 				}
-//#ifndef SE_HEADLESS
+#ifndef SE_HEADLESS
 				_renderer.HandleEvents(event);
-//#endif
+#endif
 			}
 
 			// TODO: Run ECS here
-//#ifndef SE_HEADLESS
+			LOG("Update");
+
+
+#ifndef SE_HEADLESS
 			ImGui::Text("DT: %f", averageDeltaTime);
 			ImGui::Text("Frame Time (ms): %f", averageDeltaTime / 0.001f);
 			ImGui::Text("FPS: %llu", averageFps);
 
 			_renderer.Render();
-//#endif
+#endif
 			Input::Reset();
 		}
 	}

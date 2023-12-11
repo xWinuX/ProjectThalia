@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.26)
 
+option(HEADLESS "Builds engine without rendering and audio features" OFF)
+option(SKIP_AUTOMATE_VCPKG "When ON, you will need to built the packages required on your own or supply your own vcpkg toolchain.")
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -10,74 +13,85 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 include(cmake/AutomateVCPKG.cmake)
 include(cmake/Vulkan.cmake)
 
-option(SKIP_AUTOMATE_VCPKG "When ON, you will need to built the packages required on your own or supply your own vcpkg toolchain.")
 if (NOT SKIP_AUTOMATE_VCPKG)
     vcpkg_bootstrap()
     vcpkg_install_packages_in_manifest()
 endif ()
 
+if (HEADLESS)
+    add_compile_definitions(SE_HEADLESS)
+endif ()
+
 project(SplitEngine)
 
-add_executable(${PROJECT_NAME}
-        main.cpp
-        src/SplitEngine/Application.cpp
+set(SOURCE_FILES
         include/SplitEngine/Application.hpp
-        include/SplitEngine/Window.hpp
-        src/SplitEngine/Window.cpp
-        src/SplitEngine/Debug/Log.cpp
-        include/SplitEngine/Debug/Log.hpp
-        src/SplitEngine/ErrorHandler.cpp
-        include/SplitEngine/ErrorHandler.hpp
-        src/SplitEngine/Rendering/Vulkan/Context.cpp
-        include/SplitEngine/Rendering/Vulkan/Context.hpp
-        src/SplitEngine/Rendering/Vulkan/Pipeline.cpp
-        include/SplitEngine/Rendering/Vulkan/Pipeline.hpp
-        src/SplitEngine/IO/Stream.cpp
-        include/SplitEngine/IO/Stream.hpp
-        src/SplitEngine/Rendering/Vulkan/Swapchain.cpp
-        include/SplitEngine/Rendering/Vulkan/Swapchain.hpp
-        src/SplitEngine/Rendering/Vulkan/PhysicalDevice.cpp
-        include/SplitEngine/Rendering/Vulkan/PhysicalDevice.hpp
-        src/SplitEngine/Rendering/Vulkan/Device.cpp
-        include/SplitEngine/Rendering/Vulkan/Device.hpp
-        src/SplitEngine/Rendering/Vulkan/RenderPass.cpp
-        include/SplitEngine/Rendering/Vulkan/RenderPass.hpp
-        src/SplitEngine/Rendering/Vulkan/Instance.cpp
-        include/SplitEngine/Rendering/Vulkan/Instance.hpp
-        src/SplitEngine/Rendering/Renderer.cpp
-        include/SplitEngine/Rendering/Renderer.hpp
-        include/SplitEngine/Rendering/Vulkan/Utility.hpp
-        include/SplitEngine/Event.hpp
-        include/SplitEngine/Rendering/Vertex.hpp
-        src/SplitEngine/Rendering/Vulkan/Buffer.cpp
-        include/SplitEngine/Rendering/Vulkan/Buffer.hpp
-        src/SplitEngine/Rendering/Vulkan/DeviceObject.cpp
-        include/SplitEngine/Rendering/Vulkan/DeviceObject.hpp
-        src/SplitEngine/Rendering/Vulkan/Image.cpp
-        include/SplitEngine/Rendering/Vulkan/Image.hpp
-        src/SplitEngine/IO/ImageFile.cpp
-        include/SplitEngine/IO/ImageFile.hpp
-        src/SplitEngine/Rendering/Vulkan/Allocator.cpp
-        include/SplitEngine/Rendering/Vulkan/Allocator.hpp
-        src/SplitEngine/Rendering/Material.cpp
-        include/SplitEngine/Rendering/Material.hpp
-        src/SplitEngine/Rendering/Vulkan/DescriptorSetManager.cpp
-        include/SplitEngine/Rendering/Vulkan/DescriptorSetManager.hpp
-        src/SplitEngine/Input.cpp
-        include/SplitEngine/Input.hpp
-        src/SplitEngine/Rendering/Vulkan/DescriptorSetManager.cpp
-        src/SplitEngine/Rendering/Texture2D.cpp
-        include/SplitEngine/Rendering/Texture2D.hpp
-        include/SplitEngine/Rendering/TextureSettings.hpp
-        src/SplitEngine/Rendering/Material.cpp
-        src/SplitEngine/Rendering/Model.cpp
-        include/SplitEngine/Rendering/Model.hpp
-        src/SplitEngine/Rendering/Shader.cpp
-        include/SplitEngine/Rendering/Shader.hpp
-        include/SplitEngine/DataStructures.hpp
-        src/SplitEngine/Rendering/Texture2D.cpp
         include/SplitEngine/ApplicationInfo.hpp
+        include/SplitEngine/DataStructures.hpp
+        include/SplitEngine/Debug/Log.hpp
+        include/SplitEngine/ErrorHandler.hpp
+        include/SplitEngine/Event.hpp
+        include/SplitEngine/IO/ImageFile.hpp
+        include/SplitEngine/IO/Stream.hpp
+        include/SplitEngine/Input.hpp
+        src/SplitEngine/Application.cpp
+        src/SplitEngine/Debug/Log.cpp
+        src/SplitEngine/ErrorHandler.cpp
+        src/SplitEngine/Input.cpp
+        src/SplitEngine/IO/ImageFile.cpp
+        src/SplitEngine/IO/Stream.cpp
+        main.cpp
 )
+
+if (NOT HEADLESS)
+    set(RENDERING_FILES
+            include/SplitEngine/Rendering/Material.hpp
+            include/SplitEngine/Rendering/Model.hpp
+            include/SplitEngine/Rendering/Renderer.hpp
+            include/SplitEngine/Rendering/Shader.hpp
+            include/SplitEngine/Rendering/Texture2D.hpp
+            include/SplitEngine/Rendering/TextureSettings.hpp
+            include/SplitEngine/Rendering/Vertex.hpp
+            include/SplitEngine/Rendering/Vulkan/Allocator.hpp
+            include/SplitEngine/Rendering/Vulkan/Buffer.hpp
+            include/SplitEngine/Rendering/Vulkan/Context.hpp
+            include/SplitEngine/Rendering/Vulkan/DescriptorSetManager.hpp
+            include/SplitEngine/Rendering/Vulkan/Device.hpp
+            include/SplitEngine/Rendering/Vulkan/DeviceObject.hpp
+            include/SplitEngine/Rendering/Vulkan/Image.hpp
+            include/SplitEngine/Rendering/Vulkan/Instance.hpp
+            include/SplitEngine/Rendering/Vulkan/PhysicalDevice.hpp
+            include/SplitEngine/Rendering/Vulkan/Pipeline.hpp
+            include/SplitEngine/Rendering/Vulkan/RenderPass.hpp
+            include/SplitEngine/Rendering/Vulkan/Swapchain.hpp
+            include/SplitEngine/Rendering/Vulkan/Utility.hpp
+            include/SplitEngine/Window.hpp
+            src/SplitEngine/Rendering/Material.cpp
+            src/SplitEngine/Rendering/Material.cpp
+            src/SplitEngine/Rendering/Model.cpp
+            src/SplitEngine/Rendering/Renderer.cpp
+            src/SplitEngine/Rendering/Shader.cpp
+            src/SplitEngine/Rendering/Texture2D.cpp
+            src/SplitEngine/Rendering/Texture2D.cpp
+            src/SplitEngine/Rendering/Vulkan/Allocator.cpp
+            src/SplitEngine/Rendering/Vulkan/Buffer.cpp
+            src/SplitEngine/Rendering/Vulkan/Context.cpp
+            src/SplitEngine/Rendering/Vulkan/DescriptorSetManager.cpp
+            src/SplitEngine/Rendering/Vulkan/DescriptorSetManager.cpp
+            src/SplitEngine/Rendering/Vulkan/Device.cpp
+            src/SplitEngine/Rendering/Vulkan/DeviceObject.cpp
+            src/SplitEngine/Rendering/Vulkan/Image.cpp
+            src/SplitEngine/Rendering/Vulkan/Instance.cpp
+            src/SplitEngine/Rendering/Vulkan/PhysicalDevice.cpp
+            src/SplitEngine/Rendering/Vulkan/Pipeline.cpp
+            src/SplitEngine/Rendering/Vulkan/RenderPass.cpp
+            src/SplitEngine/Rendering/Vulkan/Swapchain.cpp
+            src/SplitEngine/Window.cpp
+    )
+    list(APPEND SOURCE_FILES ${RENDERING_FILES})
+endif ()
+
+add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
 # add everything in include as an... well... include
 target_include_directories(${PROJECT_NAME} PRIVATE include)

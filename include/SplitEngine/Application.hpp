@@ -1,13 +1,15 @@
 #pragma once
 #define SDL_MAIN_HANDLED
 
+// TODO: Investigate why this is so broken
+// This needs to be here for it to work for some reason
+#ifndef SE_HEADLESS
+	#include "SplitEngine/Rendering/Renderer.hpp"
+#endif
+
 #include "ApplicationInfo.hpp"
 #include "Event.hpp"
 #include "Window.hpp"
-
-//#ifndef SE_HEADLESS
-	#include "SplitEngine/Rendering/Renderer.hpp"
-//#endif
 
 #include <array>
 
@@ -17,7 +19,6 @@ namespace SplitEngine
 	{
 		public:
 			explicit Application(ApplicationInfo applicationInfo);
-			~Application();
 			void Run();
 
 			static const ApplicationInfo& GetApplicationInfo();
@@ -27,8 +28,8 @@ namespace SplitEngine
 
 			void Initialize();
 
-//#ifndef SE_HEADLESS
+#ifndef SE_HEADLESS
 			Rendering::Renderer _renderer;
-//#endif
+#endif
 	};
 }

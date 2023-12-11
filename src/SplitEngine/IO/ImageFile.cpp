@@ -1,6 +1,9 @@
 #include "SplitEngine/IO/ImageFile.hpp"
-
 #include "SplitEngine/ErrorHandler.hpp"
+
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 namespace SplitEngine::IO
 {

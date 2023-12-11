@@ -131,6 +131,7 @@ namespace SplitEngine::Rendering
 
 	Renderer::~Renderer()
 	{
+		_vulkanContext.WaitForIdle();
 		_vulkanContext.Destroy();
 		_window.Close();
 	}
