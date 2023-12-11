@@ -141,15 +141,3 @@ target_link_libraries(${PROJECT_NAME}
 # STB
 find_package(Stb REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${Stb_INCLUDE_DIR})
-
-# Copy all res files to binary folder
-file(COPY res DESTINATION "${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}")
-
-# Compile all shaders
-compile_shader(${PROJECT_NAME}
-        ENV vulkan1.3
-        FORMAT spv
-        SOURCES
-        /res/shaders/debug/Debug.vert
-        /res/shaders/debug/Debug.frag
-)
