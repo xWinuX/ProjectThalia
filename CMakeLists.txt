@@ -76,6 +76,7 @@ add_executable(${PROJECT_NAME}
         include/SplitEngine/Rendering/Shader.hpp
         include/SplitEngine/DataStructures.hpp
         src/SplitEngine/Rendering/Texture2D.cpp
+        include/SplitEngine/ApplicationInfo.hpp
 )
 
 # add everything in include as an... well... include

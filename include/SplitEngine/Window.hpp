@@ -7,11 +7,10 @@
 
 namespace SplitEngine
 {
-	class Application;
 
 	class Window
 	{
-		friend Application;
+		//	friend Rendering::Renderer;
 
 		public:
 			Window() = default;
@@ -26,8 +25,8 @@ namespace SplitEngine
 			Event<int, int> OnResize;
 
 		private:
-			SDL_Window* _window = nullptr;
-			bool        _isMinimized;
+			SDL_Window* _window      = nullptr;
+			bool        _isMinimized = false;
 
 			void SetMinimized(bool newState);
 	};

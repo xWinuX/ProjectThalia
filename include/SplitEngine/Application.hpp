@@ -1,11 +1,13 @@
 #pragma once
 #define SDL_MAIN_HANDLED
 
+#include "ApplicationInfo.hpp"
 #include "Event.hpp"
-#include "SplitEngine/Rendering/Material.hpp"
-#include "SplitEngine/Rendering/Model.hpp"
-#include "SplitEngine/Rendering/Renderer.hpp"
 #include "Window.hpp"
+
+//#ifndef SE_HEADLESS
+	#include "SplitEngine/Rendering/Renderer.hpp"
+//#endif
 
 #include <array>
 
@@ -14,43 +16,19 @@ namespace SplitEngine
 	class Application
 	{
 		public:
-			Application() = default;
+			explicit Application(ApplicationInfo applicationInfo);
 			~Application();
 			void Run();
 
+			static const ApplicationInfo& GetApplicationInfo();
 
 		private:
-			struct CameraUBO
-			{
-					glm::mat4 model;
-					glm::mat4 view;
-					glm::mat4 proj;
-			};
-
-			struct ObjectData
-			{
-					glm::vec4 position;
-			};
-
-			struct ObjectBuffer
-			{
-					std::array<ObjectData, 1'024'000> objects;
-			};
+			static ApplicationInfo _applicationInfo;
 
 			void Initialize();
-			void UserInitialize();
 
-			size_t _numQuads;
-
-			Event<int>          _event;
-			Window              _window;
+//#ifndef SE_HEADLESS
 			Rendering::Renderer _renderer;
-
-			std::unique_ptr<Rendering::Shader>    _shader;
-			std::unique_ptr<Rendering::Material>  _material;
-			std::unique_ptr<Rendering::Texture2D> _floppaTexture;
-			std::unique_ptr<Rendering::Texture2D> _evilFloppaTexture;
-
-			std::unique_ptr<Rendering::Model> _model;
+//#endif
 	};
 }

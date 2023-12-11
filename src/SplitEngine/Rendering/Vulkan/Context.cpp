@@ -1,6 +1,10 @@
+#define VMA_IMPLEMENTATION
+#include <vk_mem_alloc.h>
+
 #include "SplitEngine/Rendering/Vulkan/Context.hpp"
 #include "SplitEngine/Rendering/Vulkan/Device.hpp"
 
+#include "SplitEngine/Application.hpp"
 #include "SplitEngine/Debug/Log.hpp"
 #include "SplitEngine/ErrorHandler.hpp"
 #include "SplitEngine/IO/Stream.hpp"
@@ -80,7 +84,7 @@ namespace SplitEngine::Rendering::Vulkan
 		_instance.Destroy();
 	}
 
-	void Context::WaitForIdle()  { _device->GetVkDevice().waitIdle(); }
+	void Context::WaitForIdle() { _device->GetVkDevice().waitIdle(); }
 
 	void Context::CreateInstance(SDL_Window* sdlWindow)
 	{
@@ -90,9 +94,11 @@ namespace SplitEngine::Rendering::Vulkan
 		std::vector<const char*> extensionNames = std::vector<const char*>(extensionCount, nullptr);
 		SDL_Vulkan_GetInstanceExtensions(sdlWindow, &extensionCount, extensionNames.data());
 
-		vk::ApplicationInfo applicationInfo = vk::ApplicationInfo("Project Thalia",
-																  VK_MAKE_VERSION(1, 0, 0),
-																  "No Engine",
+		vk::ApplicationInfo applicationInfo = vk::ApplicationInfo(Application::GetApplicationInfo().Name.c_str(),
+																  VK_MAKE_VERSION(Application::GetApplicationInfo().MajorVersion,
+																				  Application::GetApplicationInfo().MinorVersion,
+																				  Application::GetApplicationInfo().PatchVersion),
+																  "Split Engine",
 																  VK_MAKE_VERSION(1, 0, 0),
 																  VK_API_VERSION_1_3);
 

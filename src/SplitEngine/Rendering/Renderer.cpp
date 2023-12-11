@@ -9,6 +9,10 @@ namespace SplitEngine::Rendering
 {
 	void Renderer::Render()
 	{
+		if (_window.IsMinimized()) { return; }
+
+		ImGui::Render();
+
 		Vulkan::Device* _device = Vulkan::Context::GetDevice();
 
 		_device->GetVkDevice().waitForFences(_vulkanContext.GetInFlightFence(), vk::True, UINT64_MAX);
@@ -21,7 +25,7 @@ namespace SplitEngine::Rendering
 		if (imageIndexResult.result == vk::Result::eErrorOutOfDateKHR)
 		{
 			_device->GetVkDevice().waitIdle();
-			_device->CreateSwapchain(_vulkanContext.GetInstance().GetVkSurface(), _window->GetSize());
+			_device->CreateSwapchain(_vulkanContext.GetInstance().GetVkSurface(), _window.GetSize());
 
 			return;
 		}
@@ -87,7 +91,7 @@ namespace SplitEngine::Rendering
 												 0,
 												 nullptr);
 
-				commandBuffer.drawIndexed(model->GetModelBuffer().GetBufferElementNum(1),  1'024'000/5000, 0, 0, 0);
+				commandBuffer.drawIndexed(model->GetModelBuffer().GetBufferElementNum(1), 1'024'000 / 5000, 0, 0, 0);
 			}
 		}
 
@@ -115,25 +119,46 @@ namespace SplitEngine::Rendering
 		{
 			_device->GetVkDevice().waitIdle();
 			_frameBufferResized = false;
-			_device->CreateSwapchain(_vulkanContext.GetInstance().GetVkSurface(), _window->GetSize());
+			_device->CreateSwapchain(_vulkanContext.GetInstance().GetVkSurface(), _window.GetSize());
 		}
 		else if (presentResult != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("failed to present swap chain image!"); }
 
 		// Clear out current models
 		for (auto& [material, models] : _modelsToRender) { models.Clear(); }
+
+		StartImGuiFrame();
 	}
 
-	Renderer::~Renderer() { _vulkanContext.Destroy(); }
-
-	void Renderer::Initialize(Window* window)
+	Renderer::~Renderer()
 	{
-		_vulkanContext.Initialize(window);
-		_window = window;
+		_vulkanContext.Destroy();
+		_window.Close();
+	}
 
+	void Renderer::Initialize()
+	{
+		if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0)
+		{
+			ErrorHandler::ThrowRuntimeError(std::format("SDL could not initialize! SDL_Error: {0}\n", SDL_GetError()));
+		}
 
-		_window->OnResize.Add([this](int width, int height) {
+		_window.Open();
+
+		_vulkanContext.Initialize(&_window);
+
+		_window.OnResize.Add([this](int width, int height) {
 			_frameBufferResized = true;
 		});
+
+		StartImGuiFrame();
+	}
+
+	void Renderer::StartImGuiFrame() const
+	{
+		ImGui_ImplVulkan_NewFrame();
+		ImGui_ImplSDL2_NewFrame(_window.GetSDLWindow());
+
+		ImGui::NewFrame();
 	}
 
 	void Renderer::SubmitModel(Material* material, const Model* model)
@@ -141,5 +166,17 @@ namespace SplitEngine::Rendering
 		if (!_modelsToRender.contains(material)) { _modelsToRender[material] = IncrementVector<const Model*>(100); }
 
 		_modelsToRender[material].PushBack(model);
+	}
+
+	void Renderer::HandleEvents(SDL_Event event)
+	{
+		ImGui_ImplSDL2_ProcessEvent(&event);
+
+		switch (event.window.event)
+		{
+			case SDL_WINDOWEVENT_SIZE_CHANGED: _window.OnResize.Invoke(event.window.data1, event.window.data2); break;
+			//case SDL_WINDOWEVENT_MINIMIZED: _window.SetMinimized(true); break;
+			//case SDL_WINDOWEVENT_RESTORED: _window.SetMinimized(false); break;
+		}
 	}
 }

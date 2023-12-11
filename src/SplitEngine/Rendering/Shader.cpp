@@ -1,23 +1,24 @@
 #include "SplitEngine/Rendering/Shader.hpp"
+#include "SplitEngine/Application.hpp"
 #include "SplitEngine/ErrorHandler.hpp"
 #include "SplitEngine/Rendering/Vulkan/Context.hpp"
 #include "SplitEngine/Rendering/Vulkan/Pipeline.hpp"
 
 #include <filesystem>
 #include <iostream>
-#include <vector>
-
 #include <utility>
+#include <vector>
 
 namespace SplitEngine::Rendering
 {
 	Shader::Shader(std::string shaderPath) :
-		_shaderPath(shaderPath)
+		_shaderPath(std::move(shaderPath))
 	{
 		std::vector<std::filesystem::path> files;
 		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(_shaderPath))
 		{
-			if (std::filesystem::is_regular_file(entry.path()) && entry.path().extension() == ".spv") { files.push_back(entry.path()); }
+			bool hasSpvExtension = entry.path().extension() == std::format(".{0}", Application::GetApplicationInfo().SpirvFileExtension);
+			if (std::filesystem::is_regular_file(entry.path()) && hasSpvExtension) { files.push_back(entry.path()); }
 		}
 
 		std::vector<Vulkan::Pipeline::ShaderInfo> shaderInfos;
@@ -50,8 +51,8 @@ namespace SplitEngine::Rendering
 
 			LOG(shaderTypeString);
 
-			if (shaderTypeString == "vert") { shaderType = Vulkan::Pipeline::ShaderType::Vertex; }
-			if (shaderTypeString == "frag") { shaderType = Vulkan::Pipeline::ShaderType::Fragment; }
+			if (shaderTypeString == Application::GetApplicationInfo().VertexShaderFileExtension) { shaderType = Vulkan::Pipeline::ShaderType::Vertex; }
+			if (shaderTypeString == Application::GetApplicationInfo().FragmentShaderFileExtension) { shaderType = Vulkan::Pipeline::ShaderType::Fragment; }
 
 			shaderInfos.push_back({file.string(), shaderType});
 		}

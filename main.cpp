@@ -2,7 +2,7 @@
 
 int main()
 {
-	SplitEngine::Application application = SplitEngine::Application();
+	SplitEngine::Application application = SplitEngine::Application({});
 
 	application.Run();
 

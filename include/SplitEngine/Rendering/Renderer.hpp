@@ -15,17 +15,20 @@ namespace SplitEngine::Rendering
 			Renderer() = default;
 			~Renderer();
 
-			void Initialize(Window* window);
+			void Initialize();
 			void Render();
 
 			void SubmitModel(Material* material, const Model* model);
 
+			void HandleEvents(SDL_Event event);
+
 		private:
-			Window*         _window;
+			Window          _window;
 			Vulkan::Context _vulkanContext;
 
 			std::unordered_map<Material*, IncrementVector<const Model*>> _modelsToRender;
 
 			bool _frameBufferResized = false;
+			void StartImGuiFrame() const;
 	};
 }
