@@ -79,11 +79,12 @@ if (NOT HEADLESS)
             src/SplitEngine/Rendering/Vulkan/RenderPass.cpp
             src/SplitEngine/Rendering/Vulkan/Swapchain.cpp
             src/SplitEngine/Window.cpp
+            main.cpp
     )
     list(APPEND SOURCE_FILES ${RENDERING_FILES})
 endif ()
 
-add_library(SplitEngine ${SOURCE_FILES})
+add_executable(SplitEngine ${SOURCE_FILES})
 target_include_directories(SplitEngine
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

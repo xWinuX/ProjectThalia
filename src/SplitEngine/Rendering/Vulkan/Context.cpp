@@ -148,11 +148,11 @@ namespace SplitEngine::Rendering::Vulkan
 
 		vk::CommandBuffer commandBuffer = _device->BeginOneshotCommands();
 
-		ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+		ImGui_ImplVulkan_CreateFontsTexture();
 
 		_device->EndOneshotCommands(commandBuffer);
 
-		ImGui_ImplVulkan_DestroyFontUploadObjects();
+		ImGui_ImplVulkan_DestroyFontsTexture();
 	}
 
 	Device* Context::GetDevice() { return _device.get(); }
