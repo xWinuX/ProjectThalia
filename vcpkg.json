@@ -23,7 +23,8 @@
     "version>=" : "2021-01-15#2"
   }, {
     "name" : "sdl2",
-    "version>=" : "2.28.2"
+    "version>=" : "2.28.2",
+    "features" : [ "vulkan" ]
   }, {
     "name" : "glm",
     "version>=" : "2023-06-08"
