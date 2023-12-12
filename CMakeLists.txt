@@ -108,7 +108,7 @@ target_link_libraries(SplitEngine PRIVATE Vulkan::Headers)
 
 # Vulkan Memory Allocator
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
-target_link_libraries(SplitEngine PRIVATE Vulkan::Headers GPUOpen::VulkanMemoryAllocator)
+target_link_libraries(SplitEngine PRIVATE GPUOpen::VulkanMemoryAllocator)
 
 # SPIRV Cross
 find_package(spirv_cross_core CONFIG REQUIRED)
