@@ -6,9 +6,7 @@ option(SKIP_AUTOMATE_VCPKG "When ON, you will need to built the packages require
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
 include(cmake/AutomateVCPKG.cmake)
 include(cmake/Vulkan.cmake)
@@ -97,36 +95,36 @@ target_include_directories(SplitEngine
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/SplitEngine
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 # Vulkan
 find_package(Vulkan REQUIRED)
-target_link_libraries(SplitEngine PUBLIC Vulkan::Vulkan)
+target_link_libraries(SplitEngine PRIVATE Vulkan::Vulkan)
 
 # Vulkan Headers
 find_package(VulkanHeaders CONFIG)
-target_link_libraries(SplitEngine PUBLIC Vulkan::Headers)
+target_link_libraries(SplitEngine PRIVATE Vulkan::Headers)
 
 # Vulkan Memory Allocator
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
-target_link_libraries(SplitEngine PUBLIC GPUOpen::VulkanMemoryAllocator)
+target_link_libraries(SplitEngine PRIVATE GPUOpen::VulkanMemoryAllocator)
 
 # SPIRV Cross
 find_package(spirv_cross_core CONFIG REQUIRED)
-target_link_libraries(SplitEngine PUBLIC spirv-cross-core)
+target_link_libraries(SplitEngine PRIVATE spirv-cross-core)
 
 find_package(spirv_cross_glsl CONFIG REQUIRED)
-target_link_libraries(SplitEngine PUBLIC spirv-cross-glsl)
+target_link_libraries(SplitEngine PRIVATE spirv-cross-glsl)
 
 find_package(spirv_cross_cpp CONFIG REQUIRED)
-target_link_libraries(SplitEngine PUBLIC spirv-cross-cpp)
+target_link_libraries(SplitEngine PRIVATE spirv-cross-cpp)
 
 find_package(spirv_cross_reflect CONFIG REQUIRED)
-target_link_libraries(SplitEngine PUBLIC spirv-cross-reflect)
+target_link_libraries(SplitEngine PRIVATE spirv-cross-reflect)
 
 find_package(spirv_cross_util CONFIG REQUIRED)
-target_link_libraries(SplitEngine PUBLIC spirv-cross-util)
+target_link_libraries(SplitEngine PRIVATE spirv-cross-util)
 
 # IMGUI
 find_package(imgui CONFIG REQUIRED)
@@ -139,7 +137,7 @@ target_link_libraries(SplitEngine PUBLIC glm::glm)
 # SDL 2
 find_package(SDL2 CONFIG REQUIRED)
 target_link_libraries(SplitEngine
-        PUBLIC
+        PRIVATE
         $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
         $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
 )
@@ -148,34 +146,10 @@ target_link_libraries(SplitEngine
 find_package(Stb REQUIRED)
 target_include_directories(SplitEngine PRIVATE ${Stb_INCLUDE_DIR})
 
-
-set_target_properties(SplitEngine PROPERTIES
-        CXX_STANDARD 23
-        CXX_STANDARD_REQUIRED YES
-        CXX_EXTENSIONS NO
-        VERSION ${PROJECT_VERSION}
-        SOVERSION ${PROJECT_VERSION_MAJOR}
-)
-
-if (MSVC)
-    set_target_properties(SplitEngine PROPERTIES
-            COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-            COMPILE_PDB_NAME SplitEngine
-    )
-
-    install(
-            FILES "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/SplitEngine.pdb"
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            OPTIONAL
-    )
-endif ()
-
 install(
         TARGETS SplitEngine
         EXPORT SplitEngineConfig
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 install(
