@@ -8,14 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
-include(cmake/AutomateVCPKG.cmake)
 include(cmake/Vulkan.cmake)
 include(GNUInstallDirs)
-
-if (NOT SKIP_AUTOMATE_VCPKG)
-    vcpkg_bootstrap()
-    vcpkg_install_packages_in_manifest()
-endif ()
 
 if (HEADLESS)
     add_compile_definitions(SE_HEADLESS)
