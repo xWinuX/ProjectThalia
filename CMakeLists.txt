@@ -6,8 +6,6 @@ option(SKIP_AUTOMATE_VCPKG "When ON, you will need to built the packages require
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-
 include(cmake/AutomateVCPKG.cmake)
 include(cmake/Vulkan.cmake)
 
