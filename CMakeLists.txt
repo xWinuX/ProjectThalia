@@ -6,8 +6,11 @@ option(SKIP_AUTOMATE_VCPKG "When ON, you will need to built the packages require
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+
 include(cmake/AutomateVCPKG.cmake)
 include(cmake/Vulkan.cmake)
+include(GNUInstallDirs)
 
 if (NOT SKIP_AUTOMATE_VCPKG)
     vcpkg_bootstrap()
@@ -18,7 +21,7 @@ if (HEADLESS)
     add_compile_definitions(SE_HEADLESS)
 endif ()
 
-project(SplitEngine)
+project(SplitEngine VERSION 1.0.0)
 
 set(SOURCE_FILES
         include/SplitEngine/Application.hpp
@@ -86,51 +89,54 @@ if (NOT HEADLESS)
     list(APPEND SOURCE_FILES ${RENDERING_FILES})
 endif ()
 
-add_library(${PROJECT_NAME} ${SOURCE_FILES})
-
-# add everything in include as an... well... include
-target_include_directories(${PROJECT_NAME} PRIVATE include)
+add_library(SplitEngine ${SOURCE_FILES})
+target_include_directories(SplitEngine
+        PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 
 # Vulkan
 find_package(Vulkan REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan)
+target_link_libraries(SplitEngine PRIVATE Vulkan::Vulkan)
 
 # Vulkan Headers
 find_package(VulkanHeaders CONFIG)
-target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Headers)
+target_link_libraries(SplitEngine PRIVATE Vulkan::Headers)
 
 # Vulkan Memory Allocator
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Headers GPUOpen::VulkanMemoryAllocator)
+target_link_libraries(SplitEngine PRIVATE Vulkan::Headers GPUOpen::VulkanMemoryAllocator)
 
 # SPIRV Cross
 find_package(spirv_cross_core CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE spirv-cross-core)
+target_link_libraries(SplitEngine PRIVATE spirv-cross-core)
 
 find_package(spirv_cross_glsl CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE spirv-cross-glsl)
+target_link_libraries(SplitEngine PRIVATE spirv-cross-glsl)
 
 find_package(spirv_cross_cpp CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE spirv-cross-cpp)
-
+target_link_libraries(SplitEngine PRIVATE spirv-cross-cpp)
 
 find_package(spirv_cross_reflect CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE spirv-cross-reflect)
+target_link_libraries(SplitEngine PRIVATE spirv-cross-reflect)
 
 find_package(spirv_cross_util CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE spirv-cross-util)
+target_link_libraries(SplitEngine PRIVATE spirv-cross-util)
 
 # IMGUI
 find_package(imgui CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE imgui::imgui)
+target_link_libraries(SplitEngine PUBLIC imgui::imgui)
 
 # GLM
 find_package(glm CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
+target_link_libraries(SplitEngine PUBLIC glm::glm)
 
 # SDL 2
 find_package(SDL2 CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(SplitEngine
         PRIVATE
         $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
         $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
@@ -138,4 +144,33 @@ target_link_libraries(${PROJECT_NAME}
 
 # STB
 find_package(Stb REQUIRED)
-target_include_directories(${PROJECT_NAME} PRIVATE ${Stb_INCLUDE_DIR})
+target_include_directories(SplitEngine PRIVATE ${Stb_INCLUDE_DIR})
+
+install(
+        TARGETS SplitEngine
+        EXPORT SplitEngineConfig
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+install(
+        EXPORT SplitEngineConfig
+        NAMESPACE SplitEngine::
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/SplitEngine"
+)
+
+include(CMakePackageConfigHelpers)
+
+write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/SplitEngineConfigVersion.cmake"
+        COMPATIBILITY SameMajorVersion
+)
+
+install(
+        FILES "${CMAKE_CURRENT_BINARY_DIR}/SplitEngineConfigVersion.cmake"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/SplitEngine"
+)
+
+install(
+        DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/SplitEngine"
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
