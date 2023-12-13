@@ -94,31 +94,31 @@ target_include_directories(SplitEngine
 
 # Vulkan
 find_package(Vulkan REQUIRED)
-target_link_libraries(SplitEngine PRIVATE Vulkan::Vulkan)
+target_link_libraries(SplitEngine PUBLIC Vulkan::Vulkan)
 
 # Vulkan Headers
 find_package(VulkanHeaders CONFIG)
-target_link_libraries(SplitEngine PRIVATE Vulkan::Headers)
+target_link_libraries(SplitEngine PUBLIC Vulkan::Headers)
 
 # Vulkan Memory Allocator
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
-target_link_libraries(SplitEngine PRIVATE GPUOpen::VulkanMemoryAllocator)
+target_link_libraries(SplitEngine PUBLIC GPUOpen::VulkanMemoryAllocator)
 
 # SPIRV Cross
 find_package(spirv_cross_core CONFIG REQUIRED)
-target_link_libraries(SplitEngine PRIVATE spirv-cross-core)
+target_link_libraries(SplitEngine PUBLIC spirv-cross-core)
 
 find_package(spirv_cross_glsl CONFIG REQUIRED)
-target_link_libraries(SplitEngine PRIVATE spirv-cross-glsl)
+target_link_libraries(SplitEngine PUBLIC spirv-cross-glsl)
 
 find_package(spirv_cross_cpp CONFIG REQUIRED)
-target_link_libraries(SplitEngine PRIVATE spirv-cross-cpp)
+target_link_libraries(SplitEngine PUBLIC spirv-cross-cpp)
 
 find_package(spirv_cross_reflect CONFIG REQUIRED)
-target_link_libraries(SplitEngine PRIVATE spirv-cross-reflect)
+target_link_libraries(SplitEngine PUBLIC spirv-cross-reflect)
 
 find_package(spirv_cross_util CONFIG REQUIRED)
-target_link_libraries(SplitEngine PRIVATE spirv-cross-util)
+target_link_libraries(SplitEngine PUBLIC spirv-cross-util)
 
 # IMGUI
 find_package(imgui CONFIG REQUIRED)
@@ -131,7 +131,7 @@ target_link_libraries(SplitEngine PUBLIC glm::glm)
 # SDL 2
 find_package(SDL2 CONFIG REQUIRED)
 target_link_libraries(SplitEngine
-        PRIVATE
+        PUBLIC
         $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
         $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
 )
@@ -144,7 +144,8 @@ install(
         TARGETS SplitEngine
         EXPORT SplitEngineConfig
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 install(
         EXPORT SplitEngineConfig
