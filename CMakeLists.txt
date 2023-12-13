@@ -79,11 +79,12 @@ if (NOT HEADLESS)
             src/SplitEngine/Rendering/Vulkan/RenderPass.cpp
             src/SplitEngine/Rendering/Vulkan/Swapchain.cpp
             src/SplitEngine/Window.cpp
+            main.cpp
     )
     list(APPEND SOURCE_FILES ${RENDERING_FILES})
 endif ()
 
-add_library(SplitEngine ${SOURCE_FILES})
+add_executable(SplitEngine ${SOURCE_FILES})
 target_include_directories(SplitEngine
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -140,20 +141,29 @@ target_link_libraries(SplitEngine
 find_package(Stb REQUIRED)
 target_include_directories(SplitEngine PRIVATE ${Stb_INCLUDE_DIR})
 
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
 install(
         TARGETS SplitEngine
-        EXPORT SplitEngineConfig
+        EXPORT SplitEngineTargets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-install(
-        EXPORT SplitEngineConfig
-        NAMESPACE SplitEngine::
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/SplitEngine"
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-include(CMakePackageConfigHelpers)
+install(
+        EXPORT SplitEngineTargets
+        FILE SplitEngineConfig.cmake
+        NAMESPACE SplitEngine::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SplitEngine
+)
+
+configure_package_config_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/SplitEngineConfig.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/SplitEngineConfig.cmake
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SplitEngine
+)
 
 write_basic_package_version_file(
         "${CMAKE_CURRENT_BINARY_DIR}/SplitEngineConfigVersion.cmake"
