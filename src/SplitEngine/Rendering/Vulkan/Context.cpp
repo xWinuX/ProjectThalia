@@ -77,8 +77,9 @@ namespace SplitEngine::Rendering::Vulkan
 		_device->GetVkDevice().destroy(_renderFinishedSemaphore);
 		_device->GetVkDevice().destroy(_inFlightFence);
 
-		_device->GetVkDevice().destroy(_imGuiDescriptorPool);
 		ImGui_ImplVulkan_Shutdown();
+
+		_device->GetVkDevice().destroy(_imGuiDescriptorPool);
 
 		_device->Destroy();
 		_instance.Destroy();
@@ -126,7 +127,7 @@ namespace SplitEngine::Rendering::Vulkan
 											  {vk::DescriptorType::eStorageBufferDynamic, 1000},
 											  {vk::DescriptorType::eInputAttachment, 1000}};
 
-		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo({}, 1000, poolSizes);
+		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1000, poolSizes);
 
 		_imGuiDescriptorPool = _device->GetVkDevice().createDescriptorPool(descriptorPoolCreateInfo);
 
