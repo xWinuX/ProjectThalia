@@ -1,5 +1,7 @@
 @PACKAGE_INIT@
 
+include(CMakeFindDependencyMacro)
+
 # Vulkan
 find_dependency(Vulkan REQUIRED)
 

@@ -10,6 +10,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
 include(cmake/Vulkan.cmake)
 include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 
 if (HEADLESS)
     add_compile_definitions(SE_HEADLESS)
@@ -140,9 +141,6 @@ target_link_libraries(SplitEngine
 find_package(Stb REQUIRED)
 target_include_directories(SplitEngine PRIVATE ${Stb_INCLUDE_DIR})
 
-include(GNUInstallDirs)
-include(CMakePackageConfigHelpers)
-
 install(
         TARGETS SplitEngine
         EXPORT SplitEngineTargets
@@ -153,15 +151,19 @@ install(
 
 install(
         EXPORT SplitEngineTargets
-        FILE SplitEngineConfig.cmake
+        FILE SplitEngineTargets.cmake
         NAMESPACE SplitEngine::
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SplitEngine
 )
 
 configure_package_config_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/SplitEngineConfig.cmake.in
+        SplitEngineConfig.cmake.in
         ${CMAKE_CURRENT_BINARY_DIR}/SplitEngineConfig.cmake
         INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SplitEngine
+)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/SplitEngineConfig.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SplitEngine
 )
 
 write_basic_package_version_file(
