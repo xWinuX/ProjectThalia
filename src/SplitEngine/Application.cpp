@@ -81,7 +81,6 @@ namespace SplitEngine
 			}
 
 			// TODO: Run ECS here
-			LOG("Update");
 
 #ifndef SE_HEADLESS
 			ImGui::Text("DT: %f", averageDeltaTime);
