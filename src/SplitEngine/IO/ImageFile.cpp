@@ -1,6 +1,6 @@
 #include "SplitEngine/IO/ImageFile.hpp"
+#include "SplitEngine/Debug/Log.hpp"
 #include "SplitEngine/ErrorHandler.hpp"
-
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -8,9 +8,11 @@
 namespace SplitEngine::IO
 {
 	ImageFile::ImageFile(std::string filePath, ChannelSetup channels) :
-		_filePath(std::move(filePath))
+		_filePath(filePath)
 	{
 		_pixels = stbi_load(_filePath.c_str(), &_width, &_height, &_channels, channels);
+
+		LOG(filePath);
 		if (_pixels == nullptr) { ErrorHandler::ThrowRuntimeError("failed to load texture image!"); }
 
 		int numChannels = 0;

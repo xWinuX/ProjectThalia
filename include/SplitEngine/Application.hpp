@@ -8,6 +8,7 @@
 #endif
 
 #include "ApplicationInfo.hpp"
+#include "AssetDatabase.hpp"
 #include "Event.hpp"
 #include "Window.hpp"
 
@@ -19,17 +20,20 @@ namespace SplitEngine
 	{
 		public:
 			explicit Application(ApplicationInfo applicationInfo);
+			void Initialize();
 			void Run();
 
 			static const ApplicationInfo& GetApplicationInfo();
 
+			AssetDatabase& GetAssetDatabase();
+
 		private:
 			static ApplicationInfo _applicationInfo;
-
-			void Initialize();
 
 #ifndef SE_HEADLESS
 			Rendering::Renderer _renderer;
 #endif
+
+			AssetDatabase _assetDatabase;
 	};
 }

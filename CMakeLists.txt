@@ -34,6 +34,7 @@ set(SOURCE_FILES
         src/SplitEngine/Input.cpp
         src/SplitEngine/IO/ImageFile.cpp
         src/SplitEngine/IO/Stream.cpp
+        include/SplitEngine/AssetDatabase.hpp
 )
 
 if (NOT HEADLESS)

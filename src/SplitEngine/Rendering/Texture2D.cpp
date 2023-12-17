@@ -5,15 +5,15 @@
 
 namespace SplitEngine::Rendering
 {
-	Texture2D::Texture2D(std::string filePath, const TextureSettings& textureSettings) :
-		_textureSettings(textureSettings),
-		_imageFile(IO::ImageFile(std::move(filePath), IO::ImageFile::ChannelSetup::RGBA)),
+	Texture2D::Texture2D(const CreateInfo& createInfo) :
+		_textureSettings(createInfo.TextureSettings),
+		_imageFile(IO::ImageFile(createInfo.FileName, IO::ImageFile::ChannelSetup::RGBA)),
 		_image(Vulkan::Image(Vulkan::Context::GetDevice(),
 							 _imageFile.GetPixels(),
 							 _imageFile.GetTotalImageSize(),
 							 {static_cast<uint32_t>(_imageFile.GetWidth()), static_cast<uint32_t>(_imageFile.GetHeight()), 1},
 							 {})),
-		_sampler(Vulkan::Context::GetDevice()->GetAllocator().AllocateSampler(textureSettings))
+		_sampler(Vulkan::Context::GetDevice()->GetAllocator().AllocateSampler(createInfo.TextureSettings))
 	{}
 
 	Texture2D::~Texture2D()

@@ -1,9 +1,9 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
 #include "SplitEngine/Application.hpp"
+#include "SplitEngine/Debug/Log.hpp"
 #include "SplitEngine/ErrorHandler.hpp"
 #include "SplitEngine/Input.hpp"
-#include "SplitEngine/Debug/Log.hpp"
 
 #include <format>
 
@@ -34,8 +34,6 @@ namespace SplitEngine
 
 	void Application::Run()
 	{
-		Initialize();
-
 		// Main Loop
 		uint64_t currentTime = SDL_GetPerformanceCounter();
 		uint64_t previousTime;
@@ -94,4 +92,6 @@ namespace SplitEngine
 	}
 
 	const ApplicationInfo& Application::GetApplicationInfo() { return _applicationInfo; }
+
+	AssetDatabase& Application::GetAssetDatabase() { return _assetDatabase; }
 }
