@@ -3,10 +3,10 @@
 
 namespace SplitEngine::Rendering
 {
-	Material::Material(Shader* shader) :
-		_shader(shader)
+	Material::Material(const CreateInfo& createInfo) :
+		_shader(createInfo._shader)
 	{
-		_descriptorSetAllocation = shader->GetPipeline().GetDescriptorSetManager().AllocateDescriptorSet();
+		_descriptorSetAllocation = _shader->GetPipeline().GetDescriptorSetManager().AllocateDescriptorSet();
 	}
 
 	Material::~Material()
@@ -18,7 +18,7 @@ namespace SplitEngine::Rendering
 		}
 	}
 
-	Shader* Material::GetShader() const { return _shader; }
+	AssetHandle<Shader> Material::GetShader() const { return _shader; }
 
 	Vulkan::DescriptorSetManager::DescriptorSetAllocation& Material::GetDescriptorSetAllocation() { return _descriptorSetAllocation; }
 

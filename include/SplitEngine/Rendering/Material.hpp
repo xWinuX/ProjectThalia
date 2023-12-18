@@ -1,19 +1,26 @@
 #pragma once
 
+#include "SplitEngine/AssetDatabase.hpp"
+#include "SplitEngine/Rendering/Texture2D.hpp"
+#include "SplitEngine/Rendering/Shader.hpp"
 #include "SplitEngine/Rendering/Vulkan/Buffer.hpp"
 #include "SplitEngine/Rendering/Vulkan/Pipeline.hpp"
-#include "SplitEngine/Rendering/Texture2D.hpp"
-
-#include "Shader.hpp"
 
 namespace SplitEngine::Rendering
 {
 	class Material
 	{
 		public:
+			struct CreateInfo
+			{
+				public:
+					AssetHandle<Shader> _shader;
+			};
+
+		public:
 			Material() = default;
 
-			explicit Material(Shader* shader);
+			explicit Material(const CreateInfo& createInfo);
 
 			~Material();
 
@@ -22,13 +29,13 @@ namespace SplitEngine::Rendering
 
 			void Update();
 
-			[[nodiscard]] Shader* GetShader() const;
+			[[nodiscard]] AssetHandle<Shader> GetShader() const;
 
 			[[nodiscard]] Vulkan::DescriptorSetManager::DescriptorSetAllocation&       GetDescriptorSetAllocation();
 			[[nodiscard]] const Vulkan::DescriptorSetManager::DescriptorSetAllocation& GetDescriptorSetAllocation() const;
 
 		private:
-			Shader* _shader = nullptr;
+			AssetHandle<Shader> _shader;
 
 			std::vector<vk::WriteDescriptorSet> _updateImageWriteDescriptorSets;
 

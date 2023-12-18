@@ -8,14 +8,21 @@ namespace SplitEngine::Rendering
 	class Model
 	{
 		public:
+			struct CreateInfo
+			{
+				public:
+					std::vector<std::byte> Vertices;
+					std::vector<uint16_t>  Indices;
+			};
+
+		public:
 			Model() = default;
 
 			~Model();
 
-			template<typename TVertex>
-			Model(std::vector<TVertex> vertices, std::vector<uint16_t> indices)
+			explicit Model(const CreateInfo& createInfo)
 			{
-				_modelBuffer = Vulkan::Buffer::CreateStagedModelBuffer(Vulkan::Context::GetDevice(), vertices, indices);
+				_modelBuffer = Vulkan::Buffer::CreateStagedModelBuffer(Vulkan::Context::GetDevice(), createInfo.Vertices, createInfo.Indices);
 			}
 
 			[[nodiscard]] const Vulkan::Buffer& GetModelBuffer() const;

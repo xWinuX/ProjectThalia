@@ -1,25 +1,10 @@
 #pragma once
 
 #include "ErrorHandler.hpp"
+
+#include <format>
+#include <functional>
 #include <unordered_map>
-#include <utility>
-
-#define MAP(type, var) \
-	std::unordered_map<size_t, SplitEngine::type> _##var##Map {}
-
-#define SPECIALIZE(type, var)                                                                                                                 \
-	template<>                                                                                                                                \
-	inline AssetHandle<SplitEngine::type> AssetDatabase::CreateAsset<SplitEngine::type>(size_t key, SplitEngine::type::CreateInfo createInfo) \
-	{                                                                                                                                         \
-		_##var##Map.try_emplace(key, createInfo);                                                                                             \
-		return AssetHandle<type>(*this, key);                                                                                                 \
-	}                                                                                                                                         \
-                                                                                                                                              \
-	template<>                                                                                                                                \
-	inline SplitEngine::type* AssetDatabase::GetAsset<SplitEngine::type>(AssetHandle<SplitEngine::type> assetHandle)                          \
-	{                                                                                                                                         \
-		return &_##var##Map.at(assetHandle._id);                                                                                              \
-	}
 
 namespace SplitEngine
 {
@@ -31,41 +16,55 @@ namespace SplitEngine
 			friend AssetDatabase;
 
 		public:
+			AssetHandle() = default;
+
 			T* operator->()
 			{
-				if (_asset == nullptr) { _asset = _assetDatabase.GetAsset<T>(*this); }
+				if (_asset == nullptr) { _asset = _assetDatabase->GetAsset<T>(*this); }
 				return _asset;
 			}
 
 		private:
-			explicit AssetHandle(AssetDatabase& assetDatabase, size_t id) :
+			explicit AssetHandle(AssetDatabase* assetDatabase, size_t id) :
 				_assetDatabase(assetDatabase),
 				_id(id)
 			{}
 
-			T*             _asset = nullptr;
-			AssetDatabase& _assetDatabase;
-			size_t         _id;
+			T*             _asset         = nullptr;
+			AssetDatabase* _assetDatabase = nullptr;
+			size_t         _id            = -1;
 	};
 
 	class AssetDatabase
 	{
 		public:
+			~AssetDatabase()
+			{
+				for (auto& item : _assetDeletionList) { item(); }
+			}
+
 			template<class T>
 			[[nodiscard]] AssetHandle<T> CreateAsset(size_t key, T::CreateInfo createInfo)
 			{
-				ErrorHandler::ThrowRuntimeError(std::format("Creation of asset with type {0} is not supported", typeid(T).name()));
+				T* pointer = new T(createInfo);
+				_assetMap.try_emplace(key, pointer);
+
+				_assetDeletionList.push_back([pointer] {
+					delete pointer;
+				});
+
+				return AssetHandle<T>(this, key);
 			}
 
 			template<class T>
 			T* GetAsset(AssetHandle<T> assetHandle)
 			{
-				ErrorHandler::ThrowRuntimeError(std::format("Retrieval of asset with type {0} is not supported", typeid(T).name()));
+				return (T*) _assetMap.at(assetHandle._id);
 			}
 
 		private:
-			MAP(Rendering::Texture2D, texture);
+			std::unordered_map<size_t, void*>  _assetMap;
+			std::vector<std::function<void()>> _assetDeletionList;
 	};
 
-	SPECIALIZE(Rendering::Texture2D, texture);
 }

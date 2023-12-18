@@ -11,8 +11,8 @@
 
 namespace SplitEngine::Rendering
 {
-	Shader::Shader(std::string shaderPath) :
-		_shaderPath(std::move(shaderPath))
+	Shader::Shader(const CreateInfo& createInfo) :
+		_shaderPath(std::move(createInfo.ShaderPath))
 	{
 		std::vector<std::filesystem::path> files;
 		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(_shaderPath))

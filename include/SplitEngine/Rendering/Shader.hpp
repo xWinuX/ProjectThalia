@@ -10,8 +10,14 @@ namespace SplitEngine::Rendering
 	class Shader
 	{
 		public:
+			struct CreateInfo
+			{
+				public:
+					std::string ShaderPath;
+			};
+		public:
 			Shader() = default;
-			explicit Shader(std::string shaderPath);
+			explicit Shader(const CreateInfo& createInfo);
 
 			~Shader();
 
