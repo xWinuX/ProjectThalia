@@ -95,5 +95,5 @@ namespace SplitEngine
 
 	AssetDatabase& Application::GetAssetDatabase() { return _assetDatabase; }
 
-	ECSManager& Application::GetECSManager() { return _ecsManager; }
+	ECS& Application::GetECS() { return _ecs; }
 }

@@ -35,7 +35,7 @@ set(SOURCE_FILES
         src/SplitEngine/IO/ImageFile.cpp
         src/SplitEngine/IO/Stream.cpp
         include/SplitEngine/AssetDatabase.hpp
-        include/SplitEngine/ECSManager.hpp
+        include/SplitEngine/ECS.hpp
 )
 
 if (NOT HEADLESS)
@@ -86,7 +86,8 @@ if (NOT HEADLESS)
     list(APPEND SOURCE_FILES ${RENDERING_FILES})
 endif ()
 
-add_library(SplitEngine ${SOURCE_FILES})
+#add_library(SplitEngine ${SOURCE_FILES})
+add_executable(SplitEngine ${SOURCE_FILES} main.cpp)
 target_include_directories(SplitEngine
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -182,3 +183,5 @@ install(
         DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/SplitEngine"
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
+
+file(COPY res DESTINATION "${CMAKE_BUILD_TYPE}")
