@@ -15,10 +15,6 @@ namespace SplitEngine
 			ECSManager() = default;
 
 			// TODO: somehow remove this mechanism
-			void Finalize()
-			{
-				for (const auto& item : ArchetypeBase::_archetypes) { item->_apply(); }
-			}
 
 			struct ArchetypeBase
 			{
@@ -41,14 +37,13 @@ namespace SplitEngine
 						Signature.ExtendSizeBy(_components.size());
 
 						// TODO: remove this monstrosity
-						_apply = [=] {
-							(
-									[&] {
-										auto hash = typeid(T).hash_code();
-										auto id   = _components.at(hash);
-									}(),
-									...);
-						};
+						(
+								[&] {
+									auto hash = typeid(T).hash_code();
+									auto id   = _components.at(hash);
+								}(),
+								...);
+
 
 						_archetypes.push_back(this);
 					}
@@ -65,11 +60,11 @@ namespace SplitEngine
 			{
 				++_entityID;
 
-				_archetype<T...>.Entities.push_back(_entityID);
+				GetArchetype<T...>().Entities.push_back(_entityID);
 
 				// Jesus fucking christ
 				// Copies data into the archetype
-				auto destIterator = std::back_inserter(_archetype<T...>.ComponentData);
+				auto destIterator = std::back_inserter(GetArchetype<T...>().ComponentData);
 				((std::copy(reinterpret_cast<const std::byte*>(&args), reinterpret_cast<const std::byte*>(&args) + sizeof(args), destIterator)), ...);
 
 				return _entityID;
@@ -80,7 +75,11 @@ namespace SplitEngine
 			{}
 
 			template<typename... T>
-			static Archetype<T...> _archetype;
+			static Archetype<T...>& GetArchetype()
+			{
+				static Archetype<T...> archetype;
+				return archetype;
+			}
 
 		private:
 			size_t _componentID = 0;
@@ -113,9 +112,6 @@ namespace SplitEngine
 	};
 
 	inline std::unordered_map<size_t, size_t> ECSManager::_components = std::unordered_map<size_t, size_t>();
-
-	template<typename... T>
-	inline ECSManager::Archetype<T...> ECSManager::_archetype;
 
 	inline std::vector<ECSManager::ArchetypeBase*> ECSManager::ArchetypeBase::_archetypes = std::vector<ECSManager::ArchetypeBase*>();
 }
