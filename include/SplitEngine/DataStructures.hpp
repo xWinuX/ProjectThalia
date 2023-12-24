@@ -2,8 +2,79 @@
 
 #include <vector>
 
+#define PRIVATE_COMPARE_SIZE(var) \
+	if (_numBits != var._numBits) { LOG_FATAL("can't compare 2 signatures that have different sizes"); }
+
 namespace SplitEngine
 {
+	class DynamicBitSet
+	{
+		public:
+			DynamicBitSet() = default;
+
+			DynamicBitSet(uint64_t size) { ExtendSizeBy(size); }
+
+			void ExtendSizeBy(uint64_t amountToIncrease = 1)
+			{
+				_numBits += amountToIncrease;
+				while (_numBits > _masks.size() * MASK_SIZE) { _masks.push_back(0); }
+			}
+
+			void SetBit(uint64_t bitIndex)
+			{
+				uint64_t index         = bitIndex / MASK_SIZE;
+				uint64_t relativeIndex = bitIndex - (index * MASK_SIZE);
+
+				_masks[index] |= static_cast<uint64_t>(1) << relativeIndex;
+			}
+
+			void UnsetBit(uint64_t bitIndex)
+			{
+				uint64_t index         = bitIndex / MASK_SIZE;
+				uint64_t relativeIndex = bitIndex - (index * MASK_SIZE);
+
+				_masks[index] &= ~(static_cast<uint64_t>(1) << relativeIndex);
+			}
+
+			/**
+			 * Checks if this bitset matches given bitset EXACTLY
+			 */
+			bool Matches(const DynamicBitSet& other)
+			{
+				PRIVATE_COMPARE_SIZE(other)
+
+				for (uint64_t i = 0; i < _masks.size(); ++i)
+				{
+					if (_masks[i] != other._masks[i]) { return false; }
+				}
+
+				return true;
+			}
+
+			/**
+			 * Determines whether this DynamicBitSet fuzzily matches another DynamicBitSet.
+			 * Fuzzy matching requires that each set bit in this DynamicBitSet is also set in the given DynamicBitSet,
+			 * without concern for additional bits set in the given bitset.
+			 * Comment written by ChatGPT because I'm to dumb to explain this concisely
+			 */
+			bool FuzzyMatches(const DynamicBitSet& other)
+			{
+				PRIVATE_COMPARE_SIZE(other)
+
+				for (uint64_t i = 0; i < _masks.size(); ++i)
+				{
+					if ((_masks[i] & other._masks[i]) != _masks[i]) { return false; }
+				}
+
+				return true;
+			}
+
+		private:
+			static constexpr uint64_t MASK_SIZE = sizeof(uint64_t) * CHAR_BIT;
+
+			uint64_t              _numBits = 0;
+			std::vector<uint64_t> _masks;
+	};
 
 	template<typename T>
 	class IncrementVector
@@ -70,3 +141,5 @@ namespace SplitEngine
 			uint32_t              _cursor = -1;
 	};
 }
+
+#undef PRIVATE_COMPARE_SIZE

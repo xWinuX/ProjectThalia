@@ -9,6 +9,7 @@
 
 #include "ApplicationInfo.hpp"
 #include "AssetDatabase.hpp"
+#include "ECSManager.hpp"
 #include "Event.hpp"
 #include "Window.hpp"
 
@@ -26,6 +27,7 @@ namespace SplitEngine
 			static const ApplicationInfo& GetApplicationInfo();
 
 			AssetDatabase& GetAssetDatabase();
+			ECSManager& GetECSManager();
 
 		private:
 			static ApplicationInfo _applicationInfo;
@@ -35,5 +37,6 @@ namespace SplitEngine
 #endif
 
 			AssetDatabase _assetDatabase;
+			ECSManager    _ecsManager;
 	};
 }

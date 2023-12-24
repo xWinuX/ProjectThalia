@@ -94,4 +94,6 @@ namespace SplitEngine
 	const ApplicationInfo& Application::GetApplicationInfo() { return _applicationInfo; }
 
 	AssetDatabase& Application::GetAssetDatabase() { return _assetDatabase; }
+
+	ECSManager& Application::GetECSManager() { return _ecsManager; }
 }
