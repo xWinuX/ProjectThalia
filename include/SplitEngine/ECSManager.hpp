@@ -60,11 +60,13 @@ namespace SplitEngine
 			{
 				++_entityID;
 
-				GetArchetype<T...>().Entities.push_back(_entityID);
+				Archetype<T...>& archetype = GetArchetype<T...>();
+
+				archetype.Entities.push_back(_entityID);
 
 				// Jesus fucking christ
 				// Copies data into the archetype
-				auto destIterator = std::back_inserter(GetArchetype<T...>().ComponentData);
+				auto destIterator = std::back_inserter(archetype.ComponentData);
 				((std::copy(reinterpret_cast<const std::byte*>(&args), reinterpret_cast<const std::byte*>(&args) + sizeof(args), destIterator)), ...);
 
 				return _entityID;
