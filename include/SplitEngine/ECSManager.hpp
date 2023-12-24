@@ -75,7 +75,7 @@ namespace SplitEngine
 			{}
 
 			template<typename... T>
-			static Archetype<T...>& GetArchetype()
+			Archetype<T...>& GetArchetype()
 			{
 				static Archetype<T...> archetype;
 				return archetype;
