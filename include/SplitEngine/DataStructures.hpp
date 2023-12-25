@@ -39,7 +39,7 @@ namespace SplitEngine
 			/**
 			 * Checks if this bitset matches given bitset EXACTLY
 			 */
-			bool Matches(const DynamicBitSet& other)
+			[[nodiscard]] bool Matches(const DynamicBitSet& other) const
 			{
 				PRIVATE_COMPARE_SIZE(other)
 
@@ -57,7 +57,7 @@ namespace SplitEngine
 			 * without concern for additional bits set in the given bitset.
 			 * Comment written by ChatGPT because I'm to dumb to explain this concisely
 			 */
-			bool FuzzyMatches(const DynamicBitSet& other)
+			[[nodiscard]] bool FuzzyMatches(const DynamicBitSet& other) const
 			{
 				PRIVATE_COMPARE_SIZE(other)
 

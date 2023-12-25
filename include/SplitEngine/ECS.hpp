@@ -11,14 +11,15 @@ namespace SplitEngine
 	struct Component
 	{};
 
-	template<class T>
+	// Source: https://indiegamedev.net/2020/05/19/an-entity-component-system-with-data-locality-in-cpp/
+	template<typename TBase>
 	class TypeIDGenerator
 	{
 		private:
 			static uint64_t _count;
 
 		public:
-			template<class U>
+			template<typename T>
 			static uint64_t GetID()
 			{
 				static const uint64_t ID = _count++;
@@ -36,8 +37,51 @@ namespace SplitEngine
 		public:
 			ECS() = default;
 
+			void Update(float deltaTime)
+			{
+				for (auto& system : _systems) { system->RunUpdate(*this, deltaTime); }
+			}
+
+			class SystemBase
+			{
+				public:
+					virtual void RunUpdate(const ECS& ecs, float deltaTime) = 0;
+			};
+
+			template<typename... T>
+			class System : public SystemBase
+			{
+				public:
+					System()
+					{
+						Signature.ExtendSizeBy(TypeIDGenerator<Component>::GetCount());
+						(Signature.SetBit(TypeIDGenerator<Component>::GetID<T>()), ...);
+					}
+
+					void RunUpdate(const ECS& ecs, float deltaTime) final
+					{
+						std::vector<ECS::ArchetypeBase*> archetypes = ecs.GetArchetypesWithSignature(Signature);
+
+						for (ECS::ArchetypeBase* archetype : archetypes)
+						{
+							std::apply(
+									[this, &archetype, deltaTime](T*... components) {
+										Update(components..., archetype->Entities.size(), deltaTime);
+									},
+									std::make_tuple(reinterpret_cast<T*>(archetype->GetComponents<T>().data())...));
+						}
+					}
+
+					virtual void Update(T*..., uint64_t numEntities, float deltaTime) = 0;
+
+				private:
+					DynamicBitSet Signature {};
+			};
+
 			class ArchetypeBase
 			{
+					friend ECS;
+
 				public:
 					uint64_t                                           ID = 0;
 					std::vector<uint64_t>                              Entities {};
@@ -89,8 +133,7 @@ namespace SplitEngine
 
 				archetype.Entities.push_back(_entityID);
 
-				// Jesus fucking christ
-				// Copies data into the archetype
+				// Copies each component into the archetype vector for it
 				((std::copy(reinterpret_cast<const std::byte*>(&args),
 							reinterpret_cast<const std::byte*>(&args) + sizeof(args),
 							std::back_inserter(archetype.template GetComponents<T>()))),
@@ -109,7 +152,23 @@ namespace SplitEngine
 
 			template<typename T>
 			void RegisterSystem()
-			{}
+			{
+				static_assert(std::is_base_of<SystemBase, T>::value, "an ECS System needs to derive from SplitEngine::ECS::System");
+
+				_systems.emplace_back(new T());
+			}
+
+			[[nodiscard]] std::vector<ArchetypeBase*> GetArchetypesWithSignature(const DynamicBitSet& signature) const
+			{
+				std::vector<ArchetypeBase*> archetypes {};
+
+				for (ArchetypeBase* archetype : ArchetypeBase::_archetypes)
+				{
+					if (signature.FuzzyMatches(archetype->Signature)) { archetypes.push_back(archetype); }
+				}
+
+				return archetypes;
+			}
 
 			template<typename... T>
 			Archetype<T...>& GetArchetype()
@@ -119,12 +178,13 @@ namespace SplitEngine
 			}
 
 		private:
-			uint64_t _componentID = 0;
 			uint64_t _entityID    = 0;
 
 			std::unordered_map<uint64_t, size_t> _entityLocation;
+
+			std::vector<SystemBase*> _systems;
 	};
 
-	inline std::vector<ECS::ArchetypeBase*>        ECS::ArchetypeBase::_archetypes = std::vector<ECS::ArchetypeBase*>();
-	inline uint64_t                                ECS::ArchetypeBase::_id         = 0;
+	inline std::vector<ECS::ArchetypeBase*> ECS::ArchetypeBase::_archetypes = std::vector<ECS::ArchetypeBase*>();
+	inline uint64_t                         ECS::ArchetypeBase::_id         = 0;
 }

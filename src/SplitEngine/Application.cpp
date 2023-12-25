@@ -78,7 +78,7 @@ namespace SplitEngine
 #endif
 			}
 
-			// TODO: Run ECS here
+			_ecs.Update(deltaTime);
 
 #ifndef SE_HEADLESS
 			ImGui::Text("DT: %f", averageDeltaTime);
