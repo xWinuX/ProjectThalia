@@ -3,7 +3,7 @@
 #include "SplitEngine/DataStructures.hpp"
 #include "SplitEngine/Debug/Log.hpp"
 #include <bitset>
-#include <unordered_map>
+#include <chrono>
 #include <vector>
 
 namespace SplitEngine
@@ -42,6 +42,13 @@ namespace SplitEngine
 				for (auto& system : _systems) { system->RunUpdate(*this, deltaTime); }
 			}
 
+			struct Entity
+			{
+				public:
+					uint64_t archetypeIndex;
+					uint64_t componentIndex;
+			};
+
 			class SystemBase
 			{
 				public:
@@ -66,13 +73,13 @@ namespace SplitEngine
 						{
 							std::apply(
 									[this, &archetype, deltaTime](T*... components) {
-										Update(components..., archetype->Entities.size(), deltaTime);
+										Update(components..., archetype->Entities, deltaTime);
 									},
 									std::make_tuple(reinterpret_cast<T*>(archetype->GetComponents<T>().data())...));
 						}
 					}
 
-					virtual void Update(T*..., uint64_t numEntities, float deltaTime) = 0;
+					virtual void Update(T*..., std::vector<uint64_t>& entities, float deltaTime) = 0;
 
 				private:
 					DynamicBitSet Signature {};
@@ -83,65 +90,112 @@ namespace SplitEngine
 					friend ECS;
 
 				public:
-					uint64_t                                           ID = 0;
-					std::vector<uint64_t>                              Entities {};
-					std::unordered_map<size_t, std::vector<std::byte>> ComponentData {};
-					size_t                                             EntitySize = 0;
-					DynamicBitSet                                      Signature {};
+					uint64_t                            ID = 0;
+					std::vector<uint64_t>               Entities {};
+					std::vector<std::vector<std::byte>> ComponentData {};
+					DynamicBitSet                       Signature {};
 
 					template<typename T>
 					std::vector<std::byte>& GetComponents()
 					{
-						return ComponentData.at(TypeIDGenerator<Component>::GetID<T>());
+						return ComponentData[TypeIDGenerator<Component>::GetID<T>()];
 					}
+
+					template<typename ...T>
+					uint64_t AddEntity(uint64_t entityID, T&&... args)
+					{
+						Entities.push_back(entityID);
+
+						((std::copy(reinterpret_cast<const std::byte*>(&args),
+									reinterpret_cast<const std::byte*>(&args) + sizeof(args),
+									std::back_inserter(GetComponents<T>()))),
+						 ...);
+
+						return Entities.size() - 1;
+					}
+
+					void DestroyEntity(uint64_t entityID) { RunDestroyEntity(entityID); }
 
 				protected:
 					static uint64_t                    _id;
 					static std::vector<ArchetypeBase*> _archetypes;
+
+					virtual void RunDestroyEntity(uint64_t entityID) = 0;
 			};
 
 			template<typename... T>
 			class Archetype : public ArchetypeBase
 			{
 				public:
-					explicit Archetype()
+					explicit Archetype(std::vector<Entity>& sparseEntityLookup) :
+						_sparseEntityLookup(sparseEntityLookup)
 					{
 						Signature.ExtendSizeBy(TypeIDGenerator<Component>::GetCount());
-
+						ComponentData.resize(TypeIDGenerator<Component>::GetCount());
 						(
 								[&] {
 									uint64_t id = TypeIDGenerator<Component>::GetID<T>();
 									Signature.SetBit(id);
-									ComponentData.try_emplace(id, std::vector<std::byte>());
 								}(),
 								...);
-
-						EntitySize = (sizeof(T) + ... + 0);
 
 						ID = _id++;
 
 						_archetypes.push_back(this);
 					}
+
+					void RunDestroyEntity(uint64_t entityID) override
+					{
+						size_t indexToRemove = _sparseEntityLookup[entityID].componentIndex;
+						size_t lastIndex     = Entities.size() - 1;
+
+						_sparseEntityLookup[Entities[lastIndex]].componentIndex = indexToRemove;
+
+						std::swap(Entities[indexToRemove], Entities[lastIndex]);
+						Entities.pop_back();
+
+						(
+								[&] {
+									std::vector<std::byte>& bytes = GetComponents<T>();
+									T*                      data  = reinterpret_cast<T*>(bytes.data());
+									std::swap(data[indexToRemove], data[lastIndex]);
+									bytes.erase(bytes.end() - sizeof(T), bytes.end());
+								}(),
+								...);
+					}
+
+				private:
+					std::vector<Entity>& _sparseEntityLookup;
 			};
 
 			template<typename... T>
-			size_t CreateEntity(T... args)
+			size_t CreateEntity(T&&... args)
 			{
-				++_entityID;
-
 				Archetype<T...>& archetype = GetArchetype<T...>();
 
-				archetype.Entities.push_back(_entityID);
+				uint64_t entityID = 0;
+				if (!_entityGraveyard.IsEmpty())
+				{
+					entityID                                     = _entityGraveyard.Pop();
+					uint64_t componentIndex                      = archetype.AddEntity(entityID, std::forward<T>(args)...);
+					_sparseEntityLookup[entityID].archetypeIndex = archetype.ID;
+					_sparseEntityLookup[entityID].componentIndex = componentIndex;
+				}
+				else
+				{
+					entityID                = _sparseEntityLookup.size();
+					uint64_t componentIndex = archetype.AddEntity(entityID, std::forward<T>(args)...);
+					_sparseEntityLookup.emplace_back(archetype.ID, componentIndex);
+				}
 
-				// Copies each component into the archetype vector for it
-				((std::copy(reinterpret_cast<const std::byte*>(&args),
-							reinterpret_cast<const std::byte*>(&args) + sizeof(args),
-							std::back_inserter(archetype.template GetComponents<T>()))),
-				 ...);
+				return entityID;
+			}
 
-				_entityLocation.try_emplace(_entityID, archetype.ID);
+			void DestroyEntity(uint64_t entityID)
+			{
+				ArchetypeBase::_archetypes[_sparseEntityLookup[entityID].archetypeIndex]->DestroyEntity(entityID);
 
-				return _entityID;
+				_entityGraveyard.Push(entityID);
 			}
 
 			template<typename T>
@@ -150,15 +204,15 @@ namespace SplitEngine
 				TypeIDGenerator<Component>::GetID<T>();
 			}
 
-			template<typename T>
-			void RegisterSystem()
+			template<typename T, typename... TArgs>
+			void RegisterSystem(TArgs&&... args)
 			{
 				static_assert(std::is_base_of<SystemBase, T>::value, "an ECS System needs to derive from SplitEngine::ECS::System");
 
-				_systems.emplace_back(new T());
+				_systems.emplace_back(new T(std::forward<TArgs>(args)...));
 			}
 
-			[[nodiscard]] std::vector<ArchetypeBase*> GetArchetypesWithSignature(const DynamicBitSet& signature) const
+			[[nodiscard]] static std::vector<ArchetypeBase*> GetArchetypesWithSignature(const DynamicBitSet& signature)
 			{
 				std::vector<ArchetypeBase*> archetypes {};
 
@@ -173,14 +227,15 @@ namespace SplitEngine
 			template<typename... T>
 			Archetype<T...>& GetArchetype()
 			{
-				static Archetype<T...> archetype;
+				static Archetype<T...> archetype = Archetype<T...>(_sparseEntityLookup);
 				return archetype;
 			}
 
-		private:
-			uint64_t _entityID    = 0;
 
-			std::unordered_map<uint64_t, size_t> _entityLocation;
+		private:
+			std::vector<Entity> _sparseEntityLookup;
+
+			AvailableStack<uint64_t> _entityGraveyard;
 
 			std::vector<SystemBase*> _systems;
 	};

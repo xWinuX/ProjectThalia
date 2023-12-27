@@ -97,13 +97,13 @@ namespace SplitEngine
 
 			void Clear() { _cursor = 0; }
 
-			T* begin() { return &_vector[0]; }
+			T* begin() { return _vector.data(); }
 
-			const T* begin() const { return &_vector[0]; }
+			const T* begin() const { return _vector.data(); }
 
-			T* end() { return &_vector[_cursor]; }
+			T* end() { return _vector.data() + _cursor; }
 
-			const T* end() const { return &_vector[_cursor]; }
+			const T* end() const { return _vector.data() + _cursor; }
 
 			std::vector<T> _vector;
 			size_t         _size   = 0;
@@ -117,28 +117,35 @@ namespace SplitEngine
 			AvailableStack() = default;
 
 			explicit AvailableStack(size_t capacity) :
-				_vector(std::vector<T>(capacity, 0)),
-				_cursor(capacity - 1)
+				_vector(std::vector<T>(capacity, {})),
+				_cursor(capacity != 0 ? capacity - 1 : 0)
 			{}
 
-			T Pop() { return _vector[_cursor--]; }
+			T Pop() { return _vector[--_cursor]; }
 
-			void Push(T value) { _vector[++_cursor] = value; }
+			void Push(T value)
+			{
+				if (_vector.size() <= _cursor)
+				{
+					_vector.push_back(value);
+					++_cursor;
+				}
+				else { _vector[_cursor++] = value; }
+			}
 
 			[[nodiscard]] bool IsEmpty() const { return _cursor == 0; }
 
-			T* begin() { return &_vector[0]; }
+			T* begin() { return _vector.data(); }
 
-			const T* begin() const { return &_vector[0]; }
+			const T* begin() const { return _vector.data(); }
 
-			T* end() { return &_vector[_size]; }
+			T* end() { return _vector.data() + _cursor; }
 
-			const T* end() const { return &_vector[_size]; }
+			const T* end() const { return _vector.data() + _cursor; }
 
 		private:
-			std::vector<uint32_t> _vector;
-			size_t                _size   = 0;
-			uint32_t              _cursor = -1;
+			std::vector<T> _vector {};
+			uint64_t       _cursor = 0;
 	};
 }
 
