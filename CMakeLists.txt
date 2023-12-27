@@ -36,6 +36,7 @@ set(SOURCE_FILES
         src/SplitEngine/IO/Stream.cpp
         include/SplitEngine/AssetDatabase.hpp
         include/SplitEngine/ECS.hpp
+        include/SplitEngine/Debug/Performance.hpp
 )
 
 if (NOT HEADLESS)
