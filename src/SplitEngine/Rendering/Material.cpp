@@ -16,6 +16,7 @@ namespace SplitEngine::Rendering
 		{
 			_shader->GetPipeline().GetDescriptorSetManager().DeallocateDescriptorSet(_descriptorSetAllocation);
 		}
+		LOG("Mat destroy end");
 	}
 
 	AssetHandle<Shader> Material::GetShader() const { return _shader; }
@@ -32,7 +33,7 @@ namespace SplitEngine::Rendering
 		SetWriteDescriptorSetDirty(index);
 	}
 
-	void Material::SetTextures(size_t index, size_t offset, const std::vector<Texture2D*>& textures)
+	void Material::SetTextures(size_t index, size_t offset, std::vector<AssetHandle<Texture2D>>& textures)
 	{
 		for (int i = 0; i < textures.size(); ++i)
 		{

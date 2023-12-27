@@ -7,6 +7,7 @@ namespace SplitEngine::ECS
 	class SystemBase
 	{
 		public:
-			virtual void RunUpdate(const Registry* registry, float deltaTime) = 0;
+			virtual ~SystemBase() {};
+			virtual void RunExecute(Context& context) = 0;
 	};
 }

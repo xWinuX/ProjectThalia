@@ -1,11 +1,33 @@
 #include "SplitEngine/ECS/Registry.hpp"
 
+#ifndef SE_HEADLESS
+#include "SplitEngine/Rendering/Vulkan/Context.hpp"
+#endif
+
 namespace SplitEngine::ECS
 {
+	Registry::Registry() { _context.Registry = this; }
+
+	Registry::~Registry()
+	{
+#ifndef SE_HEADLESS
+		for (const SystemBase* system : _renderSystems) { delete system; }
+#endif
+		for (const SystemBase* system : _gameplaySystems) { delete system; }
+	}
+
 	void Registry::Update(float deltaTime)
 	{
+		_context.DeltaTime = deltaTime;
+		for (auto& system : _gameplaySystems) { system->RunExecute(_context); }
+	}
 
-		for (auto& system : _systems) { system->RunUpdate(this, deltaTime); }
+	void Registry::Render(float deltaTime)
+	{
+#ifndef SE_HEADLESS
+		_context.DeltaTime = deltaTime;
+		for (auto& system : _renderSystems) { system->RunExecute(_context); }
+#endif
 	}
 
 	std::vector<ArchetypeBase*> Registry::GetArchetypesWithSignature(const DynamicBitSet& signature)

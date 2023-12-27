@@ -45,6 +45,7 @@ set(SOURCE_FILES
         include/SplitEngine/ECS/Archetype.hpp
         include/SplitEngine/ECS/SystemBase.hpp
         include/SplitEngine/ECS/System.hpp
+        include/SplitEngine/ECS/Context.hpp
 )
 
 if (NOT HEADLESS)

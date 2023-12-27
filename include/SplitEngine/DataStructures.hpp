@@ -141,7 +141,7 @@ namespace SplitEngine
 
 			explicit AvailableStack(size_t capacity) :
 				_vector(std::vector<T>(capacity, {})),
-				_cursor(capacity != 0 ? capacity - 1 : 0)
+				_cursor(capacity)
 			{}
 
 			T Pop() { return _vector[--_cursor]; }

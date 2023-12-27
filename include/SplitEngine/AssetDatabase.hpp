@@ -25,14 +25,14 @@ namespace SplitEngine
 			}
 
 		private:
-			explicit AssetHandle(AssetDatabase* assetDatabase, size_t id) :
+			explicit AssetHandle(AssetDatabase* assetDatabase, uint64_t id) :
 				_assetDatabase(assetDatabase),
 				_id(id)
 			{}
 
 			T*             _asset         = nullptr;
 			AssetDatabase* _assetDatabase = nullptr;
-			size_t         _id            = -1;
+			uint64_t       _id            = -1;
 	};
 
 	class AssetDatabase
@@ -40,30 +40,42 @@ namespace SplitEngine
 		public:
 			~AssetDatabase()
 			{
-				for (auto& item : _assetDeletionList) { item(); }
+				for (auto it = _assetDeletionList.rbegin(); it != _assetDeletionList.rend(); ++it) { (*it)(); }
 			}
 
-			template<class T>
-			[[nodiscard]] AssetHandle<T> CreateAsset(size_t key, T::CreateInfo createInfo)
+			template<class T, class TKey>
+			[[nodiscard]] AssetHandle<T> CreateAsset(TKey key, T::CreateInfo createInfo)
 			{
-				T* pointer = new T(createInfo);
-				_assetMap.try_emplace(key, pointer);
+				T* pointer          = new T(createInfo);
+				GetAssets<T>()[static_cast<uint64_t>(key)] = pointer;
 
 				_assetDeletionList.push_back([pointer] {
 					delete pointer;
 				});
 
-				return AssetHandle<T>(this, key);
+				return AssetHandle<T>(this, static_cast<uint64_t>(key));
+			}
+
+			template<typename T>
+			std::unordered_map<uint64_t, T*>& GetAssets()
+			{
+				static std::unordered_map<uint64_t, T*> map;
+				return map;
 			}
 
 			template<class T>
 			T* GetAsset(AssetHandle<T> assetHandle)
 			{
-				return (T*) _assetMap.at(assetHandle._id);
+				return (T*) GetAssets<T>().at(assetHandle._id);
+			}
+
+			template<typename T, typename TKey>
+			T* GetAsset(TKey key)
+			{
+				return GetAssets<T>().at(static_cast<uint64_t>(key));
 			}
 
 		private:
-			std::unordered_map<size_t, void*>  _assetMap;
 			std::vector<std::function<void()>> _assetDeletionList;
 	};
 

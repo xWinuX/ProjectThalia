@@ -12,7 +12,7 @@
 namespace SplitEngine::Rendering
 {
 	Shader::Shader(const CreateInfo& createInfo) :
-		_shaderPath(std::move(createInfo.ShaderPath))
+		_shaderPath(createInfo.ShaderPath)
 	{
 		std::vector<std::filesystem::path> files;
 		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(_shaderPath))
@@ -49,7 +49,6 @@ namespace SplitEngine::Rendering
 			std::string                  shaderTypeString = file.string().substr(secondLastDotPosition + 1, lastDotPosition - secondLastDotPosition - 1);
 			Vulkan::Pipeline::ShaderType shaderType       = Vulkan::Pipeline::ShaderType::Vertex;
 
-			LOG(shaderTypeString);
 
 			if (shaderTypeString == Application::GetApplicationInfo().VertexShaderFileExtension) { shaderType = Vulkan::Pipeline::ShaderType::Vertex; }
 			if (shaderTypeString == Application::GetApplicationInfo().FragmentShaderFileExtension) { shaderType = Vulkan::Pipeline::ShaderType::Fragment; }

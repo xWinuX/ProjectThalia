@@ -4,20 +4,32 @@
 
 #include "Archetype.hpp"
 #include "Component.hpp"
+#include "Context.hpp"
 #include "Entity.hpp"
 #include "SystemBase.hpp"
 
 #include <iterator>
 #include <vector>
 
+#ifndef SE_HEADLESS
+namespace SplitEngine::Rendering::Vulkan
+{
+	class Context;
+}
+#endif
+
 namespace SplitEngine::ECS
 {
 	class Registry
 	{
 		public:
-			Registry() = default;
+			Registry();
+
+			~Registry();
 
 			void Update(float deltaTime);
+
+			void Render(float deltaTime);
 
 			template<typename... T>
 			size_t CreateEntity(T&&... args)
@@ -51,14 +63,14 @@ namespace SplitEngine::ECS
 			}
 
 			template<typename T, typename... TArgs>
-			void RegisterSystem(TArgs&&... args)
+			void RegisterGameplaySystem(TArgs&&... args)
 			{
 				static_assert(std::is_base_of<SystemBase, T>::value, "an ECS System needs to derive from SplitEngine::ECS::System");
 
-				_systems.emplace_back(new T(std::forward<TArgs>(args)...));
+				_gameplaySystems.emplace_back(new T(std::forward<TArgs>(args)...));
 			}
 
-			[[nodiscard]] static std::vector<ArchetypeBase*> GetArchetypesWithSignature(const DynamicBitSet& signature);
+			[[nodiscard]] std::vector<ArchetypeBase*> GetArchetypesWithSignature(const DynamicBitSet& signature);
 
 			template<typename... T>
 			Archetype<T...>& GetArchetype()
@@ -66,13 +78,31 @@ namespace SplitEngine::ECS
 				static Archetype<T...> archetype = Archetype<T...>(_sparseEntityLookup);
 				return archetype;
 			}
-			
+
 		private:
 			std::vector<Entity> _sparseEntityLookup;
 
 			AvailableStack<uint64_t> _entityGraveyard;
 
-			std::vector<SystemBase*> _systems;
+			std::vector<SystemBase*> _gameplaySystems;
+
+			Context _context {};
+
+#ifndef SE_HEADLESS
+		public:
+			void RegisterRenderingContext(SplitEngine::Rendering::Vulkan::Context* context) { _context.RenderingContext = context; }
+
+			template<typename T, typename... TArgs>
+			void RegisterRenderSystem(TArgs&&... args)
+			{
+				static_assert(std::is_base_of<SystemBase, T>::value, "an ECS System needs to derive from SplitEngine::ECS::System");
+
+				_renderSystems.emplace_back(new T(std::forward<TArgs>(args)...));
+			}
+
+		private:
+			std::vector<SystemBase*> _renderSystems;
+#endif
 	};
 
 

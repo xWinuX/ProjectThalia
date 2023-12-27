@@ -29,6 +29,7 @@ namespace SplitEngine
 
 #ifndef SE_HEADLESS
 		_renderer.Initialize();
+		_ecsRegistry.RegisterRenderingContext(&_renderer.GetContext());
 #endif
 	}
 
@@ -114,11 +115,19 @@ namespace SplitEngine
 			ImGui::Text("FPS: %llu", averageFps);
 
 			renderStartTime = SDL_GetPerformanceCounter();
-			_renderer.Render();
+			_renderer.BeginRender();
+
+			_ecsRegistry.Render(deltaTime);
+
+			_renderer.EndRender();
 			renderEndTime = SDL_GetPerformanceCounter();
 #endif
 			Input::Reset();
 		}
+
+#ifndef SE_HEADLESS
+		_renderer.GetContext().WaitForIdle();
+#endif
 	}
 
 	const ApplicationInfo& Application::GetApplicationInfo() { return _applicationInfo; }

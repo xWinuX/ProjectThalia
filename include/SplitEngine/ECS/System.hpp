@@ -1,11 +1,10 @@
 #pragma once
 
-#include "SystemBase.hpp"
 #include "Registry.hpp"
+#include "SystemBase.hpp"
 
 namespace SplitEngine::ECS
 {
-
 	template<typename... T>
 	class System : public SystemBase
 	{
@@ -16,26 +15,23 @@ namespace SplitEngine::ECS
 				(Signature.SetBit(TypeIDGenerator<Component>::GetID<T>()), ...);
 			}
 
-			void RunUpdate(const Registry* registry, float deltaTime) final
+			void RunExecute(Context& context) final
 			{
-				std::vector<ArchetypeBase*> archetypes = registry->GetArchetypesWithSignature(Signature);
+				std::vector<ArchetypeBase*> archetypes = context.Registry->GetArchetypesWithSignature(Signature);
 
 				for (ArchetypeBase* archetype : archetypes)
 				{
 					std::apply(
-							[this, &archetype, deltaTime](T*... components) {
-								Update(components..., archetype->Entities, deltaTime);
+							[this, &archetype, &context](T*... components) {
+								Execute(components..., archetype->Entities, context);
 							},
 							std::make_tuple(reinterpret_cast<T*>(archetype->GetComponents<T>().data())...));
 				}
 			}
 
-			virtual void Update(T*..., std::vector<uint64_t>& entities, float deltaTime) = 0;
+			virtual void Execute(T*..., std::vector<uint64_t>& entities, Context& context) = 0;
 
 		private:
 			DynamicBitSet Signature {};
 	};
-
-} // ECS
-
-// SplitEngine
+}
