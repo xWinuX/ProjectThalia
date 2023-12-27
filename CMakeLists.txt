@@ -35,8 +35,16 @@ set(SOURCE_FILES
         src/SplitEngine/IO/ImageFile.cpp
         src/SplitEngine/IO/Stream.cpp
         include/SplitEngine/AssetDatabase.hpp
-        include/SplitEngine/ECS.hpp
         include/SplitEngine/Debug/Performance.hpp
+        src/SplitEngine/ECS/Registry.cpp
+        include/SplitEngine/ECS/Registry.hpp
+        include/SplitEngine/ECS/Entity.hpp
+        include/SplitEngine/ECS/Component.hpp
+        src/SplitEngine/ECS/ArchetypeBase.cpp
+        include/SplitEngine/ECS/ArchetypeBase.hpp
+        include/SplitEngine/ECS/Archetype.hpp
+        include/SplitEngine/ECS/SystemBase.hpp
+        include/SplitEngine/ECS/System.hpp
 )
 
 if (NOT HEADLESS)

@@ -9,7 +9,7 @@
 
 #include "ApplicationInfo.hpp"
 #include "AssetDatabase.hpp"
-#include "ECS.hpp"
+#include "ECS/Registry.hpp"
 #include "Event.hpp"
 #include "Window.hpp"
 
@@ -27,7 +27,7 @@ namespace SplitEngine
 			static const ApplicationInfo& GetApplicationInfo();
 
 			AssetDatabase& GetAssetDatabase();
-			ECS&           GetECS();
+			ECS::Registry& GetECSRegistry();
 
 		private:
 			static ApplicationInfo _applicationInfo;
@@ -37,6 +37,6 @@ namespace SplitEngine
 #endif
 
 			AssetDatabase _assetDatabase;
-			ECS           _ecs;
+			ECS::Registry _ecsRegistry;
 	};
 }

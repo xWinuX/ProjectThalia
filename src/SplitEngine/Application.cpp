@@ -35,9 +35,9 @@ namespace SplitEngine
 	void Application::Run()
 	{
 		// Main Loop
-		uint64_t currentTime = SDL_GetPerformanceCounter();
+		uint64_t currentTime  = SDL_GetPerformanceCounter();
 		uint64_t previousTime = 0;
-		float    deltaTime = 0;
+		float    deltaTime    = 0;
 
 		uint64_t averageFps       = 0;
 		float    averageDeltaTime = 0.0f;
@@ -50,13 +50,13 @@ namespace SplitEngine
 		float averageUpdateTime     = 0.0f;
 
 		uint64_t updateStartTime = 0;
-		uint64_t updateEndTime = 0;
+		uint64_t updateEndTime   = 0;
 
 		float accumulatedRenderTime = 0.0f;
 		float averageRenderTime     = 0.0f;
 
 		uint64_t renderStartTime = 0;
-		uint64_t renderEndTime = 0;
+		uint64_t renderEndTime   = 0;
 
 		SDL_Event event;
 		bool      quit = false;
@@ -86,7 +86,7 @@ namespace SplitEngine
 				accumulatedUpdateTime = 0.0f;
 				accumulatedRenderTime = 0.0f;
 
-				accumulatedFrames     = 0;
+				accumulatedFrames = 0;
 			}
 
 			while (SDL_PollEvent(&event))
@@ -103,7 +103,7 @@ namespace SplitEngine
 			}
 
 			updateStartTime = SDL_GetPerformanceCounter();
-			_ecs.Update(deltaTime);
+			_ecsRegistry.Update(deltaTime);
 			updateEndTime = SDL_GetPerformanceCounter();
 
 #ifndef SE_HEADLESS
@@ -125,5 +125,5 @@ namespace SplitEngine
 
 	AssetDatabase& Application::GetAssetDatabase() { return _assetDatabase; }
 
-	ECS& Application::GetECS() { return _ecs; }
+	ECS::Registry& Application::GetECSRegistry() { return _ecsRegistry; }
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "SplitEngine/Debug/Log.hpp"
+
 #include <vector>
 
 #define PRIVATE_COMPARE_SIZE(var) \
@@ -7,6 +9,27 @@
 
 namespace SplitEngine
 {
+	// Source: https://indiegamedev.net/2020/05/19/an-entity-component-system-with-data-locality-in-cpp/
+	template<typename TBase>
+	class TypeIDGenerator
+	{
+		private:
+			static uint64_t _count;
+
+		public:
+			template<typename T>
+			static uint64_t GetID()
+			{
+				static const uint64_t ID = _count++;
+				return ID;
+			}
+
+			static uint64_t GetCount() { return _count; }
+	};
+
+	template<class T>
+	uint64_t TypeIDGenerator<T>::_count = 0;
+
 	class DynamicBitSet
 	{
 		public:
