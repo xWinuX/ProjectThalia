@@ -46,6 +46,8 @@ set(SOURCE_FILES
         include/SplitEngine/ECS/SystemBase.hpp
         include/SplitEngine/ECS/System.hpp
         include/SplitEngine/ECS/Context.hpp
+        src/SplitEngine/Tools/TexturePacker.cpp
+        include/SplitEngine/Tools/TexturePacker.hpp
 )
 
 if (NOT HEADLESS)
