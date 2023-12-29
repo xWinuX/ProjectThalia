@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SplitEngine/IO/ImageFile.hpp"
+#include "SplitEngine/IO/ImageLoader.hpp"
 #include "SplitEngine/Rendering/Vulkan/Image.hpp"
 #include "TextureSettings.hpp"
 #include <string>
@@ -13,7 +13,7 @@ namespace SplitEngine::Rendering
 		public:
 			struct CreateInfo
 			{
-					std::string     FileName;
+					IO::Image       IoImage;
 					TextureSettings TextureSettings = {};
 			};
 
@@ -25,8 +25,8 @@ namespace SplitEngine::Rendering
 			[[nodiscard]] const vk::Sampler*   GetSampler() const;
 
 		private:
-			IO::ImageFile         _imageFile;
-			Vulkan::Image         _image;
+			IO::Image             _ioImage;
+			Vulkan::Image         _vulkanImage;
 			const vk::Sampler*    _sampler {};
 			const TextureSettings _textureSettings;
 	};

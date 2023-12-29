@@ -6,7 +6,7 @@
 
 namespace SplitEngine::Rendering::Vulkan
 {
-	Image::Image(Device* device, const unsigned char* pixels, vk::DeviceSize pixelsSizeInBytes, vk::Extent3D extend, CreateInfo createInfo) :
+	Image::Image(Device* device, const std::byte* pixels, vk::DeviceSize pixelsSizeInBytes, vk::Extent3D extend, CreateInfo createInfo) :
 		DeviceObject(device)
 	{
 		vk::ImageCreateInfo imageCreateInfo = vk::ImageCreateInfo({},

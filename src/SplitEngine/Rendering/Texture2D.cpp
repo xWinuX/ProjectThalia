@@ -7,21 +7,18 @@ namespace SplitEngine::Rendering
 {
 	Texture2D::Texture2D(const CreateInfo& createInfo) :
 		_textureSettings(createInfo.TextureSettings),
-		_imageFile(IO::ImageFile(createInfo.FileName, IO::ImageFile::ChannelSetup::RGBA)),
-		_image(Vulkan::Image(Vulkan::Context::GetDevice(),
-							 _imageFile.GetPixels(),
-							 _imageFile.GetTotalImageSize(),
-							 {static_cast<uint32_t>(_imageFile.GetWidth()), static_cast<uint32_t>(_imageFile.GetHeight()), 1},
-							 {})),
+		_ioImage(createInfo.IoImage),
+		_vulkanImage(Vulkan::Image(Vulkan::Context::GetDevice(),
+								   _ioImage.Pixels.data(),
+								   _ioImage.Width * _ioImage.Height * _ioImage.Channels,
+								   {_ioImage.Width, _ioImage.Height, 1},
+								   {})),
 		_sampler(Vulkan::Context::GetDevice()->GetAllocator().AllocateSampler(createInfo.TextureSettings))
 	{}
 
-	Texture2D::~Texture2D()
-	{
-		_image.Destroy();
-	}
+	Texture2D::~Texture2D() { _vulkanImage.Destroy(); }
 
-	const Vulkan::Image& Texture2D::GetImage() const { return _image; }
+	const Vulkan::Image& Texture2D::GetImage() const { return _vulkanImage; }
 
 	const vk::Sampler* Texture2D::GetSampler() const { return _sampler; }
 }

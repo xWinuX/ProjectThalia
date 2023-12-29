@@ -25,14 +25,14 @@ set(SOURCE_FILES
         include/SplitEngine/Debug/Log.hpp
         include/SplitEngine/ErrorHandler.hpp
         include/SplitEngine/Event.hpp
-        include/SplitEngine/IO/ImageFile.hpp
+        include/SplitEngine/IO/ImageLoader.hpp
         include/SplitEngine/IO/Stream.hpp
         include/SplitEngine/Input.hpp
         src/SplitEngine/Application.cpp
         src/SplitEngine/Debug/Log.cpp
         src/SplitEngine/ErrorHandler.cpp
         src/SplitEngine/Input.cpp
-        src/SplitEngine/IO/ImageFile.cpp
+        src/SplitEngine/IO/ImageLoader.cpp
         src/SplitEngine/IO/Stream.cpp
         include/SplitEngine/AssetDatabase.hpp
         include/SplitEngine/Debug/Performance.hpp
@@ -47,7 +47,10 @@ set(SOURCE_FILES
         include/SplitEngine/ECS/System.hpp
         include/SplitEngine/ECS/Context.hpp
         src/SplitEngine/Tools/TexturePacker.cpp
-        include/SplitEngine/Tools/TexturePacker.hpp
+        include/SplitEngine/Tools/ImagePacker.hpp
+        src/SplitEngine/Tools/TextureSlicer.cpp
+        include/SplitEngine/Tools/ImageSlicer.hpp
+        include/SplitEngine/IO/Image.hpp
 )
 
 if (NOT HEADLESS)

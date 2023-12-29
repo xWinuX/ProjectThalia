@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SplitEngine/IO/ImageFile.hpp"
+#include "SplitEngine/IO/ImageLoader.hpp"
 
 #include "glm/vec2.hpp"
 #include "glm/vec4.hpp"
@@ -9,10 +9,10 @@
 
 namespace SplitEngine::Tools
 {
-	class TexturePacker
+	class ImagePacker
 	{
 		public:
-			TexturePacker() = default;
+			ImagePacker() = default;
 
 			struct TextureInfo
 			{
@@ -27,13 +27,13 @@ namespace SplitEngine::Tools
 			struct PackingData
 			{
 				public:
-					std::vector<std::vector<std::byte>> PageBytes;
+					std::vector<IO::Image>   PageImages;
 					std::vector<TextureInfo> TextureInfos;
 			};
 
 
 		public:
-			void AddTexture(const std::string& texturePath);
+			void AddImage(const std::string& texturePath);
 
 			PackingData Pack(uint32_t pageSize);
 

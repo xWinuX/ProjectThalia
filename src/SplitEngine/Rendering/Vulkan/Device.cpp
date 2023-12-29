@@ -45,8 +45,8 @@ namespace SplitEngine::Rendering::Vulkan
 	{
 		_defaultSampler = GetAllocator().AllocateSampler({});
 
-		// Image
-		const unsigned char fuchsia[] = {0xFF, 0x00, 0xFF};
+		// ImageLoader
+		const std::byte fuchsia[] = {static_cast<const std::byte>(255), static_cast<const std::byte>(0), static_cast<const std::byte>(255)};
 
 		_defaultImage = Image(this, std::begin(fuchsia), 4, {1, 1, 1}, {});
 	}
@@ -82,7 +82,6 @@ namespace SplitEngine::Rendering::Vulkan
 	const RenderPass& Device::GetRenderPass() const { return _renderPass; }
 
 	const Swapchain& Device::GetSwapchain() const { return _swapchain; }
-
 
 	const vk::CommandPool& Device::GetGraphicsCommandPool() const { return _graphicsCommandPool; }
 

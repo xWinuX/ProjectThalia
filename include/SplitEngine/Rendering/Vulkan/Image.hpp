@@ -23,7 +23,7 @@ namespace SplitEngine::Rendering::Vulkan
 
 		public:
 			Image() = default;
-			Image(Device* device, const unsigned char* pixels, vk::DeviceSize pixelsSizeInBytes, vk::Extent3D extend, CreateInfo createInfo);
+			Image(Device* device, const std::byte* pixels, vk::DeviceSize pixelsSizeInBytes, vk::Extent3D extend, CreateInfo createInfo);
 
 			void TransitionLayout(vk::ImageLayout newLayout);
 			void TransitionLayout(const vk::CommandBuffer& commandBuffer, vk::ImageLayout newLayout);
