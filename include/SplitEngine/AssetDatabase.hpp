@@ -4,6 +4,7 @@
 
 #include <format>
 #include <functional>
+#include <ranges>
 #include <unordered_map>
 
 namespace SplitEngine
@@ -40,13 +41,13 @@ namespace SplitEngine
 		public:
 			~AssetDatabase()
 			{
-				for (auto it = _assetDeletionList.rbegin(); it != _assetDeletionList.rend(); ++it) { (*it)(); }
+				for (auto& deletionFunction : std::ranges::reverse_view(_assetDeletionList)) { deletionFunction(); }
 			}
 
 			template<class T, class TKey>
 			[[nodiscard]] AssetHandle<T> CreateAsset(TKey key, T::CreateInfo createInfo)
 			{
-				T* pointer          = new T(createInfo);
+				T* pointer                                 = new T(createInfo);
 				GetAssets<T>()[static_cast<uint64_t>(key)] = pointer;
 
 				_assetDeletionList.push_back([pointer] {
