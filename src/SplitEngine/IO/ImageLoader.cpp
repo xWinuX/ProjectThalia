@@ -1,6 +1,6 @@
+#include "SplitEngine/IO/ImageLoader.hpp"
 #include "SplitEngine/Debug/Log.hpp"
 #include "SplitEngine/ErrorHandler.hpp"
-#include "SplitEngine/IO/ImageLoader.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -13,7 +13,7 @@ namespace SplitEngine::IO
 
 		stbi_uc* pixels = stbi_load(filePath.c_str(), &width, &height, &channels, channelSetup);
 
-		if (pixels == nullptr) { ErrorHandler::ThrowRuntimeError("failed to load texture image!"); }
+		if (pixels == nullptr) { ErrorHandler::ThrowRuntimeError(std::format("failed to load image {0}!", filePath)); }
 
 		int numChannels = 0;
 		switch (channelSetup)
@@ -26,10 +26,7 @@ namespace SplitEngine::IO
 
 		size_t sizeInBytes = width * height * numChannels;
 
-		Image image {std::vector<std::byte>(sizeInBytes, {}),
-							 static_cast<uint32_t>(width),
-							 static_cast<uint32_t>(height),
-							 static_cast<uint32_t>(channels)};
+		Image image {std::vector<std::byte>(sizeInBytes, {}), static_cast<uint32_t>(width), static_cast<uint32_t>(height), static_cast<uint32_t>(channels)};
 
 		memcpy(image.Pixels.data(), pixels, sizeInBytes);
 

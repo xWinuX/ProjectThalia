@@ -12,29 +12,29 @@ namespace SplitEngine::Tools
 	{
 		SliceData sliceData;
 
-		IO::Image imageFile = IO::ImageLoader::Load(filePath);
+		IO::Image image = IO::ImageLoader::Load(filePath);
 
-		uint32_t width  = sliceOptions.Size.x == 0 ? imageFile.Width : sliceOptions.Size.x;
-		uint32_t height = sliceOptions.Size.y == 0 ? imageFile.Height : sliceOptions.Size.y;
+		uint32_t width  = sliceOptions.Size.x == 0 ? image.Width : sliceOptions.Size.x;
+		uint32_t height = sliceOptions.Size.y == 0 ? image.Height : sliceOptions.Size.y;
 
 		if (sliceOptions.Size.x == 0 && sliceOptions.Size.y == 0)
 		{
-			if (sliceOptions.NumTextures == 0)
+			if (sliceOptions.NumImages == 0)
 			{
-				ErrorHandler::ThrowRuntimeError(std::format("slicing texture {0} failed! slice options size and num textures can't both be zero!", filePath));
+				ErrorHandler::ThrowRuntimeError(std::format("slicing image {0} failed! slice options size and num image can't both be zero!", filePath));
 			}
 
-			width  = imageFile.Width / sliceOptions.NumTextures;
-			height = imageFile.Height;
+			width  = image.Width / sliceOptions.NumImages;
+			height = image.Height;
 		}
 
-		uint32_t xCount = imageFile.Width / width;
-		uint32_t yCount = imageFile.Height / height;
+		uint32_t xCount = image.Width / width;
+		uint32_t yCount = image.Height / height;
 
-		if (xCount * yCount < sliceOptions.NumTextures)
+		if (xCount * yCount < sliceOptions.NumImages)
 		{
 			ErrorHandler::ThrowRuntimeError(
-					std::format("slicing texture {0} failed! {1} textures cannot fit with given slicing parameters ", filePath, sliceOptions.NumTextures));
+					std::format("slicing image {0} failed! {1} image cannot fit with given slicing parameters ", filePath, sliceOptions.NumImages));
 		}
 
 		bool earlyExit = false;
@@ -47,19 +47,17 @@ namespace SplitEngine::Tools
 				uint32_t index = (y * xCount) + x;
 
 				size_t gridOffsetX = x * width * 4;
-				size_t gridOffsetY = y * height * imageFile.Width * 4;
+				size_t gridOffsetY = y * height * image.Width * 4;
 
 				for (uint32_t line = 0; line < height; line++)
 				{
-					size_t lineOffset      = (line * imageFile.Width * 4);
+					size_t lineOffset      = (line * image.Width * 4);
 					size_t sliceLineOffset = (line * width * 4);
 
-					memcpy(sliceData.Images[index].Pixels.data() + sliceLineOffset,
-						   imageFile.Pixels.data() + gridOffsetX + gridOffsetY + lineOffset,
-						   width * 4);
+					memcpy(sliceData.Images[index].Pixels.data() + sliceLineOffset, image.Pixels.data() + gridOffsetX + gridOffsetY + lineOffset, width * 4);
 				}
 
-				if (sliceOptions.NumTextures != 0 && index + 1 == sliceOptions.NumTextures)
+				if (sliceOptions.NumImages != 0 && index + 1 == sliceOptions.NumImages)
 				{
 					earlyExit = true;
 					break;

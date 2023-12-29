@@ -22,13 +22,13 @@ namespace SplitEngine::Tools
 			struct SliceOptions
 			{
 				public:
-					// Number of sub textures inside the texture (leaving this value at 0 will cause the slicer to extract as many images as can fit
-					uint32_t NumTextures = 0;
+					// Number of sub images inside the image (leaving this value at 0 will cause the slicer to extract as many images as can fit
+					uint32_t NumImages = 0;
 
 					/**
-					 * Size of each individual sub texture.
-					 * Leaving one of the elements on 0 assumes all textures are laid out on this axis (x = 0 -> laid out horizontally y = 0 -> laid out vertically)
-					 * Leaving both on 0 requires NumTextures to be set, assumes the textures are laid out horizontally and consume the full height
+					 * Size of each individual sub image.
+					 * Leaving one of the elements on 0 assumes all sub images are laid out on this axis (x = 0 -> laid out horizontally y = 0 -> laid out vertically)
+					 * Leaving both on 0 requires NumImages to be set, assumes the sub images are laid out horizontally and consume the full height
 					 */
 					glm::uvec2 Size {0, 0};
 			};

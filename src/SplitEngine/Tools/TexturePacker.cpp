@@ -8,31 +8,31 @@
 
 namespace SplitEngine::Tools
 {
-	void ImagePacker::AddImage(const std::string& texturePath) { _texturePaths.push_back(texturePath); }
+	void ImagePacker::AddImage(const std::string& imagePath) { _imagePaths.push_back(imagePath); }
 
 	ImagePacker::PackingData ImagePacker::Pack(uint32_t pageSize)
 	{
 		PackingData packingData {};
 
 		std::vector<std::vector<stbrp_rect>> atlasPageRects;
-		std::vector<IO::Image>               imageFiles;
+		std::vector<IO::Image>               images;
 		std::vector<stbrp_rect>              rects = std::vector<stbrp_rect>();
 
-		for (int i = 0; i < _texturePaths.size(); ++i)
+		for (int i = 0; i < _imagePaths.size(); ++i)
 		{
-			IO::Image imageFile = IO::ImageLoader::Load(_texturePaths[i], IO::ImageLoader::ChannelSetup::RGBA);
+			IO::Image image = IO::ImageLoader::Load(_imagePaths[i], IO::ImageLoader::ChannelSetup::RGBA);
 
-			if (imageFile.Width > pageSize || imageFile.Height > pageSize)
+			if (image.Width > pageSize || image.Height > pageSize)
 			{
-				ErrorHandler::ThrowRuntimeError(std::format("Texture {0} ({1}x{2}) is bigger than the specified page size ({3}x{3})!",
-															_texturePaths[i],
-															imageFile.Width,
-															imageFile.Height,
+				ErrorHandler::ThrowRuntimeError(std::format("Image {0} ({1}x{2}) is bigger than the specified page size ({3}x{3})!",
+															_imagePaths[i],
+															image.Width,
+															image.Height,
 															pageSize));
 			}
 
-			rects.push_back({i, static_cast<int32_t>(imageFile.Width), static_cast<int32_t>(imageFile.Height)});
-			imageFiles.push_back(imageFile);
+			rects.push_back({i, static_cast<int32_t>(image.Width), static_cast<int32_t>(image.Height)});
+			images.push_back(image);
 		}
 
 		// Pack rects
@@ -67,7 +67,7 @@ namespace SplitEngine::Tools
 			delete[] nodes;
 		}
 
-		// Create Texture
+		// Create page images
 		float xStep = 1.0f / static_cast<float>(pageSize);
 		float yStep = 1.0f / static_cast<float>(pageSize);
 		for (uint32_t i = 0; i < atlasPageRects.size(); ++i)
@@ -76,7 +76,7 @@ namespace SplitEngine::Tools
 
 			for (const stbrp_rect& rect : atlasPageRects[i])
 			{
-				IO::Image imageFile = imageFiles[rect.id];
+				IO::Image image = images[rect.id];
 
 				// Configure UV's
 				float startX = static_cast<float>(rect.x);
@@ -84,29 +84,29 @@ namespace SplitEngine::Tools
 				float xEnd   = startX + static_cast<float>(rect.w);
 				float yEnd   = startY + static_cast<float>(rect.h);
 
-				TextureInfo textureInfo {};
-				textureInfo.PageIndex     = i;
-				textureInfo.UVTopLeft     = {startX * xStep, startY * yStep};
-				textureInfo.UVTopRight    = {xEnd * xStep, startY * yStep};
-				textureInfo.UVBottomLeft  = {startX * xStep, yEnd * yStep};
-				textureInfo.UVBottomRight = {xEnd * xStep, yEnd * yStep};
+				PackingInfo packingInfo {};
+				packingInfo.PageIndex     = i;
+				packingInfo.UVTopLeft     = {startX * xStep, startY * yStep};
+				packingInfo.UVTopRight    = {xEnd * xStep, startY * yStep};
+				packingInfo.UVBottomLeft  = {startX * xStep, yEnd * yStep};
+				packingInfo.UVBottomRight = {xEnd * xStep, yEnd * yStep};
 
-				packingData.TextureInfos.emplace_back(textureInfo);
+				packingData.PackingInfos.emplace_back(packingInfo);
 
-				// Copy pixel data into texture
-				for (int y = 0; y < imageFile.Height; ++y)
+				// Copy pixel data into image
+				for (int y = 0; y < image.Height; ++y)
 				{
 					size_t xPageOffset = rect.x * 4;
 					size_t yPageOffset = (rect.y * pageSize * 4) + (y * pageSize * 4);
 
-					size_t yOffset = imageFile.Width * y * 4;
-					memcpy(packingData.PageImages[i].Pixels.data() + xPageOffset + yPageOffset, imageFile.Pixels.data() + yOffset, imageFile.Width * 4);
+					size_t yOffset = image.Width * y * 4;
+					memcpy(packingData.PageImages[i].Pixels.data() + xPageOffset + yPageOffset, image.Pixels.data() + yOffset, image.Width * 4);
 				}
 			}
 		}
 
-		imageFiles.clear();
-		_texturePaths.clear();
+		images.clear();
+		_imagePaths.clear();
 
 		return packingData;
 	}

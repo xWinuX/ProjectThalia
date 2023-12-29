@@ -14,7 +14,7 @@ namespace SplitEngine::Tools
 		public:
 			ImagePacker() = default;
 
-			struct TextureInfo
+			struct PackingInfo
 			{
 				public:
 					uint32_t  PageIndex = 0;
@@ -28,16 +28,16 @@ namespace SplitEngine::Tools
 			{
 				public:
 					std::vector<IO::Image>   PageImages;
-					std::vector<TextureInfo> TextureInfos;
+					std::vector<PackingInfo> PackingInfos;
 			};
 
 
 		public:
-			void AddImage(const std::string& texturePath);
+			void AddImage(const std::string& imagePath);
 
 			PackingData Pack(uint32_t pageSize);
 
 		private:
-			std::vector<std::string> _texturePaths;
+			std::vector<std::string> _imagePaths;
 	};
 }
