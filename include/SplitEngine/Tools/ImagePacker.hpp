@@ -17,7 +17,11 @@ namespace SplitEngine::Tools
 			struct PackingInfo
 			{
 				public:
-					uint32_t  PageIndex = 0;
+					uint32_t PageIndex = 0;
+
+					// Multiply the width with this value to get a correct looking quad
+					float AspectRatio = 0.0f;
+
 					glm::vec2 UVTopLeft {};
 					glm::vec2 UVTopRight {};
 					glm::vec2 UVBottomLeft {};
@@ -29,15 +33,34 @@ namespace SplitEngine::Tools
 				public:
 					std::vector<IO::Image>   PageImages;
 					std::vector<PackingInfo> PackingInfos;
+
+					/**
+					 * Maps the ids returned from the AddImage* functions to packing info
+					 * For the AddImage function the vector will just contain a singular entry that contains an index that points to the packing info of the image
+					 * For the AddRelatedImages the vector will contain multiple indices which each point to the related packing info
+					 */
+					std::vector<std::vector<uint64_t>> PackMapping;
 			};
 
-
 		public:
-			void AddImage(const std::string& imagePath);
+			uint64_t AddImage(const std::string& imagePath);
+			uint64_t AddImage(IO::Image&& image);
+
+			uint64_t AddRelatedImages(std::vector<IO::Image>& images);
 
 			PackingData Pack(uint32_t pageSize);
 
 		private:
+			struct ImageEntry
+			{
+				public:
+					uint64_t  ID = 0;
+					IO::Image Image;
+			};
+
+			uint64_t _id = 0;
+
 			std::vector<std::string> _imagePaths;
+			std::vector<ImageEntry>  _images;
 	};
 }

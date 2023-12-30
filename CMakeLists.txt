@@ -46,9 +46,9 @@ set(SOURCE_FILES
         include/SplitEngine/ECS/SystemBase.hpp
         include/SplitEngine/ECS/System.hpp
         include/SplitEngine/ECS/Context.hpp
-        src/SplitEngine/Tools/TexturePacker.cpp
+        src/SplitEngine/Tools/ImagePacker.cpp
         include/SplitEngine/Tools/ImagePacker.hpp
-        src/SplitEngine/Tools/TextureSlicer.cpp
+        src/SplitEngine/Tools/ImageSlicer.cpp
         include/SplitEngine/Tools/ImageSlicer.hpp
         include/SplitEngine/IO/Image.hpp
 )
@@ -199,4 +199,16 @@ install(
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-file(COPY res DESTINATION "${CMAKE_BUILD_TYPE}")
+
+compile_shader(${PROJECT_NAME}
+        ENV vulkan1.3
+        FORMAT spv
+        OUTPUT ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}
+        SOURCES
+        /res/shaders/debug/Debug.vert
+        /res/shaders/debug/Debug.frag
+)
+
+message("${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
+
+file(COPY res DESTINATION "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")

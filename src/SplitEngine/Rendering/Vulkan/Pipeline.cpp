@@ -266,6 +266,23 @@ namespace SplitEngine::Rendering::Vulkan
 					case 4: return vk::Format::eR32G32B32A32Sfloat;
 				}
 				break;
+			case spirv_cross::SPIRType::Int:
+				switch (type.vecsize)
+				{
+					case 1: return vk::Format::eR32Sint;
+					case 2: return vk::Format::eR32G32Sint;
+					case 3: return vk::Format::eR32G32B32Sint;
+					case 4: return vk::Format::eR32G32B32A32Sint;
+				}
+				break;
+			case spirv_cross::SPIRType::UInt:
+				switch (type.vecsize)
+				{
+					case 1: return vk::Format::eR32Uint;
+					case 2: return vk::Format::eR32G32Uint;
+					case 3: return vk::Format::eR32G32B32Uint;
+					case 4: return vk::Format::eR32G32B32A32Uint;
+				}
 		}
 
 		return vk::Format::eUndefined;

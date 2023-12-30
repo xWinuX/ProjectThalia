@@ -33,6 +33,18 @@ namespace SplitEngine::Rendering
 		SetWriteDescriptorSetDirty(index);
 	}
 
+	void Material::SetTextures(size_t index, size_t offset, std::vector<std::unique_ptr<Texture2D>>& textures)
+	{
+		for (int i = 0; i < textures.size(); ++i)
+		{
+			_descriptorSetAllocation.ImageInfos[index][i + offset] = vk::DescriptorImageInfo(*textures[i]->GetSampler(),
+																							 textures[i]->GetImage().GetView(),
+																							 textures[i]->GetImage().GetLayout());
+		}
+
+		SetWriteDescriptorSetDirty(index);
+	}
+
 	void Material::SetTextures(size_t index, size_t offset, std::vector<AssetHandle<Texture2D>>& textures)
 	{
 		for (int i = 0; i < textures.size(); ++i)
@@ -65,5 +77,4 @@ namespace SplitEngine::Rendering
 
 		_updateImageWriteDescriptorSets.clear();
 	}
-
 }
