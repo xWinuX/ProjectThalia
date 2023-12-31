@@ -51,6 +51,8 @@ set(SOURCE_FILES
         src/SplitEngine/Tools/ImageSlicer.cpp
         include/SplitEngine/Tools/ImageSlicer.hpp
         include/SplitEngine/IO/Image.hpp
+        include/SplitEngine/Rendering/Sprite.cpp
+        include/SplitEngine/Rendering/Sprite.hpp
 )
 
 if (NOT HEADLESS)

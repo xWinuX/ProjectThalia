@@ -1,11 +1,12 @@
-#include "SplitEngine/Debug/Log.hpp"
 #include "SplitEngine/Tools/ImagePacker.hpp"
+#include "SplitEngine/Debug/Log.hpp"
 #include <algorithm>
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include "stb_rect_pack.h"
 
 #include "SplitEngine/ErrorHandler.hpp"
+#include "SplitEngine/Tools/ImageSlicer.hpp"
 
 namespace SplitEngine::Tools
 {
@@ -20,6 +21,10 @@ namespace SplitEngine::Tools
 		_images.push_back({_id++, std::move(image)});
 		return _images.back().ID;
 	}
+
+	uint64_t ImagePacker::AddRelatedImages(ImageSlicer::SliceData& sliceData) { return AddRelatedImages(sliceData.Images); }
+
+	uint64_t ImagePacker::AddRelatedImages(Tools::ImageSlicer::SliceData&& sliceData) { return AddRelatedImages(sliceData.Images); }
 
 	uint64_t ImagePacker::AddRelatedImages(std::vector<IO::Image>& images)
 	{
@@ -149,5 +154,4 @@ namespace SplitEngine::Tools
 
 		return packingData;
 	}
-
 }

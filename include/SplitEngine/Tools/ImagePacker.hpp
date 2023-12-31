@@ -2,6 +2,7 @@
 
 #include "SplitEngine/IO/ImageLoader.hpp"
 
+#include "ImageSlicer.hpp"
 #include "glm/vec2.hpp"
 #include "glm/vec4.hpp"
 #include <string>
@@ -47,6 +48,9 @@ namespace SplitEngine::Tools
 			uint64_t AddImage(IO::Image&& image);
 
 			uint64_t AddRelatedImages(std::vector<IO::Image>& images);
+			uint64_t AddRelatedImages(SplitEngine::Tools::ImageSlicer::SliceData& sliceData);
+			uint64_t AddRelatedImages(SplitEngine::Tools::ImageSlicer::SliceData&& sliceData);
+
 
 			PackingData Pack(uint32_t pageSize);
 
