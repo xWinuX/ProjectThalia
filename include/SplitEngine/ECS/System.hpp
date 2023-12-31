@@ -19,6 +19,11 @@ namespace SplitEngine::ECS
 			{
 				std::vector<ArchetypeBase*> archetypes = context.Registry->GetArchetypesWithSignature(Signature);
 
+				Execute(archetypes, context);
+			}
+
+			virtual void Execute(std::vector<ArchetypeBase*>& archetypes, Context& context)
+			{
 				for (ArchetypeBase* archetype : archetypes)
 				{
 					std::apply(
@@ -29,7 +34,7 @@ namespace SplitEngine::ECS
 				}
 			}
 
-			virtual void Execute(T*..., std::vector<uint64_t>& entities, Context& context) = 0;
+			virtual void Execute(T*..., std::vector<uint64_t>& entities, Context& context) {};
 
 		private:
 			DynamicBitSet Signature {};
