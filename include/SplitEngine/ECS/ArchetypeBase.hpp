@@ -19,9 +19,15 @@ namespace SplitEngine::ECS
 			DynamicBitSet                       Signature {};
 
 			template<typename T>
-			std::vector<std::byte>& GetComponents()
+			std::vector<std::byte>& GetComponentsRaw()
 			{
 				return ComponentData[TypeIDGenerator<Component>::GetID<T>()];
+			}
+
+			template<class T>
+			T* GetComponents()
+			{
+				return reinterpret_cast<T*>(ComponentData[TypeIDGenerator<Component>::GetID<T>()].data());
 			}
 
 			template<typename... T>
@@ -31,7 +37,7 @@ namespace SplitEngine::ECS
 
 				((std::copy(reinterpret_cast<const std::byte*>(&args),
 							reinterpret_cast<const std::byte*>(&args) + sizeof(args),
-							std::back_inserter(GetComponents<T>()))),
+							std::back_inserter(GetComponentsRaw<T>()))),
 				 ...);
 
 				return Entities.size() - 1;

@@ -101,24 +101,28 @@ class SpriteRenderSystem : public ECS::System<TransformComponent, SpriteComponen
 			_model = std::make_unique<Rendering::Model, Rendering::Model::CreateInfo>({reinterpret_cast<std::vector<std::byte>&>(vertices), indices});
 		}
 
-		void Execute(TransformComponent* transformComponents, SpriteComponent* spriteComponents, std::vector<uint64_t>& entities, ECS::Context& context) final
+		/**
+		 * This function can be override if you need more control over how archetypes are handled
+		 *
+		 * In this example we want to apply animation and positions to all entities with sprite and transform components.
+		 * Since this is a render system we also want to give the gpu the command to draw these sprites, but if we do it in the execute function
+		 * each Archetype will causes a draw call which is not optimal, so we just apply animation and transforms in the execute function
+		 * and issue the draw call here so we can render all sprites in 1 draw call
+		 *
+		 * If you don't override this function it will call the execute function with all required parameters automatically thanks to template magic!
+		 */
+		void ExecuteArchetypes(std::vector<ECS::ArchetypeBase*>& archetypes, ECS::Context& context) override
 		{
-			size_t numEntities = entities.size();
+			size_t numEntities = 0;
+			for (const auto& archetype : archetypes)
+			{
+				TransformComponent* transformComponents = archetype->GetComponents<TransformComponent>();
+				SpriteComponent*    spriteComponents    = archetype->GetComponents<SpriteComponent>();
 
-			memcpy(_objectBuffer->positions.data(), transformComponents, numEntities * sizeof(glm::vec4));
+				Execute(transformComponents, spriteComponents, archetype->Entities, context);
 
-			_indexes = std::ranges::iota_view((size_t) 0, entities.size());
-			std::for_each(std::execution::par, _indexes.begin(), _indexes.end(), [this, spriteComponents, context](size_t i) {
-				SpriteComponent&   spriteAnimatorComponent = spriteComponents[i];
-				float&             currentFrame            = spriteAnimatorComponent.CurrentFrame;
-				Rendering::Sprite* sprite                  = spriteAnimatorComponent.Sprite.Get();
-
-				currentFrame = FastFmod(currentFrame + spriteAnimatorComponent.AnimationSpeed * context.DeltaTime,
-										static_cast<float>(sprite->GetNumSubSprites()));
-
-				_objectBuffer->textureIDs[i] = sprite->GetTextureID(static_cast<uint32_t>(currentFrame));
-			});
-
+				numEntities += archetype->Entities.size();
+			}
 
 			vk::CommandBuffer commandBuffer = context.RenderingContext->GetCommandBuffer();
 
@@ -150,6 +154,25 @@ class SpriteRenderSystem : public ECS::System<TransformComponent, SpriteComponen
 											 nullptr);
 
 			commandBuffer.drawIndexed(_model->GetModelBuffer().GetBufferElementNum(1), std::max(1u, static_cast<uint32_t>(numEntities) / 10240u), 0, 0, 0);
+		}
+
+		void Execute(TransformComponent* transformComponents, SpriteComponent* spriteComponents, std::vector<uint64_t>& entities, ECS::Context& context) final
+		{
+			size_t numEntities = entities.size();
+
+			memcpy(_objectBuffer->positions.data(), transformComponents, numEntities * sizeof(glm::vec4));
+
+			_indexes = std::ranges::iota_view((size_t) 0, entities.size());
+			std::for_each(std::execution::par, _indexes.begin(), _indexes.end(), [this, spriteComponents, context](size_t i) {
+				SpriteComponent&   spriteAnimatorComponent = spriteComponents[i];
+				float&             currentFrame            = spriteAnimatorComponent.CurrentFrame;
+				Rendering::Sprite* sprite                  = spriteAnimatorComponent.Sprite.Get();
+
+				currentFrame = FastFmod(currentFrame + spriteAnimatorComponent.AnimationSpeed * context.DeltaTime,
+										static_cast<float>(sprite->GetNumSubSprites()));
+
+				_objectBuffer->textureIDs[i] = sprite->GetTextureID(static_cast<uint32_t>(currentFrame));
+			});
 		}
 
 
@@ -200,27 +223,6 @@ class PhysicsSystem : public ECS::System<TransformComponent, PhysicsComponent>
 		PhysicsSystem() :
 			ECS::System<TransformComponent, PhysicsComponent>()
 		{}
-
-		/**
-		 * This execute function can be override if you need more control over how archetypes are handeled
-		 * You could for example handle the each archtype in a different thread.
-		 * If you don't override this function it will call the other execute function with all required parameters thanks to template magic!
-		 */
-		void Execute(std::vector<ECS::ArchetypeBase*>& archetypes, SplitEngine::ECS::Context& context) override
-		{
-			size_t numEntities = 0;
-			for (const auto& archetype : archetypes)
-			{
-				TransformComponent* transformComponents = reinterpret_cast<TransformComponent*>(archetype->GetComponents<TransformComponent>().data());
-				PhysicsComponent*   physicsComponents   = reinterpret_cast<PhysicsComponent*>(archetype->GetComponents<PhysicsComponent>().data());
-
-				Execute(transformComponents, physicsComponents, archetype->Entities, context);
-
-				numEntities += archetype->Entities.size();
-			}
-
-			ImGui::Text("Num Physics Entities: %llu", numEntities);
-		}
 
 		/**
 		 * The execute function contains a pointer to each component array used by the system

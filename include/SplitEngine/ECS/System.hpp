@@ -17,20 +17,20 @@ namespace SplitEngine::ECS
 
 			void RunExecute(Context& context) final
 			{
-				std::vector<ArchetypeBase*> archetypes = context.Registry->GetArchetypesWithSignature(Signature);
+				std::vector<ECS::ArchetypeBase*> archetypes = context.Registry->GetArchetypesWithSignature(Signature);
 
-				Execute(archetypes, context);
+				ExecuteArchetypes(archetypes, context);
 			}
 
-			virtual void Execute(std::vector<ArchetypeBase*>& archetypes, Context& context)
+			virtual void ExecuteArchetypes(std::vector<ECS::ArchetypeBase*>& archetypes, Context& context)
 			{
-				for (ArchetypeBase* archetype : archetypes)
+				for (ECS::ArchetypeBase* archetype : archetypes)
 				{
 					std::apply(
 							[this, &archetype, &context](T*... components) {
 								Execute(components..., archetype->Entities, context);
 							},
-							std::make_tuple(reinterpret_cast<T*>(archetype->GetComponents<T>().data())...));
+							std::make_tuple(reinterpret_cast<T*>(archetype->GetComponentsRaw<T>().data())...));
 				}
 			}
 

@@ -39,7 +39,7 @@ namespace SplitEngine::ECS
 
 				(
 						[&] {
-							std::vector<std::byte>& bytes = GetComponents<T>();
+							std::vector<std::byte>& bytes = GetComponentsRaw<T>();
 							T*                      data  = reinterpret_cast<T*>(bytes.data());
 							std::swap(data[indexToRemove], data[lastIndex]);
 							bytes.erase(bytes.end() - sizeof(T), bytes.end());
