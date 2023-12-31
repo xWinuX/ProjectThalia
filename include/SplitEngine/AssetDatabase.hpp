@@ -19,21 +19,20 @@ namespace SplitEngine
 		public:
 			AssetHandle() = default;
 
-			T* operator->()
-			{
-				if (_asset == nullptr) { _asset = _assetDatabase->GetAsset<T>(*this); }
-				return _asset;
-			}
+			uint64_t GetID() { return _id; }
+
+			T* Get() { return _asset; }
+
+			T* operator->() { return _asset; }
 
 		private:
-			explicit AssetHandle(AssetDatabase* assetDatabase, uint64_t id) :
-				_assetDatabase(assetDatabase),
+			explicit AssetHandle(T* asset, uint64_t id) :
+				_asset(asset),
 				_id(id)
 			{}
 
-			T*             _asset         = nullptr;
-			AssetDatabase* _assetDatabase = nullptr;
-			uint64_t       _id            = -1;
+			T*       _asset = nullptr;
+			uint64_t _id    = -1;
 	};
 
 	class AssetDatabase
@@ -54,7 +53,7 @@ namespace SplitEngine
 					delete pointer;
 				});
 
-				return AssetHandle<T>(this, static_cast<uint64_t>(key));
+				return AssetHandle<T>(GetAsset<T>(key), static_cast<uint64_t>(key));
 			}
 
 			template<typename T>
