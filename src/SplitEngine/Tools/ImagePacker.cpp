@@ -113,11 +113,6 @@ namespace SplitEngine::Tools
 				packingInfo.UVBottomLeft  = {startX * xStep, yEnd * yStep};
 				packingInfo.UVBottomRight = {xEnd * xStep, yEnd * yStep};
 
-				LOG("TOP LEFT: {0} {1}", packingInfo.UVTopLeft.x, packingInfo.UVTopLeft.y);
-				LOG("TOP RIGHT: {0} {1}", packingInfo.UVTopRight.x, packingInfo.UVTopRight.y);
-				LOG("BOT LEFT: {0} {1}", packingInfo.UVBottomLeft.x, packingInfo.UVBottomLeft.y);
-				LOG("BOT RIGHT: {0} {1}", packingInfo.UVBottomRight.x, packingInfo.UVBottomRight.y);
-
 				packingData.PackingInfos.emplace_back(packingInfo);
 
 				// Create mapping from rect id to packing index
