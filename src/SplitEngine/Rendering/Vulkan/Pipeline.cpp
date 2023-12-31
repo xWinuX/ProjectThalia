@@ -191,13 +191,13 @@ namespace SplitEngine::Rendering::Vulkan
 																												   vk::False);
 
 
-		vk::PipelineColorBlendAttachmentState colorBlendAttachmentState = vk::PipelineColorBlendAttachmentState(vk::False,
-																												vk::BlendFactor::eOne,
-																												vk::BlendFactor::eZero,
+		vk::PipelineColorBlendAttachmentState colorBlendAttachmentState = vk::PipelineColorBlendAttachmentState(vk::True,
+																												vk::BlendFactor::eSrcAlpha,
+																												vk::BlendFactor::eOneMinusSrcAlpha,
 																												vk::BlendOp::eAdd,
 																												vk::BlendFactor::eOne,
 																												vk::BlendFactor::eZero,
-																												vk::BlendOp::eAdd,
+																												vk::BlendOp::eSubtract,
 																												vk::ColorComponentFlagBits::eR |
 																														vk::ColorComponentFlagBits::eG |
 																														vk::ColorComponentFlagBits::eB |
