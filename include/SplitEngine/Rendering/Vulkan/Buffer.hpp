@@ -3,7 +3,6 @@
 #include "Allocator.hpp"
 #include "DeviceObject.hpp"
 #include "SplitEngine/Debug/Log.hpp"
-#include "SplitEngine/Rendering/Vertex.hpp"
 
 #include <vulkan/vulkan.hpp>
 

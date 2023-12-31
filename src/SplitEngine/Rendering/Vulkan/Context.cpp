@@ -8,7 +8,6 @@
 #include "SplitEngine/Debug/Log.hpp"
 #include "SplitEngine/ErrorHandler.hpp"
 #include "SplitEngine/IO/Stream.hpp"
-#include "SplitEngine/Rendering/Vertex.hpp"
 
 
 #include <SDL2/SDL_vulkan.h>

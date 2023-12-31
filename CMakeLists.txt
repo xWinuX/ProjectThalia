@@ -61,7 +61,6 @@ if (NOT HEADLESS)
             include/SplitEngine/Rendering/Shader.hpp
             include/SplitEngine/Rendering/Texture2D.hpp
             include/SplitEngine/Rendering/TextureSettings.hpp
-            include/SplitEngine/Rendering/Vertex.hpp
             include/SplitEngine/Rendering/Vulkan/Allocator.hpp
             include/SplitEngine/Rendering/Vulkan/Buffer.hpp
             include/SplitEngine/Rendering/Vulkan/Context.hpp
