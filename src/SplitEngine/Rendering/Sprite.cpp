@@ -1,4 +1,4 @@
-#include "Sprite.hpp"
+#include "SplitEngine/Rendering/Sprite.hpp"
 
 namespace SplitEngine::Rendering
 {

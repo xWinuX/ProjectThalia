@@ -1,9 +1,17 @@
 #pragma once
 
 #ifndef SE_HEADLESS
-namespace SplitEngine::Rendering::Vulkan
+namespace SplitEngine
 {
-	class Context;
+	namespace Rendering::Vulkan
+	{
+		class Context;
+	}
+
+	namespace Audio
+	{
+		class Manager;
+	}
 }
 #endif
 
@@ -17,6 +25,7 @@ namespace SplitEngine::ECS
 			float     DeltaTime;
 #ifndef SE_HEADLESS
 			SplitEngine::Rendering::Vulkan::Context* RenderingContext;
+			SplitEngine::Audio::Manager* AudioManager;
 #endif
 	};
 }

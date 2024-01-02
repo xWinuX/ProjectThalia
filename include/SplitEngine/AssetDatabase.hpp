@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ErrorHandler.hpp"
+#include "SplitEngine/Debug/Log.hpp"
 
 #include <format>
 #include <functional>
@@ -40,13 +41,16 @@ namespace SplitEngine
 		public:
 			~AssetDatabase()
 			{
+				LOG("Shutting down AssetDatabase...");
 				for (auto& deletionFunction : std::ranges::reverse_view(_assetDeletionList)) { deletionFunction(); }
 			}
 
-			template<class T, class TKey>
-			[[nodiscard]] AssetHandle<T> CreateAsset(TKey key, T::CreateInfo createInfo)
+			template<typename T, typename TKey>
+			[[nodiscard]] AssetHandle<T> CreateAsset(TKey key, typename T::CreateInfo&& createInfo)
 			{
-				T* pointer                                 = new T(createInfo);
+				LOG("Assetdb");
+				T* pointer                                 = new T(std::move(createInfo));
+				LOG("Assetdb after");
 				GetAssets<T>()[static_cast<uint64_t>(key)] = pointer;
 
 				_assetDeletionList.push_back([pointer] {

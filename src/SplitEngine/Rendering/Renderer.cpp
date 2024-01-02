@@ -9,6 +9,7 @@ namespace SplitEngine::Rendering
 {
 	Renderer::~Renderer()
 	{
+		LOG("Shutting down Renderer...");
 		_vulkanContext.Destroy();
 		_window.Close();
 	}
@@ -90,8 +91,6 @@ namespace SplitEngine::Rendering
 
 		device->GetVkDevice().resetFences(_vulkanContext.GetInFlightFence());
 
-		// TODO: Set global uniform buffer
-
 		const vk::CommandBuffer& commandBuffer = _vulkanContext.GetCommandBuffer();
 
 		commandBuffer.reset({});
@@ -110,18 +109,21 @@ namespace SplitEngine::Rendering
 																			  {{0, 0}, device->GetSwapchain().GetExtend()},
 																			  clearValues);
 
-		commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
-
 		vk::Viewport viewport = vk::Viewport(0,
 											 static_cast<float>(device->GetSwapchain().GetExtend().height),
 											 static_cast<float>(device->GetSwapchain().GetExtend().width),
 											 -static_cast<float>(device->GetSwapchain().GetExtend().height),
 											 0.0f,
 											 1.0f);
+
 		commandBuffer.setViewport(0, 1, &viewport);
 
 		vk::Rect2D scissor = vk::Rect2D({0, 0}, device->GetSwapchain().GetExtend());
 		commandBuffer.setScissor(0, 1, &scissor);
+
+		commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+
+
 	}
 
 	void Renderer::EndRender()

@@ -92,6 +92,8 @@ namespace SplitEngine::ECS
 		public:
 			void RegisterRenderingContext(SplitEngine::Rendering::Vulkan::Context* context) { _context.RenderingContext = context; }
 
+			void RegisterAudioManager(SplitEngine::Audio::Manager* audioManager) { _context.AudioManager = audioManager; }
+
 			template<typename T, typename... TArgs>
 			void RegisterRenderSystem(TArgs&&... args)
 			{

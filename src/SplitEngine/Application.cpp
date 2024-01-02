@@ -22,14 +22,24 @@ namespace SplitEngine
 
 	void Application::Initialize()
 	{
+		LOG("Initializing SDL Events...");
+
 		if (SDL_InitSubSystem(SDL_INIT_EVENTS) < 0)
 		{
 			ErrorHandler::ThrowRuntimeError(std::format("SDL could not initialize! SDL_Error: {0}\n", SDL_GetError()));
 		}
 
 #ifndef SE_HEADLESS
+		LOG("Initializing Renderer...");
 		_renderer.Initialize();
+
+		LOG("Initializing Audio...");
+		_audioManager.Initialize();
+
+		LOG("Initializing ECS...");
 		_ecsRegistry.RegisterRenderingContext(&_renderer.GetContext());
+		_ecsRegistry.RegisterAudioManager(&_audioManager);
+
 #endif
 	}
 
@@ -126,6 +136,7 @@ namespace SplitEngine
 		}
 
 #ifndef SE_HEADLESS
+		LOG("Waiting for frame to finish...");
 		_renderer.GetContext().WaitForIdle();
 #endif
 	}
@@ -135,4 +146,5 @@ namespace SplitEngine
 	AssetDatabase& Application::GetAssetDatabase() { return _assetDatabase; }
 
 	ECS::Registry& Application::GetECSRegistry() { return _ecsRegistry; }
+
 }

@@ -11,6 +11,7 @@
 #include "AssetDatabase.hpp"
 #include "ECS/Registry.hpp"
 #include "Event.hpp"
+#include "SplitEngine/Audio/Manager.hpp"
 #include "Window.hpp"
 
 #include <array>
@@ -26,6 +27,7 @@ namespace SplitEngine
 
 			static const ApplicationInfo& GetApplicationInfo();
 
+
 			AssetDatabase& GetAssetDatabase();
 			ECS::Registry& GetECSRegistry();
 
@@ -34,9 +36,10 @@ namespace SplitEngine
 
 #ifndef SE_HEADLESS
 			Rendering::Renderer _renderer;
+			Audio::Manager      _audioManager;
 #endif
+			ECS::Registry _ecsRegistry;
 
 			AssetDatabase _assetDatabase;
-			ECS::Registry _ecsRegistry;
 	};
 }

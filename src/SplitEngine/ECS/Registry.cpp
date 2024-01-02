@@ -10,6 +10,7 @@ namespace SplitEngine::ECS
 
 	Registry::~Registry()
 	{
+		LOG("Shutting down ECS...");
 #ifndef SE_HEADLESS
 		for (const SystemBase* system : _renderSystems) { delete system; }
 #endif

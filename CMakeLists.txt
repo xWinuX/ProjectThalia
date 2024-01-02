@@ -8,7 +8,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
-include(cmake/Vulkan.cmake)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
@@ -51,12 +50,19 @@ set(SOURCE_FILES
         src/SplitEngine/Tools/ImageSlicer.cpp
         include/SplitEngine/Tools/ImageSlicer.hpp
         include/SplitEngine/IO/Image.hpp
-        include/SplitEngine/Rendering/Sprite.cpp
+        src/SplitEngine/Rendering/Sprite.cpp
         include/SplitEngine/Rendering/Sprite.hpp
+        include/SplitEngine/Audio/SoundEffect.hpp
+        src/SplitEngine/IO/AudioLoader.cpp
+        include/SplitEngine/IO/AudioLoader.hpp
+        include/SplitEngine/IO/Audio.hpp
+        src/SplitEngine/Audio/Manager.cpp
+        include/SplitEngine/Audio/Manager.hpp
+        src/SplitEngine/Audio/SoundEffect.cpp
 )
 
 if (NOT HEADLESS)
-    set(RENDERING_FILES
+    set(NON_HEADLESS_FILES
             include/SplitEngine/Rendering/Material.hpp
             include/SplitEngine/Rendering/Model.hpp
             include/SplitEngine/Rendering/Renderer.hpp
@@ -99,10 +105,36 @@ if (NOT HEADLESS)
             src/SplitEngine/Rendering/Vulkan/Swapchain.cpp
             src/SplitEngine/Window.cpp
     )
-    list(APPEND SOURCE_FILES ${RENDERING_FILES})
+
+    # SOLOUD
+    add_compile_definitions(WITH_SDL2)
+
+    set(SOLOUD_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/submodules/soloud/src)
+    set(SOLOUD_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/submodules/soloud/include)
+
+    file(GLOB_RECURSE
+            SOLOUD_SOURCE
+            ${SOLOUD_SOURCE_DIR}/backend/sdl/soloud_sdl2_dll.c
+            ${SOLOUD_SOURCE_DIR}/backend/sdl/soloud_sdl2.cpp
+            ${SOLOUD_SOURCE_DIR}/core/*.cpp
+            ${SOLOUD_SOURCE_DIR}/core/*.c
+            ${SOLOUD_SOURCE_DIR}/filter/*.cpp
+            ${SOLOUD_SOURCE_DIR}/filter/*.c
+            ${SOLOUD_SOURCE_DIR}/audiosource/wav/*.c
+            ${SOLOUD_SOURCE_DIR}/audiosource/wav/*.cpp
+    )
+    file(GLOB_RECURSE SOLOUD_INCLUDES ${SOLOUD_INCLUDE_DIR}/*.h ${SOLOUD_INCLUDE_DIR}/*.hpp)
+
+    # Append SOLOUD files to non headless files
+    list(APPEND NON_HEADLESS_FILES ${SOLOUD_SOURCE})
+    list(APPEND NON_HEADLESS_FILES ${SOLOUD_INCLUDES})
+
+    # Append non headless files to source files
+    list(APPEND SOURCE_FILES ${NON_HEADLESS_FILES})
 endif ()
 
 #add_library(SplitEngine ${SOURCE_FILES})
+
 add_executable(SplitEngine ${SOURCE_FILES} main.cpp)
 target_include_directories(SplitEngine
         PUBLIC
@@ -110,6 +142,7 @@ target_include_directories(SplitEngine
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${SOLOUD_INCLUDE_DIR}  # Include SoLoud headers
 )
 
 # Vulkan
@@ -200,16 +233,15 @@ install(
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
+# Copy rename Debug SDL Library because SoLoud doesn't want it that way
+if (CMAKE_BUILD_TYPE MATCHES "Debug")
+    set(SOURCE_FILE "SDL2d.dll")
 
-compile_shader(${PROJECT_NAME}
-        ENV vulkan1.3
-        FORMAT spv
-        OUTPUT ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}
-        SOURCES
-        /res/shaders/debug/Debug.vert
-        /res/shaders/debug/Debug.frag
-)
+    set(NEW_FILE_NAME "SDL2.dll")
 
-message("${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
+    add_custom_command(TARGET SplitEngine POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE_DIR:SplitEngine>/${SOURCE_FILE} $<TARGET_FILE_DIR:SplitEngine>/${NEW_FILE_NAME}
+    )
 
-file(COPY res DESTINATION "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
+    add_custom_target(RenameSDL2DebugDLL ALL DEPENDS ${CMAKE_BINARY_DIR}/${NEW_FILE_NAME})
+endif ()
