@@ -16,9 +16,6 @@ namespace SplitEngine::Audio
 			~Manager();
 			void Initialize();
 
-
-			 SoLoud::Soloud* getAudioEngine() ;
-
 			void PlaySound(SoundEffect& soundEffect, float volume = 1.0f);
 			void PlaySound(AssetHandle<SoundEffect>& soundEffect, float volume = 1.0f);
 

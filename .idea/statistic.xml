@@ -8,6 +8,14 @@
         <option value="$PROJECT_DIR$/build" />
         <option value="$PROJECT_DIR$/.vs" />
         <option value="$PROJECT_DIR$/.idea" />
+        <option value="$PROJECT_DIR$/res" />
+        <option value="$PROJECT_DIR$/cmake-build-relwithdebinfo" />
+        <option value="$PROJECT_DIR$/.idea" />
+        <option value="$PROJECT_DIR$/cmake-build-minsizerel" />
+        <option value="$PROJECT_DIR$/cmake-build-release" />
+        <option value="$PROJECT_DIR$/cmake-build-debug" />
+        <option value="$PROJECT_DIR$/cmake" />
+        <option value="$PROJECT_DIR$/submodules" />
       </list>
     </option>
   </component>

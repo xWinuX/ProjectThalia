@@ -22,8 +22,4 @@ namespace SplitEngine::Audio
 	}
 
 	void Manager::PlaySound(AssetHandle<SoundEffect>& soundEffect, float volume) { PlaySound(*soundEffect.Get(), volume); }
-
-	SoLoud::Soloud* Manager::getAudioEngine() { return _audioEngine; }
-
-
 }
