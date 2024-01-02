@@ -48,9 +48,7 @@ namespace SplitEngine
 			template<typename T, typename TKey>
 			[[nodiscard]] AssetHandle<T> CreateAsset(TKey key, typename T::CreateInfo&& createInfo)
 			{
-				LOG("Assetdb");
 				T* pointer                                 = new T(std::move(createInfo));
-				LOG("Assetdb after");
 				GetAssets<T>()[static_cast<uint64_t>(key)] = pointer;
 
 				_assetDeletionList.push_back([pointer] {

@@ -11,12 +11,10 @@ namespace SplitEngine::Rendering
 
 	Material::~Material()
 	{
-		LOG("Mat destroy start");
 		if (_descriptorSetAllocation.DescriptorSet != VK_NULL_HANDLE)
 		{
 			_shader->GetPipeline().GetDescriptorSetManager().DeallocateDescriptorSet(_descriptorSetAllocation);
 		}
-		LOG("Mat destroy end");
 	}
 
 	AssetHandle<Shader> Material::GetShader() const { return _shader; }

@@ -20,8 +20,6 @@ namespace SplitEngine::Rendering::Vulkan
 			_properties = physicalDevice.getProperties();
 			if (_properties.deviceType != vk::PhysicalDeviceType::eDiscreteGpu) { continue; }
 
-			LOG("{0}", _properties.deviceName.data());
-
 			// Check Extensions
 			std::vector<vk::ExtensionProperties> availableExtensions = physicalDevice.enumerateDeviceExtensionProperties();
 

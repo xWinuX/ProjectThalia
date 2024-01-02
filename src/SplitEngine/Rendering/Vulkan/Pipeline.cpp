@@ -69,8 +69,6 @@ namespace SplitEngine::Rendering::Vulkan
 						descriptorCount = resourceType.array[0];
 					}
 
-					LOG("descriptor count {0}", descriptorCount);
-
 					vk::DescriptorSetLayoutBinding layoutBinding = vk::DescriptorSetLayoutBinding(binding,
 																								  type,
 																								  descriptorCount,

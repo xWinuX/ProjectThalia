@@ -27,7 +27,6 @@ namespace SplitEngine::Rendering
 		// Get shader infos
 		for (const auto& file : files)
 		{
-			LOG(file.string());
 			size_t lastDotPosition       = file.string().rfind('.');
 			size_t secondLastDotPosition = -1;
 
