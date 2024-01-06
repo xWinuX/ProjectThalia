@@ -68,7 +68,7 @@ namespace SplitEngine::ECS
 			{
 				Entity& entity = _sparseEntityLookup[entityID];
 
-				Archetype::_archetypes[entity.archetypeIndex]->AddComponentsToEntity<T...>(entityID, std::forward<T>(components)...);
+				_archetypeLookup[entity.archetypeIndex]->AddComponentsToEntity<T...>(entityID, std::forward<T>(components)...);
 			}
 
 			template<typename... T>
@@ -76,7 +76,7 @@ namespace SplitEngine::ECS
 			{
 				Entity& entity = _sparseEntityLookup[entityID];
 
-				Archetype::_archetypes[entity.archetypeIndex]->RemoveComponentsFromEntity<T...>(entityID);
+				_archetypeLookup[entity.archetypeIndex]->RemoveComponentsFromEntity<T...>(entityID);
 			}
 
 			void DestroyEntity(uint64_t entityID);
@@ -103,7 +103,7 @@ namespace SplitEngine::ECS
 			{
 				static uint64_t archetypeID = _archetypeRoot->FindArchetype<T...>()->ID;
 
-				return Archetype::_archetypes[archetypeID];
+				return _archetypeLookup[archetypeID];
 			}
 
 			void RegisterAssetDatabase(SplitEngine::AssetDatabase* assetDatabase);
@@ -116,6 +116,8 @@ namespace SplitEngine::ECS
 			std::vector<size_t> _componentSizes;
 
 			Archetype* _archetypeRoot = nullptr;
+
+			std::vector<Archetype*> _archetypeLookup;
 
 			AvailableStack<uint64_t> _entityGraveyard;
 
