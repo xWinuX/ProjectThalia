@@ -37,6 +37,12 @@ namespace SplitEngine
 
 			DynamicBitSet(uint64_t size) { ExtendSizeBy(size); }
 
+			void ExtendSizeTo(uint64_t newSize)
+			{
+				_numBits = newSize;
+				while (_numBits > _masks.size() * MASK_SIZE) { _masks.push_back(0); }
+			}
+
 			void ExtendSizeBy(uint64_t amountToIncrease = 1)
 			{
 				_numBits += amountToIncrease;

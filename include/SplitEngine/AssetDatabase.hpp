@@ -55,7 +55,7 @@ namespace SplitEngine
 					delete pointer;
 				});
 
-				return AssetHandle<T>(GetAsset<T>(key), static_cast<uint64_t>(key));
+				return AssetHandle<T>(pointer, static_cast<uint64_t>(key));
 			}
 
 			template<typename T>
@@ -65,16 +65,10 @@ namespace SplitEngine
 				return map;
 			}
 
-			template<class T>
-			T* GetAsset(AssetHandle<T> assetHandle)
-			{
-				return (T*) GetAssets<T>().at(assetHandle._id);
-			}
-
 			template<typename T, typename TKey>
-			T* GetAsset(TKey key)
+			AssetHandle<T> GetAsset(TKey key)
 			{
-				return GetAssets<T>().at(static_cast<uint64_t>(key));
+				return AssetHandle<T>(GetAssets<T>().at(static_cast<uint64_t>(key)), static_cast<uint64_t>(key));
 			}
 
 		private:

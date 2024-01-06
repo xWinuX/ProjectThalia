@@ -18,6 +18,11 @@ namespace SplitEngine::Rendering::Vulkan
 }
 #endif
 
+namespace SplitEngine
+{
+	class AssetDatabase;
+}
+
 namespace SplitEngine::ECS
 {
 	class Registry
@@ -29,29 +34,49 @@ namespace SplitEngine::ECS
 
 			void Update(float deltaTime);
 
+			void AddQueuedEntities();
+			void DestroyQueuedEntities();
+			void MoveQueuedEntities();
+
 			void Render(float deltaTime);
 
 			template<typename... T>
-			size_t CreateEntity(T&&... args)
+			uint64_t CreateEntity(T&&... args)
 			{
-				Archetype<T...>& archetype = GetArchetype<T...>();
+				Archetype* archetype = GetArchetype<T...>();
 
 				uint64_t entityID = 0;
 				if (!_entityGraveyard.IsEmpty())
 				{
 					entityID                                     = _entityGraveyard.Pop();
-					uint64_t componentIndex                      = archetype.AddEntity(entityID, std::forward<T>(args)...);
-					_sparseEntityLookup[entityID].archetypeIndex = archetype.ID;
+					uint64_t componentIndex                      = archetype->AddEntity(entityID, std::forward<T>(args)...);
+					_sparseEntityLookup[entityID].archetypeIndex = archetype->ID;
 					_sparseEntityLookup[entityID].componentIndex = componentIndex;
 				}
 				else
 				{
 					entityID                = _sparseEntityLookup.size();
-					uint64_t componentIndex = archetype.AddEntity(entityID, std::forward<T>(args)...);
-					_sparseEntityLookup.emplace_back(archetype.ID, componentIndex);
+					uint64_t componentIndex = archetype->AddEntity(entityID, std::forward<T>(args)...);
+					_sparseEntityLookup.emplace_back(archetype->ID, componentIndex);
 				}
 
 				return entityID;
+			}
+
+			template<typename... T>
+			void AddComponent(uint64_t entityID, T&&... components)
+			{
+				Entity& entity = _sparseEntityLookup[entityID];
+
+				Archetype::_archetypes[entity.archetypeIndex]->AddComponentsToEntity<T...>(entityID, std::forward<T>(components)...);
+			}
+
+			template<typename... T>
+			void RemoveComponent(uint64_t entityID)
+			{
+				Entity& entity = _sparseEntityLookup[entityID];
+
+				Archetype::_archetypes[entity.archetypeIndex]->RemoveComponentsFromEntity<T...>(entityID);
 			}
 
 			void DestroyEntity(uint64_t entityID);
@@ -60,6 +85,9 @@ namespace SplitEngine::ECS
 			void RegisterComponent()
 			{
 				TypeIDGenerator<Component>::GetID<T>();
+				_componentSizes.push_back(sizeof(T));
+
+				_archetypeRoot->Resize();
 			}
 
 			template<typename T, typename... TArgs>
@@ -70,17 +98,24 @@ namespace SplitEngine::ECS
 				_gameplaySystems.emplace_back(new T(std::forward<TArgs>(args)...));
 			}
 
-			[[nodiscard]] std::vector<ArchetypeBase*> GetArchetypesWithSignature(const DynamicBitSet& signature);
-
 			template<typename... T>
-			Archetype<T...>& GetArchetype()
+			Archetype* GetArchetype()
 			{
-				static Archetype<T...> archetype = Archetype<T...>(_sparseEntityLookup);
-				return archetype;
+				static uint64_t archetypeID = _archetypeRoot->FindArchetype<T...>()->ID;
+
+				return Archetype::_archetypes[archetypeID];
 			}
+
+			void RegisterAssetDatabase(SplitEngine::AssetDatabase* assetDatabase);
+
+
+			[[nodiscard]] std::vector<Archetype*> GetArchetypesWithSignature(const DynamicBitSet& signature);
 
 		private:
 			std::vector<Entity> _sparseEntityLookup;
+			std::vector<size_t> _componentSizes;
+
+			Archetype* _archetypeRoot = nullptr;
 
 			AvailableStack<uint64_t> _entityGraveyard;
 
@@ -105,6 +140,7 @@ namespace SplitEngine::ECS
 		private:
 			std::vector<SystemBase*> _renderSystems;
 #endif
+
 	};
 
 

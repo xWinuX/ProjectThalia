@@ -1,12 +1,17 @@
 #include "SplitEngine/ECS/Registry.hpp"
 
 #ifndef SE_HEADLESS
-#include "SplitEngine/Rendering/Vulkan/Context.hpp"
+	#include "SplitEngine/Rendering/Vulkan/Context.hpp"
+	#include "SplitEngine/Debug/Performance.hpp"
 #endif
 
 namespace SplitEngine::ECS
 {
-	Registry::Registry() { _context.Registry = this; }
+	Registry::Registry()
+	{
+		_context.Registry = this;
+		_archetypeRoot    = new Archetype(_sparseEntityLookup, _componentSizes, {});
+	}
 
 	Registry::~Registry()
 	{
@@ -19,8 +24,27 @@ namespace SplitEngine::ECS
 
 	void Registry::Update(float deltaTime)
 	{
+		MoveQueuedEntities();
+		AddQueuedEntities();
+		DestroyQueuedEntities();
+
 		_context.DeltaTime = deltaTime;
 		for (auto& system : _gameplaySystems) { system->RunExecute(_context); }
+	}
+
+	void Registry::AddQueuedEntities()
+	{
+		for (const auto& archetype : Archetype::_archetypes) { archetype->AddQueuedEntities(); }
+	}
+
+	void Registry::DestroyQueuedEntities()
+	{
+		for (const auto& archetype : Archetype::_archetypes) { archetype->DestroyQueuedEntities(); }
+	}
+
+	void Registry::MoveQueuedEntities()
+	{
+		for (const auto& archetype : Archetype::_archetypes) { archetype->MoveQueuedEntities(); }
 	}
 
 	void Registry::Render(float deltaTime)
@@ -31,11 +55,11 @@ namespace SplitEngine::ECS
 #endif
 	}
 
-	std::vector<ArchetypeBase*> Registry::GetArchetypesWithSignature(const DynamicBitSet& signature)
+	std::vector<Archetype*> Registry::GetArchetypesWithSignature(const DynamicBitSet& signature)
 	{
-		std::vector<ArchetypeBase*> archetypes {};
+		std::vector<Archetype*> archetypes {};
 
-		for (ArchetypeBase* archetype : ArchetypeBase::_archetypes)
+		for (Archetype* archetype : Archetype::_archetypes)
 		{
 			if (signature.FuzzyMatches(archetype->Signature)) { archetypes.push_back(archetype); }
 		}
@@ -43,10 +67,7 @@ namespace SplitEngine::ECS
 		return archetypes;
 	}
 
-	void Registry::DestroyEntity(uint64_t entityID)
-	{
-		ArchetypeBase::_archetypes[_sparseEntityLookup[entityID].archetypeIndex]->DestroyEntity(entityID);
+	void Registry::DestroyEntity(uint64_t entityID) { Archetype::_archetypes[_sparseEntityLookup[entityID].archetypeIndex]->DestroyEntity(entityID); }
 
-		_entityGraveyard.Push(entityID);
-	}
+	void Registry::RegisterAssetDatabase(SplitEngine::AssetDatabase* assetDatabase) { _context.AssetDatabase = assetDatabase; }
 }

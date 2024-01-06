@@ -41,6 +41,7 @@ namespace SplitEngine
 		_ecsRegistry.RegisterAudioManager(&_audioManager);
 
 #endif
+		_ecsRegistry.RegisterAssetDatabase(&_assetDatabase);
 	}
 
 	void Application::Run()
@@ -69,6 +70,7 @@ namespace SplitEngine
 		uint64_t renderStartTime = 0;
 		uint64_t renderEndTime   = 0;
 
+		LOG("Start Game Loop");
 		SDL_Event event;
 		bool      quit = false;
 		while (!quit)

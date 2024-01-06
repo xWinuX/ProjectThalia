@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Archetype.hpp"
 #include "Registry.hpp"
 #include "SystemBase.hpp"
 
@@ -17,14 +18,14 @@ namespace SplitEngine::ECS
 
 			void RunExecute(Context& context) final
 			{
-				std::vector<ECS::ArchetypeBase*> archetypes = context.Registry->GetArchetypesWithSignature(Signature);
+				std::vector<ECS::Archetype*> archetypes = context.Registry->GetArchetypesWithSignature(Signature);
 
 				ExecuteArchetypes(archetypes, context);
 			}
 
-			virtual void ExecuteArchetypes(std::vector<ECS::ArchetypeBase*>& archetypes, Context& context)
+			virtual void ExecuteArchetypes(std::vector<ECS::Archetype*>& archetypes, Context& context)
 			{
-				for (ECS::ArchetypeBase* archetype : archetypes)
+				for (ECS::Archetype* archetype : archetypes)
 				{
 					std::apply(
 							[this, &archetype, &context](T*... components) {

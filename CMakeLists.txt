@@ -11,6 +11,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
+add_compile_definitions(SE_DEBUG_LOG)
+
 if (HEADLESS)
     add_compile_definitions(SE_HEADLESS)
 endif ()
@@ -39,8 +41,7 @@ set(SOURCE_FILES
         include/SplitEngine/ECS/Registry.hpp
         include/SplitEngine/ECS/Entity.hpp
         include/SplitEngine/ECS/Component.hpp
-        src/SplitEngine/ECS/ArchetypeBase.cpp
-        include/SplitEngine/ECS/ArchetypeBase.hpp
+        src/SplitEngine/ECS/Archetype.cpp
         include/SplitEngine/ECS/Archetype.hpp
         include/SplitEngine/ECS/SystemBase.hpp
         include/SplitEngine/ECS/System.hpp
@@ -233,7 +234,46 @@ install(
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-# Copy rename Debug SDL Library because SoLoud doesn't want it that way
+
+add_custom_command(TARGET SplitEngine POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/res $<TARGET_FILE_DIR:SplitEngine>/res)
+
+add_custom_target(CopyResources ALL DEPENDS ${CMAKE_SOURCE_DIR}/res)
+
+set(SHADER_FILES
+        "res/shaders/debug/Debug.vert"
+        "res/shaders/debug/Debug.frag"
+)
+
+find_program(glslangValidator_executable NAMES glslangValidator HINTS Vulkan::glslc)
+
+foreach (SHADER_FILE ${SHADER_FILES})
+    set(SPIRV_OUTPUT $<TARGET_FILE_DIR:SplitEngine>/${SHADER_FILE}.spv)
+
+    add_custom_command(TARGET SplitEngine POST_BUILD
+            COMMAND ${glslangValidator_executable}
+            -e main
+            -gVS
+            -V
+            -o ${SPIRV_OUTPUT}
+            $<TARGET_FILE_DIR:SplitEngine>/${SHADER_FILE}
+            DEPENDS ${CMAKE_SOURCE_DIR}/${SHADER_FILE}
+            RESULT_VARIABLE glslang_result
+            OUTPUT_VARIABLE glslang_output
+            ERROR_VARIABLE glslang_error
+            COMMENT "Compiling ${SHADER_FILE} to SPIR-V")
+
+    if (NOT ${glslang_result} EQUAL 0)
+        message(FATAL_ERROR "Error compiling ${SHADER_NAME}: ${glslang_output}\n${glslang_error}")
+    endif ()
+
+    list(APPEND SPIRV_OUTPUTS ${SPIRV_OUTPUT})
+endforeach ()
+
+add_custom_target(CompileShaders ALL DEPENDS ${SPIRV_OUTPUTS})
+
+# Copy rename SDL Library because SoLoud doesn't want it that way
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
     set(SOURCE_FILE "SDL2d.dll")
 

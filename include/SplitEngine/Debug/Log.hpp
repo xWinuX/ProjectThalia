@@ -25,10 +25,17 @@
 #define PRIVATE_LOG_FORMAT(type, message, ...) SplitEngine::Debug::Log::type(std::format(message, __VA_ARGS__), __FILE__, __LINE__)
 #define PRIVATE_LOG(type, message) SplitEngine::Debug::Log::type(message, __FILE__, __LINE__)
 
-#define LOG(...) PRIVATE_LOG_BOILERPLATE(Info, __VA_ARGS__)
-#define LOG_WARNING(...) PRIVATE_LOG_BOILERPLATE(Warning, __VA_ARGS__)
-#define LOG_ERROR(...) PRIVATE_LOG_BOILERPLATE(Error, __VA_ARGS__)
-#define LOG_FATAL(...) PRIVATE_LOG_BOILERPLATE(Fatal, __VA_ARGS__)
+#ifdef SE_DEBUG_LOG
+	#define LOG(...) PRIVATE_LOG_BOILERPLATE(Info, __VA_ARGS__)
+	#define LOG_WARNING(...) PRIVATE_LOG_BOILERPLATE(Warning, __VA_ARGS__)
+	#define LOG_ERROR(...) PRIVATE_LOG_BOILERPLATE(Error, __VA_ARGS__)
+	#define LOG_FATAL(...) PRIVATE_LOG_BOILERPLATE(Fatal, __VA_ARGS__)
+#else
+	#define LOG(...) do { } while(0)
+	#define LOG_WARNING(...) do { } while(0)
+	#define LOG_ERROR(...) do { } while(0)
+	#define LOG_FATAL(...) do { } while(0)
+#endif
 
 namespace SplitEngine::Debug
 {
