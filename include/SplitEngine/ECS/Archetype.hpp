@@ -110,7 +110,8 @@ namespace SplitEngine::ECS
 			void RemoveComponentsFromEntity(uint64_t entityID)
 			{
 				Entity& entity = _sparseEntityLookup[entityID];
-				if (entity.moveArchetypeIndex == -1) { _entitiesToMove.push_back(entityID); }
+
+				uint64_t oldArchetypeMoveIndex = entity.moveArchetypeIndex;
 
 				// Recursively search for archetype in tree
 				(
@@ -122,6 +123,32 @@ namespace SplitEngine::ECS
 							else { entity.moveArchetypeIndex = GetRemoveArchetypeID<T>(); }
 						}(),
 						...);
+
+				if (oldArchetypeMoveIndex == -1) { _entitiesToMove.push_back(entityID); }
+				else if (entity.moveComponentIndex != -1)
+				{
+					Archetype* newArchetype = _archetypeLookup[entity.moveArchetypeIndex];
+					Archetype* oldArchetype = _archetypeLookup[oldArchetypeMoveIndex];
+
+					newArchetype->_entitiesToAdd.push_back(entityID);
+
+					newArchetype->ResizeAddComponentsForNewEntity();
+
+					// Add data from old archetype to new one
+					for (const auto& componentID : newArchetype->ComponentIDs)
+					{
+						std::vector<std::byte>& bytes         = newArchetype->_componentDataToAdd[componentID];
+						size_t&                 componentSize = _componentSizes[componentID];
+						std::byte*              it = oldArchetype->_componentDataToAdd[componentID].data() + (entity.moveComponentIndex * componentSize);
+
+						std::move(std::make_move_iterator(it), std::make_move_iterator(it + componentSize), bytes.end() - componentSize);
+					}
+
+					// Remove old data form add arrays
+					oldArchetype->DestroyEntityInAddQueueImmediately(entityID);
+
+					entity.moveComponentIndex = newArchetype->_entitiesToAdd.size() - 1;
+				}
 			}
 
 			template<typename... T>

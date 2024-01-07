@@ -1,35 +1,22 @@
 #include "SplitEngine/ECS/Archetype.hpp"
 
-#define DESTROY_ENTITY_IMPL(entityVector, componentVector, componentIndexVar)                     \
-	size_t indexToRemove = _sparseEntityLookup[entityID].componentIndexVar;                       \
-	size_t lastIndex     = entityVector.size() - 1;                                               \
-                                                                                                  \
-	if (lastIndex != indexToRemove)                                                               \
-	{                                                                                             \
-		if (_sparseEntityLookup[entityVector[lastIndex]].moveComponentIndex == -1)                \
-		{                                                                                         \
-			_sparseEntityLookup[entityVector[lastIndex]].componentIndex = indexToRemove;          \
-		}                                                                                         \
-		else { _sparseEntityLookup[entityVector[lastIndex]].moveComponentIndex = indexToRemove; } \
-		std::swap(entityVector[indexToRemove], entityVector[lastIndex]);                          \
-	}                                                                                             \
-                                                                                                  \
-	entityVector.pop_back();                                                                      \
-                                                                                                  \
-	for (uint64_t & ComponentID : ComponentIDs)                                                   \
-	{                                                                                             \
-		std::vector<std::byte>& bytes                   = componentVector[ComponentID];           \
-		size_t&                 componentSize           = _componentSizes[ComponentID];           \
-		size_t                  indexToRemoveWithOffset = indexToRemove * componentSize;          \
-                                                                                                  \
-		if (lastIndex != indexToRemove)                                                           \
-		{                                                                                         \
-			std::swap_ranges(bytes.data() + indexToRemoveWithOffset,                              \
-							 bytes.data() + indexToRemoveWithOffset + componentSize,              \
-							 bytes.data() + (lastIndex * componentSize));                         \
-		}                                                                                         \
-                                                                                                  \
-		bytes.erase(bytes.end() - componentSize, bytes.end());                                    \
+#define DESTROY_ENTITY_IMPL(entityVector, componentVector)                               \
+	entityVector.pop_back();                                                             \
+                                                                                         \
+	for (uint64_t & ComponentID : ComponentIDs)                                          \
+	{                                                                                    \
+		std::vector<std::byte>& bytes                   = componentVector[ComponentID];  \
+		size_t&                 componentSize           = _componentSizes[ComponentID];  \
+		size_t                  indexToRemoveWithOffset = indexToRemove * componentSize; \
+                                                                                         \
+		if (lastIndex != indexToRemove)                                                  \
+		{                                                                                \
+			std::swap_ranges(bytes.data() + indexToRemoveWithOffset,                     \
+							 bytes.data() + indexToRemoveWithOffset + componentSize,     \
+							 bytes.data() + (lastIndex * componentSize));                \
+		}                                                                                \
+                                                                                         \
+		bytes.erase(bytes.end() - componentSize, bytes.end());                           \
 	}
 
 namespace SplitEngine::ECS
@@ -57,9 +44,39 @@ namespace SplitEngine::ECS
 
 	void Archetype::DestroyEntity(uint64_t entityID) { _entitiesToDestroy.push_back(entityID); }
 
-	void Archetype::DestroyEntityImmediately(uint64_t entityID) { DESTROY_ENTITY_IMPL(Entities, ComponentData, componentIndex) }
+	void Archetype::DestroyEntityImmediately(uint64_t entityID)
+	{
+		size_t indexToRemove = _sparseEntityLookup[entityID].componentIndex;
+		size_t lastIndex     = Entities.size() - 1;
 
-	void Archetype::DestroyEntityInAddQueueImmediately(uint64_t entityID) { DESTROY_ENTITY_IMPL(_entitiesToAdd, _componentDataToAdd, moveComponentIndex) }
+		Entity& lastEntity = _sparseEntityLookup[Entities[lastIndex]];
+
+		if (lastIndex != indexToRemove)
+		{
+			lastEntity.componentIndex = indexToRemove;
+
+			std::swap(Entities[indexToRemove], Entities[lastIndex]);
+		}
+
+		DESTROY_ENTITY_IMPL(Entities, ComponentData)
+	}
+
+	void Archetype::DestroyEntityInAddQueueImmediately(uint64_t entityID)
+	{
+		size_t indexToRemove = _sparseEntityLookup[entityID].moveComponentIndex;
+		size_t lastIndex     = _entitiesToAdd.size() - 1;
+
+		Entity& lastEntity = _sparseEntityLookup[_entitiesToAdd[lastIndex]];
+		if (lastIndex != indexToRemove)
+		{
+			if (lastEntity.moveComponentIndex == -1) { lastEntity.componentIndex = indexToRemove; }
+			else { lastEntity.moveComponentIndex = indexToRemove; }
+
+			std::swap(_entitiesToAdd[indexToRemove], _entitiesToAdd[lastIndex]);
+		}
+
+		DESTROY_ENTITY_IMPL(_entitiesToAdd, _componentDataToAdd)
+	}
 
 	void Archetype::AddQueuedEntities()
 	{
