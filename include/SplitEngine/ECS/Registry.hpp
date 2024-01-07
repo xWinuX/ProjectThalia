@@ -50,14 +50,14 @@ namespace SplitEngine::ECS
 				{
 					entityID                                     = _entityGraveyard.Pop();
 					uint64_t componentIndex                      = archetype->AddEntity(entityID, std::forward<T>(args)...);
-					_sparseEntityLookup[entityID].archetypeIndex = archetype->ID;
-					_sparseEntityLookup[entityID].componentIndex = componentIndex;
+					_sparseEntityLookup[entityID].moveArchetypeIndex = archetype->ID;
+					_sparseEntityLookup[entityID].moveComponentIndex = componentIndex;
 				}
 				else
 				{
 					entityID                = _sparseEntityLookup.size();
 					uint64_t componentIndex = archetype->AddEntity(entityID, std::forward<T>(args)...);
-					_sparseEntityLookup.emplace_back(archetype->ID, componentIndex);
+					_sparseEntityLookup.emplace_back(-1, -1, archetype->ID, componentIndex);
 				}
 
 				return entityID;
@@ -68,7 +68,7 @@ namespace SplitEngine::ECS
 			{
 				Entity& entity = _sparseEntityLookup[entityID];
 
-				_archetypeLookup[entity.archetypeIndex]->AddComponentsToEntity<T...>(entityID, std::forward<T>(components)...);
+				_archetypeLookup[entity.GetArchetypeIndex()]->AddComponentsToEntity<T...>(entityID, std::forward<T>(components)...);
 			}
 
 			template<typename... T>
@@ -76,7 +76,7 @@ namespace SplitEngine::ECS
 			{
 				Entity& entity = _sparseEntityLookup[entityID];
 
-				_archetypeLookup[entity.archetypeIndex]->RemoveComponentsFromEntity<T...>(entityID);
+				_archetypeLookup[entity.GetArchetypeIndex()]->RemoveComponentsFromEntity<T...>(entityID);
 			}
 
 			void DestroyEntity(uint64_t entityID);

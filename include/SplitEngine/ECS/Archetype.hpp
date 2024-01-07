@@ -57,6 +57,8 @@ namespace SplitEngine::ECS
 			template<typename... T>
 			Archetype* FindArchetype()
 			{
+				if (sizeof...(T) == 0) { return this; }
+
 				uint64_t index = -1;
 				(
 						[&] {
@@ -173,6 +175,12 @@ namespace SplitEngine::ECS
 				Archetype* newArchetype = _archetypeLookup[entity.moveArchetypeIndex];
 
 				if (oldArchetypeMoveIndex == -1) { _entitiesToMove.push_back(entityID); }
+
+				else if (entity.archetypeIndex == -1)
+				{
+					_entitiesToMove.push_back(entityID);
+					entity.archetypeIndex = ID;
+				}
 
 				newArchetype->_entitiesToAdd.push_back(entityID);
 

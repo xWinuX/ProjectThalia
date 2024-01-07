@@ -94,6 +94,16 @@ namespace SplitEngine::ECS
 			}
 		}
 
+		for (const auto& entityID : _entitiesToAdd)
+		{
+			Entity& entity = _sparseEntityLookup[entityID];
+
+			entity.archetypeIndex     = entity.moveArchetypeIndex;
+			entity.componentIndex     = entity.moveComponentIndex;
+			entity.moveArchetypeIndex = -1;
+			entity.moveComponentIndex = -1;
+		}
+
 		_entitiesToAdd.clear();
 	}
 
@@ -132,12 +142,7 @@ namespace SplitEngine::ECS
 			}
 
 			// Destroy the remains of the moved entity
-			DestroyEntityImmediately(entityID);
-
-			entity.archetypeIndex     = archetype->ID;
-			entity.componentIndex     = entity.moveComponentIndex;
-			entity.moveComponentIndex = -1;
-			entity.moveArchetypeIndex = -1;
+			if (entity.componentIndex != -1) { DestroyEntityImmediately(entityID); }
 		}
 
 		_entitiesToMove.clear();
