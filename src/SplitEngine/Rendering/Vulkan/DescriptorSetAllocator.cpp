@@ -1,4 +1,4 @@
-#include "SplitEngine/Rendering/Vulkan/DescriptorSetManager.hpp"
+#include "SplitEngine/Rendering/Vulkan/DescriptorSetAllocator.hpp"
 #include "SplitEngine/Rendering/Vulkan/Buffer.hpp"
 #include "SplitEngine/Rendering/Vulkan/Device.hpp"
 #include "SplitEngine/Rendering/Vulkan/Utility.hpp"
@@ -9,23 +9,19 @@
 
 namespace SplitEngine::Rendering::Vulkan
 {
-	DescriptorSetManager::DescriptorSetManager(Device*                                     device,
-											   std::vector<vk::DescriptorSetLayoutBinding> descriptorLayoutBindings,
-											   std::vector<vk::DescriptorPoolSize>         descriptorPoolSizes,
-											   std::vector<vk::WriteDescriptorSet>         writeDescriptorSets,
-											   uint32_t                                    maxSetsPerPool) :
+	DescriptorSetAllocator::DescriptorSetAllocator(Device* device, CreateInfo& descriptorSetInfo, uint32_t maxSetsPerPool) :
 		DeviceObject(device),
-		_descriptorPoolSizes(std::move(descriptorPoolSizes)),
-		_writeDescriptorSets(std::move(writeDescriptorSets)),
+		_descriptorPoolSizes(std::move(descriptorSetInfo.descriptorPoolSizes)),
+		_writeDescriptorSets(std::move(descriptorSetInfo.writeDescriptorSets)),
 		_maxSetsPerPool(maxSetsPerPool)
 	{
-		vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo({}, descriptorLayoutBindings);
+		vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo({}, descriptorSetInfo.descriptorLayoutBindings);
 		_descriptorSetLayout                                            = GetDevice()->GetVkDevice().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
 
 		AllocateNewDescriptorPool();
 	}
 
-	DescriptorSetManager::DescriptorSetAllocation DescriptorSetManager::AllocateDescriptorSet()
+	DescriptorSetAllocator::Allocation DescriptorSetAllocator::AllocateDescriptorSet()
 	{
 		// Find pool with available space
 		DescriptorPoolInstance* validDescriptorPoolInstance;
@@ -109,7 +105,7 @@ namespace SplitEngine::Rendering::Vulkan
 		GetDevice()->GetVkDevice().updateDescriptorSets(_writeDescriptorSets, nullptr);
 
 		// Create allocation object
-		DescriptorSetAllocation descriptorSetAllocation;
+		Allocation descriptorSetAllocation;
 		descriptorSetAllocation.DescriptorSet            = validDescriptorPoolInstance->DescriptorSets[insertionIndex];
 		descriptorSetAllocation._descriptorPoolIndex     = descriptorPoolIndex;
 		descriptorSetAllocation._descriptorSetIndex      = insertionIndex;
@@ -120,7 +116,7 @@ namespace SplitEngine::Rendering::Vulkan
 		return descriptorSetAllocation;
 	}
 
-	void DescriptorSetManager::AllocateNewDescriptorPool()
+	void DescriptorSetAllocator::AllocateNewDescriptorPool()
 	{
 		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
 																							 _maxSetsPerPool,
@@ -138,7 +134,7 @@ namespace SplitEngine::Rendering::Vulkan
 		_descriptorPoolInstances.push_back(std::move(descriptorPoolInstance));
 	}
 
-	void DescriptorSetManager::Destroy()
+	void DescriptorSetAllocator::Destroy()
 	{
 
 		Utility::DeleteDeviceHandle(GetDevice(), _descriptorSetLayout);
@@ -154,8 +150,10 @@ namespace SplitEngine::Rendering::Vulkan
 		}
 	}
 
-	void DescriptorSetManager::DeallocateDescriptorSet(DescriptorSetManager::DescriptorSetAllocation& descriptorSetAllocation)
+	void DescriptorSetAllocator::DeallocateDescriptorSet(DescriptorSetAllocator::Allocation& descriptorSetAllocation)
 	{
+		if (descriptorSetAllocation.DescriptorSet == VK_NULL_HANDLE) { return; }
+
 		DescriptorPoolInstance& descriptorPoolInstance = _descriptorPoolInstances[descriptorSetAllocation._descriptorPoolIndex];
 		GetDevice()->GetVkDevice().freeDescriptorSets(descriptorPoolInstance.DescriptorPool,
 													  descriptorPoolInstance.DescriptorSets[descriptorSetAllocation._descriptorSetIndex]);
@@ -167,6 +165,6 @@ namespace SplitEngine::Rendering::Vulkan
 		for (Buffer& buffer : descriptorSetAllocation.ShaderBuffers) { buffer.Destroy(); }
 	}
 
-	const vk::DescriptorSetLayout& DescriptorSetManager::GetDescriptorSetLayout() const { return _descriptorSetLayout; }
+	const vk::DescriptorSetLayout& DescriptorSetAllocator::GetDescriptorSetLayout() const { return _descriptorSetLayout; }
 
 }

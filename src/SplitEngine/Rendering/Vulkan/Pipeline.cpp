@@ -8,6 +8,10 @@
 
 namespace SplitEngine::Rendering::Vulkan
 {
+	DescriptorSetAllocator                          Pipeline::_globalDescriptorManager {};
+	DescriptorSetAllocator::Allocation              Pipeline::_globalDescriptorSetAllocation;
+	bool                                            Pipeline::_globalDescriptorsProcessed = false;
+
 	Pipeline::Pipeline(Device* device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos) :
 		DeviceObject(device)
 	{
@@ -15,10 +19,7 @@ namespace SplitEngine::Rendering::Vulkan
 		_shaderModules.reserve(shaderInfos.size());
 
 		// Descriptors
-		std::set<uint32_t>                          alreadyCoveredBindings   = std::set<uint32_t>();
-		std::vector<vk::DescriptorSetLayoutBinding> descriptorLayoutBindings = std::vector<vk::DescriptorSetLayoutBinding>(0);
-		std::vector<vk::DescriptorPoolSize>         descriptorPoolSizes      = std::vector<vk::DescriptorPoolSize>(0);
-		std::vector<vk::WriteDescriptorSet>         writeDescriptorSets      = std::vector<vk::WriteDescriptorSet>(0);
+		std::vector<DescriptorSetAllocator::CreateInfo> _descriptorSetInfos = std::vector<DescriptorSetAllocator::CreateInfo>(3);
 
 		// Vertex Input
 		std::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions = std::vector<vk::VertexInputAttributeDescription>(0);
@@ -47,9 +48,23 @@ namespace SplitEngine::Rendering::Vulkan
 				{
 					// Check if we already have a layout binding with the same binding index if true add the current shader stage to its shader stage mask
 					uint32_t binding = spirvCompiler.get_decoration(resource.id, spv::DecorationBinding);
-					if (alreadyCoveredBindings.contains(binding))
+					uint32_t set     = spirvCompiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+
+					if (set > 2)
 					{
-						for (vk::DescriptorSetLayoutBinding& descriptorLayoutBinding : descriptorLayoutBindings)
+						ErrorHandler::ThrowRuntimeError(
+								std::format("set decoration in shader {0} can't be higher than 2 (0 = global set, 1 = pipeline set, 2 = material set)",
+											shaderInfos[i].path));
+					}
+
+					if (set == 0 && _globalDescriptorsProcessed) { continue; }
+
+					DescriptorSetAllocator::CreateInfo& descriptorSetInfo = _descriptorSetInfos[set];
+
+					// If we already processed the binding we just add the shader stage to it and move on to the next resource
+					if (descriptorSetInfo.alreadyCoveredBindings.contains(binding))
+					{
+						for (vk::DescriptorSetLayoutBinding& descriptorLayoutBinding : descriptorSetInfo.descriptorLayoutBindings)
 						{
 							if (descriptorLayoutBinding.binding == binding)
 							{
@@ -67,6 +82,7 @@ namespace SplitEngine::Rendering::Vulkan
 					if (!resourceType.array.empty())
 					{
 						descriptorCount = resourceType.array[0];
+						LOG("descruotri count {0}", descriptorCount);
 					}
 
 					vk::DescriptorSetLayoutBinding layoutBinding = vk::DescriptorSetLayoutBinding(binding,
@@ -77,7 +93,8 @@ namespace SplitEngine::Rendering::Vulkan
 
 					vk::DescriptorPoolSize poolSize = vk::DescriptorPoolSize(type, descriptorCount);
 
-					vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet(VK_NULL_HANDLE, binding, 0, descriptorCount, type, nullptr, nullptr, nullptr);
+					vk::WriteDescriptorSet
+							writeDescriptorSet = vk::WriteDescriptorSet(VK_NULL_HANDLE, binding, 0, descriptorCount, type, nullptr, nullptr, nullptr);
 
 					switch (type)
 					{
@@ -90,10 +107,10 @@ namespace SplitEngine::Rendering::Vulkan
 						}
 					}
 
-					descriptorLayoutBindings.push_back(layoutBinding);
-					descriptorPoolSizes.push_back(poolSize);
-					writeDescriptorSets.push_back(writeDescriptorSet);
-					alreadyCoveredBindings.insert(binding);
+					descriptorSetInfo.descriptorLayoutBindings.push_back(layoutBinding);
+					descriptorSetInfo.descriptorPoolSizes.push_back(poolSize);
+					descriptorSetInfo.writeDescriptorSets.push_back(writeDescriptorSet);
+					descriptorSetInfo.alreadyCoveredBindings.insert(binding);
 				}
 			}
 
@@ -143,7 +160,22 @@ namespace SplitEngine::Rendering::Vulkan
 			}
 		}
 
-		_descriptorSetManager = DescriptorSetManager(GetDevice(), descriptorLayoutBindings, descriptorPoolSizes, writeDescriptorSets, 10);
+		if (!_globalDescriptorsProcessed)
+		{
+			_globalDescriptorManager       = DescriptorSetAllocator(GetDevice(), _descriptorSetInfos[0], 1);
+			_globalDescriptorSetAllocation = _globalDescriptorManager.AllocateDescriptorSet();
+			_globalDescriptorsProcessed    = true;
+		}
+
+		_perPipelineDescriptorSetManager    = DescriptorSetAllocator(GetDevice(), _descriptorSetInfos[1], 1);
+		_perPipelineDescriptorSetAllocation = _perPipelineDescriptorSetManager.AllocateDescriptorSet();
+
+		_perInstanceDescriptorSetManager = DescriptorSetAllocator(GetDevice(), _descriptorSetInfos[2], 10);
+
+		_descriptorSetLayouts.push_back(_globalDescriptorManager.GetDescriptorSetLayout());
+		_descriptorSetLayouts.push_back(_perPipelineDescriptorSetManager.GetDescriptorSetLayout());
+		_descriptorSetLayouts.push_back(_perInstanceDescriptorSetManager.GetDescriptorSetLayout());
+
 
 		std::vector<vk::DynamicState> dynamicStates = {
 				vk::DynamicState::eViewport,
@@ -188,7 +220,6 @@ namespace SplitEngine::Rendering::Vulkan
 																												   vk::False,
 																												   vk::False);
 
-
 		vk::PipelineColorBlendAttachmentState colorBlendAttachmentState = vk::PipelineColorBlendAttachmentState(vk::True,
 																												vk::BlendFactor::eSrcAlpha,
 																												vk::BlendFactor::eOneMinusSrcAlpha,
@@ -219,11 +250,7 @@ namespace SplitEngine::Rendering::Vulkan
 																													  0.0,
 																													  1.0f);
 
-		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo({},
-																							 1,
-																							 &_descriptorSetManager.GetDescriptorSetLayout(),
-																							 0,
-																							 nullptr);
+		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo({}, _descriptorSetLayouts, nullptr);
 
 		_layout = device->GetVkDevice().createPipelineLayout(pipelineLayoutCreateInfo);
 
@@ -292,11 +319,27 @@ namespace SplitEngine::Rendering::Vulkan
 
 	void Pipeline::Destroy()
 	{
-		_descriptorSetManager.Destroy();
+		_perPipelineDescriptorSetManager.DeallocateDescriptorSet(_perPipelineDescriptorSetAllocation);
+
+		_perInstanceDescriptorSetManager.Destroy();
+		_perPipelineDescriptorSetManager.Destroy();
+
 		for (const vk::ShaderModule& item : _shaderModules) { Utility::DeleteDeviceHandle(GetDevice(), item); }
 		Utility::DeleteDeviceHandle(GetDevice(), _layout);
 		Utility::DeleteDeviceHandle(GetDevice(), _vkPipeline);
 	}
 
-	DescriptorSetManager& Pipeline::GetDescriptorSetManager() { return _descriptorSetManager; }
+	DescriptorSetAllocator::Allocation& Pipeline::GetGlobalDescriptorSetAllocation() { return _globalDescriptorSetAllocation; }
+
+	DescriptorSetAllocator::Allocation& Pipeline::GetPerPipelineDescriptorSetAllocation() { return _perPipelineDescriptorSetAllocation; }
+
+	DescriptorSetAllocator::Allocation Pipeline::AllocatePerInstanceDescriptorSet()
+	{
+		return _perInstanceDescriptorSetManager.AllocateDescriptorSet();
+	}
+
+	void Pipeline::DeallocatePerInstanceDescriptorSet(DescriptorSetAllocator::Allocation& descriptorSetAllocation)
+	{
+		_perInstanceDescriptorSetManager.DeallocateDescriptorSet(descriptorSetAllocation);
+	}
 }

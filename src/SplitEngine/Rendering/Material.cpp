@@ -4,75 +4,27 @@
 namespace SplitEngine::Rendering
 {
 	Material::Material(const CreateInfo& createInfo) :
-		_shader(createInfo._shader)
-	{
-		_descriptorSetAllocation = _shader->GetPipeline().GetDescriptorSetManager().AllocateDescriptorSet();
-	}
-
-	Material::~Material()
-	{
-		if (_descriptorSetAllocation.DescriptorSet != VK_NULL_HANDLE)
-		{
-			_shader->GetPipeline().GetDescriptorSetManager().DeallocateDescriptorSet(_descriptorSetAllocation);
-		}
-	}
+		_shader(createInfo._shader),
+		_instanceDescriptorSetAllocation(_shader->GetPipeline().AllocatePerInstanceDescriptorSet()),
+		_instanceProperties(Shader::Properties(_shader.Get(), &_instanceDescriptorSetAllocation))
+	{}
 
 	AssetHandle<Shader> Material::GetShader() const { return _shader; }
 
-	Vulkan::DescriptorSetManager::DescriptorSetAllocation& Material::GetDescriptorSetAllocation() { return _descriptorSetAllocation; }
+	void Material::Update() { _instanceProperties.Update(); }
 
-	const Vulkan::DescriptorSetManager::DescriptorSetAllocation& Material::GetDescriptorSetAllocation() const { return _descriptorSetAllocation; }
+	Shader::Properties& Material::GetProperties() { return _instanceProperties; }
 
-	void Material::SetTexture(size_t index, const Texture2D& texture)
+	void Material::Bind(vk::CommandBuffer& commandBuffer)
 	{
-		_descriptorSetAllocation.ImageInfos[index][0] = vk::DescriptorImageInfo(*texture.GetSampler(),
-																				texture.GetImage().GetView(),
-																				texture.GetImage().GetLayout());
-		SetWriteDescriptorSetDirty(index);
+		commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+										 _shader->GetPipeline().GetLayout(),
+										 2,
+										 1,
+										 &_instanceDescriptorSetAllocation.DescriptorSet,
+										 0,
+										 nullptr);
 	}
 
-	void Material::SetTextures(size_t index, size_t offset, std::vector<std::unique_ptr<Texture2D>>& textures)
-	{
-		for (int i = 0; i < textures.size(); ++i)
-		{
-			_descriptorSetAllocation.ImageInfos[index][i + offset] = vk::DescriptorImageInfo(*textures[i]->GetSampler(),
-																							 textures[i]->GetImage().GetView(),
-																							 textures[i]->GetImage().GetLayout());
-		}
-
-		SetWriteDescriptorSetDirty(index);
-	}
-
-	void Material::SetTextures(size_t index, size_t offset, std::vector<AssetHandle<Texture2D>>& textures)
-	{
-		for (int i = 0; i < textures.size(); ++i)
-		{
-			_descriptorSetAllocation.ImageInfos[index][i + offset] = vk::DescriptorImageInfo(*textures[i]->GetSampler(),
-																							 textures[i]->GetImage().GetView(),
-																							 textures[i]->GetImage().GetLayout());
-		}
-
-		SetWriteDescriptorSetDirty(index);
-	}
-
-	void Material::SetWriteDescriptorSetDirty(size_t index)
-	{
-		// if there's already a set in updates overwrite image info
-		for (vk::WriteDescriptorSet& writeDescriptorSet : _updateImageWriteDescriptorSets)
-		{
-			if (writeDescriptorSet.dstBinding == _descriptorSetAllocation.ImageWriteDescriptorSets[index].dstBinding) { return; }
-		}
-
-		_updateImageWriteDescriptorSets.push_back(_descriptorSetAllocation.ImageWriteDescriptorSets[index]);
-	}
-
-	void Material::Update()
-	{
-		if (!_updateImageWriteDescriptorSets.empty())
-		{
-			Vulkan::Context::GetDevice()->GetVkDevice().updateDescriptorSets(_updateImageWriteDescriptorSets, nullptr);
-		}
-
-		_updateImageWriteDescriptorSets.clear();
-	}
+	Material::~Material() { _shader->GetPipeline().DeallocatePerInstanceDescriptorSet(_instanceDescriptorSetAllocation); }
 }

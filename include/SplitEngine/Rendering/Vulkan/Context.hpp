@@ -1,6 +1,6 @@
 #pragma once
 #include "Buffer.hpp"
-#include "DescriptorSetManager.hpp"
+#include "DescriptorSetAllocator.hpp"
 #include "Device.hpp"
 #include "Instance.hpp"
 #include "PhysicalDevice.hpp"
@@ -18,9 +18,9 @@ namespace SplitEngine::Rendering::Vulkan
 		public:
 			Context() = default;
 
-			void Initialize(Window* window);
-			static void WaitForIdle() ;
-			void Destroy();
+			void        Initialize(Window* window);
+			static void WaitForIdle();
+			void        Destroy();
 
 			static Device* GetDevice();
 

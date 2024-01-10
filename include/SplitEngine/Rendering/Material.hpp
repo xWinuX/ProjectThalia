@@ -1,8 +1,8 @@
 #pragma once
 
 #include "SplitEngine/AssetDatabase.hpp"
-#include "SplitEngine/Rendering/Texture2D.hpp"
 #include "SplitEngine/Rendering/Shader.hpp"
+#include "SplitEngine/Rendering/Texture2D.hpp"
 #include "SplitEngine/Rendering/Vulkan/Buffer.hpp"
 #include "SplitEngine/Rendering/Vulkan/Pipeline.hpp"
 
@@ -24,30 +24,19 @@ namespace SplitEngine::Rendering
 
 			~Material();
 
-			void SetTexture(size_t index, const Texture2D& texture);
-			void SetTextures(size_t index, size_t offset, std::vector<std::unique_ptr<Texture2D>>& textures);
-			void SetTextures(size_t index, size_t offset, std::vector<AssetHandle<Texture2D>>& textures);
+			Shader::Properties& GetProperties();
 
 			void Update();
 
-			[[nodiscard]] AssetHandle<Shader> GetShader() const;
+			void Bind(vk::CommandBuffer& commandBuffer);
 
-			[[nodiscard]] Vulkan::DescriptorSetManager::DescriptorSetAllocation&       GetDescriptorSetAllocation();
-			[[nodiscard]] const Vulkan::DescriptorSetManager::DescriptorSetAllocation& GetDescriptorSetAllocation() const;
+			[[nodiscard]] AssetHandle<Shader> GetShader() const;
 
 		private:
 			AssetHandle<Shader> _shader;
 
-			std::vector<vk::WriteDescriptorSet> _updateImageWriteDescriptorSets;
+			Shader::Properties _instanceProperties {};
 
-			Vulkan::DescriptorSetManager::DescriptorSetAllocation _descriptorSetAllocation;
-
-			template<typename T>
-			T* const GetUniformBufferObjectAs(uint32_t uniformBufferIndex = 0)
-			{
-				return _descriptorSetAllocation.ShaderBuffers[uniformBufferIndex].GetMappedData<T>();
-			}
-
-			void SetWriteDescriptorSetDirty(size_t index);
+			Vulkan::DescriptorSetAllocator::Allocation _instanceDescriptorSetAllocation;
 	};
 }

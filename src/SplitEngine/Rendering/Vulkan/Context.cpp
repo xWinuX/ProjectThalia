@@ -72,6 +72,10 @@ namespace SplitEngine::Rendering::Vulkan
 	{
 		WaitForIdle();
 
+		// Deallocate global descriptor set
+		Pipeline::_globalDescriptorManager.DeallocateDescriptorSet(Pipeline::_globalDescriptorSetAllocation);
+		Pipeline::_globalDescriptorManager.Destroy();
+
 		_device->GetVkDevice().destroy(_imageAvailableSemaphore);
 		_device->GetVkDevice().destroy(_renderFinishedSemaphore);
 		_device->GetVkDevice().destroy(_inFlightFence);

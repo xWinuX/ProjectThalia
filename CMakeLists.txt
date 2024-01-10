@@ -73,7 +73,7 @@ if (NOT HEADLESS)
             include/SplitEngine/Rendering/Vulkan/Allocator.hpp
             include/SplitEngine/Rendering/Vulkan/Buffer.hpp
             include/SplitEngine/Rendering/Vulkan/Context.hpp
-            include/SplitEngine/Rendering/Vulkan/DescriptorSetManager.hpp
+            include/SplitEngine/Rendering/Vulkan/DescriptorSetAllocator.hpp
             include/SplitEngine/Rendering/Vulkan/Device.hpp
             include/SplitEngine/Rendering/Vulkan/DeviceObject.hpp
             include/SplitEngine/Rendering/Vulkan/Image.hpp
@@ -94,8 +94,8 @@ if (NOT HEADLESS)
             src/SplitEngine/Rendering/Vulkan/Allocator.cpp
             src/SplitEngine/Rendering/Vulkan/Buffer.cpp
             src/SplitEngine/Rendering/Vulkan/Context.cpp
-            src/SplitEngine/Rendering/Vulkan/DescriptorSetManager.cpp
-            src/SplitEngine/Rendering/Vulkan/DescriptorSetManager.cpp
+            src/SplitEngine/Rendering/Vulkan/DescriptorSetAllocator.cpp
+            src/SplitEngine/Rendering/Vulkan/DescriptorSetAllocator.cpp
             src/SplitEngine/Rendering/Vulkan/Device.cpp
             src/SplitEngine/Rendering/Vulkan/DeviceObject.cpp
             src/SplitEngine/Rendering/Vulkan/Image.cpp
@@ -246,16 +246,13 @@ set(SHADER_FILES
         "res/shaders/debug/Debug.frag"
 )
 
-find_program(glslangValidator_executable NAMES glslangValidator HINTS Vulkan::glslc)
+find_program(glslc_executable NAMES glslc HINTS Vulkan::glslc)
 
 foreach (SHADER_FILE ${SHADER_FILES})
     set(SPIRV_OUTPUT $<TARGET_FILE_DIR:SplitEngine>/${SHADER_FILE}.spv)
 
     add_custom_command(TARGET SplitEngine POST_BUILD
-            COMMAND ${glslangValidator_executable}
-            -e main
-            -gVS
-            -V
+            COMMAND ${glslc_executable}
             -o ${SPIRV_OUTPUT}
             $<TARGET_FILE_DIR:SplitEngine>/${SHADER_FILE}
             DEPENDS ${CMAKE_SOURCE_DIR}/${SHADER_FILE}

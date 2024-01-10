@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DescriptorSetManager.hpp"
+#include "DescriptorSetAllocator.hpp"
 #include "DeviceObject.hpp"
 #include "spirv_common.hpp"
 
@@ -13,6 +13,8 @@ namespace SplitEngine::Rendering::Vulkan
 	class Pipeline final : DeviceObject
 	{
 		public:
+			friend class Context;
+
 			enum class ShaderType
 			{
 				Vertex   = VK_SHADER_STAGE_VERTEX_BIT,
@@ -26,7 +28,6 @@ namespace SplitEngine::Rendering::Vulkan
 					ShaderType  shaderStage;
 			};
 
-		public:
 			Pipeline() = default;
 
 			Pipeline(Device* device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos);
@@ -35,13 +36,27 @@ namespace SplitEngine::Rendering::Vulkan
 
 			[[nodiscard]] const vk::Pipeline&       GetVkPipeline() const;
 			[[nodiscard]] const vk::PipelineLayout& GetLayout() const;
-			[[nodiscard]] DescriptorSetManager&     GetDescriptorSetManager();
+
+			[[nodiscard]] static DescriptorSetAllocator::Allocation& GetGlobalDescriptorSetAllocation();
+			[[nodiscard]] DescriptorSetAllocator::Allocation&        GetPerPipelineDescriptorSetAllocation();
+			[[nodiscard]] DescriptorSetAllocator::Allocation         AllocatePerInstanceDescriptorSet();
+			void DeallocatePerInstanceDescriptorSet(DescriptorSetAllocator::Allocation& descriptorSetAllocation);
 
 		private:
 			vk::Pipeline       _vkPipeline;
 			vk::PipelineLayout _layout;
 
-			DescriptorSetManager _descriptorSetManager;
+			static DescriptorSetAllocator                          _globalDescriptorManager;
+			static DescriptorSetAllocator::Allocation              _globalDescriptorSetAllocation;
+			static bool                                            _globalDescriptorsProcessed;
+
+			DescriptorSetAllocator _perInstanceDescriptorSetManager;
+			DescriptorSetAllocator _perPipelineDescriptorSetManager;
+
+			std::vector<vk::DescriptorSetLayout> _descriptorSetLayouts;
+
+			DescriptorSetAllocator::Allocation _perPipelineDescriptorSetAllocation;
+
 
 			std::vector<vk::ShaderModule> _shaderModules;
 

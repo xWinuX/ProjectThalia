@@ -6,6 +6,7 @@
 #include "SplitEngine/DataStructures.hpp"
 #include "vulkan/vulkan.hpp"
 
+#include <set>
 #include <stack>
 #include <vector>
 
@@ -15,9 +16,18 @@ namespace SplitEngine::Rendering::Vulkan
 
 	class Buffer;
 
-	class DescriptorSetManager final : DeviceObject
+	class DescriptorSetAllocator final : DeviceObject
 	{
 		public:
+			struct CreateInfo
+			{
+				public:
+					std::set<uint32_t>                          alreadyCoveredBindings   = std::set<uint32_t>();
+					std::vector<vk::DescriptorSetLayoutBinding> descriptorLayoutBindings = std::vector<vk::DescriptorSetLayoutBinding>(0);
+					std::vector<vk::DescriptorPoolSize>         descriptorPoolSizes      = std::vector<vk::DescriptorPoolSize>(0);
+					std::vector<vk::WriteDescriptorSet>         writeDescriptorSets      = std::vector<vk::WriteDescriptorSet>(0);
+			};
+
 			struct DescriptorPoolInstance
 			{
 				public:
@@ -26,9 +36,9 @@ namespace SplitEngine::Rendering::Vulkan
 					AvailableStack<uint32_t>       Available;
 			};
 
-			struct DescriptorSetAllocation
+			struct Allocation
 			{
-					friend DescriptorSetManager;
+					friend DescriptorSetAllocator;
 
 				public:
 					vk::DescriptorSet                                 DescriptorSet            = VK_NULL_HANDLE;
@@ -41,35 +51,15 @@ namespace SplitEngine::Rendering::Vulkan
 					uint32_t _descriptorSetIndex  = -1;
 			};
 
-			struct NewDescriptorSetAllocation
-			{
-					friend DescriptorSetManager;
-
-				public:
-					vk::DescriptorSet DescriptorSet = VK_NULL_HANDLE;
-
-
-					std::vector<Buffer>                 ShaderBuffers            = std::vector<Buffer>();
-					std::vector<vk::WriteDescriptorSet> ImageWriteDescriptorSets = std::vector<vk::WriteDescriptorSet>();
-
-				private:
-					uint32_t _descriptorPoolIndex = -1;
-					uint32_t _descriptorSetIndex  = -1;
-			};
-
 		public:
-			DescriptorSetManager() = default;
-			DescriptorSetManager(Device*                                     device,
-								 std::vector<vk::DescriptorSetLayoutBinding> descriptorLayoutBindings,
-								 std::vector<vk::DescriptorPoolSize>         descriptorPoolSizes,
-								 std::vector<vk::WriteDescriptorSet>         writeDescriptorSets,
-								 uint32_t                                    maxSetsPerPool);
+			DescriptorSetAllocator() = default;
+			DescriptorSetAllocator(Device* device, CreateInfo& descriptorSetInfo, uint32_t maxSetsPerPool);
 
 			void Destroy() override;
 
-			DescriptorSetAllocation AllocateDescriptorSet();
+			Allocation AllocateDescriptorSet();
 
-			void DeallocateDescriptorSet(DescriptorSetAllocation& descriptorSetAllocation);
+			void DeallocateDescriptorSet(Allocation& descriptorSetAllocation);
 
 			[[nodiscard]] const vk::DescriptorSetLayout& GetDescriptorSetLayout() const;
 
@@ -79,6 +69,7 @@ namespace SplitEngine::Rendering::Vulkan
 			std::vector<vk::DescriptorPoolSize> _descriptorPoolSizes;
 			std::vector<vk::WriteDescriptorSet> _writeDescriptorSets;
 			uint32_t                            _maxSetsPerPool = 10;
-			void                                AllocateNewDescriptorPool();
+
+			void AllocateNewDescriptorPool();
 	};
 }
