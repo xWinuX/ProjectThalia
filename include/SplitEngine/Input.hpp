@@ -148,9 +148,13 @@ namespace SplitEngine
 				_axisActions[static_cast<int>(actionKey)].Axes.push_back({xAxis, yAxis});
 			}
 
+			static void ProvideWorldMouseOffset(glm::ivec2 offset);
+
 			static bool GetDown(SDL_KeyCode keyCode);
 
 			static bool GetPressed(SDL_KeyCode keyCode);
+
+			static const glm::ivec2 GetMousePosition();
 
 		private:
 			enum PressedState
@@ -159,6 +163,9 @@ namespace SplitEngine
 				Pressed,
 				Waiting,
 			};
+
+			static glm::ivec2 _mousePosition;
+			static glm::ivec2 _mousePositionWorldOffset;
 
 			static std::unordered_map<int, ButtonAction> _buttonActions;
 			static std::unordered_map<int, AxisAction>   _axisActions;

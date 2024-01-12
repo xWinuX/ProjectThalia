@@ -39,6 +39,12 @@ namespace SplitEngine::ECS
 				return reinterpret_cast<T*>(ComponentData[TypeIDGenerator<Component>::GetID<T>()].data());
 			}
 
+			template<typename T>
+			T& GetComponent(uint64_t entityComponentIndex)
+			{
+				return GetComponents<T>()[entityComponentIndex];
+			}
+
 			template<typename... T>
 			uint64_t AddEntity(uint64_t entityID, T&&... args)
 			{

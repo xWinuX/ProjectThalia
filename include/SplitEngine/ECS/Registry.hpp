@@ -63,6 +63,14 @@ namespace SplitEngine::ECS
 				return entityID;
 			}
 
+			template<typename T>
+			T& GetComponent(uint64_t entityID)
+			{
+				Entity& entity = _sparseEntityLookup[entityID];
+
+				return _archetypeLookup[entity.GetArchetypeIndex()]->GetComponent<T>(entity.GetComponentIndex());
+			}
+
 			template<typename... T>
 			void AddComponent(uint64_t entityID, T&&... components)
 			{
@@ -105,6 +113,8 @@ namespace SplitEngine::ECS
 
 				return _archetypeLookup[archetypeID];
 			}
+
+			bool IsEntityValid(uint64_t entityID);
 
 			void RegisterAssetDatabase(SplitEngine::AssetDatabase* assetDatabase);
 

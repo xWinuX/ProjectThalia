@@ -76,4 +76,10 @@ namespace SplitEngine::ECS
 	}
 
 	void Registry::RegisterAssetDatabase(SplitEngine::AssetDatabase* assetDatabase) { _context.AssetDatabase = assetDatabase; }
+
+	bool Registry::IsEntityValid(uint64_t entityID)
+	{
+		Entity& entity = _sparseEntityLookup[entityID];
+		return entity.GetArchetypeIndex() != -1;
+	}
 }

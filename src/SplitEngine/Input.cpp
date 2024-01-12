@@ -1,4 +1,6 @@
 #include "SplitEngine/Input.hpp"
+#include "SplitEngine/Debug/Log.hpp"
+#include "glm/gtx/string_cast.hpp"
 
 namespace SplitEngine
 {
@@ -8,23 +10,36 @@ namespace SplitEngine
 	std::unordered_map<int, Input::ButtonAction> Input::_buttonActions {};
 	std::unordered_map<int, Input::AxisAction>   Input::_axisActions {};
 
+	glm::ivec2 Input::_mousePosition {};
+	glm::ivec2 Input::_mousePositionWorldOffset {};
+
 	bool Input::GetDown(SDL_KeyCode keyCode) { return _keyDownStates[keyCode]; }
 
 	bool Input::GetPressed(SDL_KeyCode keyCode) { return _keyPressedStates[keyCode] == PressedState::Pressed; }
 
 	void Input::Update(const SDL_Event& event)
 	{
-		if (event.type == SDL_KEYDOWN)
+		switch (event.type)
 		{
-			_keyDownStates[event.key.keysym.sym] = true;
+			case SDL_KEYDOWN:
+				_keyDownStates[event.key.keysym.sym] = true;
+				if (_keyPressedStates[event.key.keysym.sym] == Ready) { _keyPressedStates[event.key.keysym.sym] = Pressed; }
+				break;
+			case SDL_KEYUP:
+				_keyDownStates[event.key.keysym.sym] = false;
 
-			if (_keyPressedStates[event.key.keysym.sym] == Ready) { _keyPressedStates[event.key.keysym.sym] = Pressed; }
-		}
-		if (event.type == SDL_KEYUP)
-		{
-			_keyDownStates[event.key.keysym.sym] = false;
-
-			if (_keyPressedStates[event.key.keysym.sym] == Waiting) { _keyPressedStates[event.key.keysym.sym] = Ready; }
+				if (_keyPressedStates[event.key.keysym.sym] == Waiting) { _keyPressedStates[event.key.keysym.sym] = Ready; }
+				break;
+			case SDL_MOUSEBUTTONDOWN:
+				break;
+			case SDL_MOUSEBUTTONUP:
+				break;
+			case SDL_MOUSEMOTION:
+				SDL_GetMouseState(&_mousePosition.x, &_mousePosition.y);
+				_mousePosition += _mousePositionWorldOffset;
+				LOG(glm::to_string(_mousePosition));
+				LOG(glm::to_string(_mousePositionWorldOffset));
+				break;
 		}
 	}
 
@@ -43,4 +58,8 @@ namespace SplitEngine
 			axisAction.DownCached    = false;
 		}
 	}
+
+	const glm::ivec2 Input::GetMousePosition() { return _mousePosition; }
+
+	void Input::ProvideWorldMouseOffset(glm::ivec2 offset) { _mousePositionWorldOffset = offset; }
 }

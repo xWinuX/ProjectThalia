@@ -107,7 +107,12 @@ namespace SplitEngine
 				switch (event.type)
 				{
 					case SDL_KEYDOWN:
-					case SDL_KEYUP: Input::Update(event); break;
+					case SDL_KEYUP:
+					case SDL_MOUSEMOTION:
+					case SDL_MOUSEBUTTONDOWN:
+					case SDL_MOUSEBUTTONUP:
+						Input::Update(event);
+						break;
 					case SDL_QUIT: quit = true; break;
 				}
 #ifndef SE_HEADLESS
