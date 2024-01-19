@@ -21,6 +21,8 @@ namespace SplitEngine::Rendering
 
 			uint32_t GetTextureID(uint32_t index);
 
+			size_t _numSubSprites;
+
 		private:
 			std::vector<uint64_t> _textureIDs;
 	};

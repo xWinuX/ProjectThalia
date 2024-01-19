@@ -82,7 +82,6 @@ namespace SplitEngine
 		PRIVATE_TIME_MEASURE_INIT(ecsRenderSystem)
 		PRIVATE_TIME_MEASURE_INIT(renderBegin)
 		PRIVATE_TIME_MEASURE_INIT(renderEnd)
-		PRIVATE_TIME_MEASURE_INIT(preRender)
 
 		LOG("Start Game Loop");
 		SDL_Event event;
@@ -98,7 +97,6 @@ namespace SplitEngine
 			PRIVATE_TIME_MEASURE_ACCUMULATE(ecsRenderSystem)
 			PRIVATE_TIME_MEASURE_ACCUMULATE(renderBegin)
 			PRIVATE_TIME_MEASURE_ACCUMULATE(renderEnd)
-			PRIVATE_TIME_MEASURE_ACCUMULATE(preRender)
 
 			accumulatedDeltaTime += deltaTime;
 
@@ -112,7 +110,6 @@ namespace SplitEngine
 				PRIVATE_TIME_MEASURE_AVERAGE(ecsRenderSystem)
 				PRIVATE_TIME_MEASURE_AVERAGE(renderBegin)
 				PRIVATE_TIME_MEASURE_AVERAGE(renderEnd)
-				PRIVATE_TIME_MEASURE_AVERAGE(preRender)
 
 				averageFps = static_cast<uint64_t>((1.0f / averageDeltaTime));
 
@@ -137,7 +134,6 @@ namespace SplitEngine
 
 			_ecsRegistry.PrepareForExecution(deltaTime);
 
-
 			PRIVATE_TIME_MEASURE_BEGIN(ecsGameplaySystem)
 			_ecsRegistry.ExecuteSystems(ECS::Stage::Gameplay);
 			PRIVATE_TIME_MEASURE_END(ecsGameplaySystem)
@@ -150,16 +146,10 @@ namespace SplitEngine
 			PRIVATE_TIME_MEASURE_IMGUI(ecsGameplaySystem, "ECS Gameplay Systems Time (ms)")
 			PRIVATE_TIME_MEASURE_IMGUI(ecsRenderSystem, "ECS Render Systems Time (ms)")
 			ImGui::Spacing();
-			PRIVATE_TIME_MEASURE_IMGUI(preRender, "Pre Render Time Begin (ms)")
 			PRIVATE_TIME_MEASURE_IMGUI(renderBegin, "Render Time Begin (ms)")
 			PRIVATE_TIME_MEASURE_IMGUI(renderEnd, "Render Time End (ms)")
 			ImGui::Spacing();
 			ImGui::Text("FPS: %llu", averageFps);
-
-			PRIVATE_TIME_MEASURE_BEGIN(preRender)
-			_ecsRegistry.ExecuteSystems(ECS::Stage::PreRendering);
-			PRIVATE_TIME_MEASURE_END(preRender)
-
 
 			PRIVATE_TIME_MEASURE_BEGIN(renderBegin)
 			_renderer.BeginRender();

@@ -30,6 +30,12 @@ namespace SplitEngine::Rendering
 					Properties(Shader* shader, Vulkan::DescriptorSetAllocator::Allocation* descriptorSetAllocation);
 
 					template<typename T>
+					Vulkan::InFlightResource<std::byte*> GetBufferRaw(uint32_t bindingPoint)
+					{
+						return _descriptorSetAllocation->ShaderBufferPtrs[_descriptorSetAllocation->SparseShaderBufferLookup[bindingPoint]];
+					}
+
+					template<typename T>
 					T* GetBuffer(uint32_t bindingPoint)
 					{
 						return reinterpret_cast<T*>(_descriptorSetAllocation->ShaderBufferPtrs[_descriptorSetAllocation->SparseShaderBufferLookup[bindingPoint]].Get());

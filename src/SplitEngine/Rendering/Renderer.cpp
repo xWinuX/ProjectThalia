@@ -127,14 +127,14 @@ namespace SplitEngine::Rendering
 
 	void Renderer::EndRender()
 	{
+		Vulkan::Device* device = Vulkan::Context::GetDevice();
+		const vk::CommandBuffer& commandBuffer = _vulkanContext.GetCommandBuffer();
+
 		if (_wasSkipped)
 		{
 			_wasSkipped = false;
 			return;
 		}
-
-		Vulkan::Device* device = Vulkan::Context::GetDevice();
-		const vk::CommandBuffer& commandBuffer = _vulkanContext.GetCommandBuffer();
 
 		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
@@ -147,6 +147,8 @@ namespace SplitEngine::Rendering
                                                    _vulkanContext.GetCommandBuffer(),
                                                    _vulkanContext.GetRenderFinishedSemaphore());
 
+
+
 		device->GetGraphicsQueue().submit(submitInfo, _vulkanContext.GetInFlightFence());
 
 		vk::PresentInfoKHR presentInfo = vk::PresentInfoKHR(_vulkanContext.GetRenderFinishedSemaphore(),
@@ -155,6 +157,7 @@ namespace SplitEngine::Rendering
 															nullptr);
 
 		vk::Result presentResult = device->GetPresentQueue().presentKHR(presentInfo);
+
 
 		if (presentResult == vk::Result::eErrorOutOfDateKHR || presentResult == vk::Result::eSuboptimalKHR || _frameBufferResized)
 		{
