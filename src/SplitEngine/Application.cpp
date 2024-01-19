@@ -104,7 +104,7 @@ namespace SplitEngine
 
 			if (accumulatedDeltaTime >= 0.5f)
 			{
-				averageDeltaTime  = accumulatedDeltaTime / static_cast<float>(accumulatedFrames);
+				averageDeltaTime = accumulatedDeltaTime / static_cast<float>(accumulatedFrames);
 
 				PRIVATE_TIME_MEASURE_AVERAGE(ecsGameplaySystem)
 				PRIVATE_TIME_MEASURE_AVERAGE(ecsRenderSystem)
@@ -113,7 +113,7 @@ namespace SplitEngine
 
 				averageFps = static_cast<uint64_t>((1.0f / averageDeltaTime));
 
-				accumulatedDeltaTime  = 0.0f;
+				accumulatedDeltaTime = 0.0f;
 
 				accumulatedFrames = 0;
 			}
@@ -124,7 +124,9 @@ namespace SplitEngine
 				{
 					case SDL_KEYDOWN:
 					case SDL_KEYUP:
-					case SDL_MOUSEMOTION: Input::Update(event); break;
+					case SDL_MOUSEMOTION:
+					case SDL_MOUSEBUTTONDOWN:
+					case SDL_MOUSEBUTTONUP: Input::Update(event); break;
 					case SDL_QUIT: quit = true; break;
 				}
 #ifndef SE_HEADLESS

@@ -305,25 +305,12 @@ class SpriteRenderSystem : public ECS::System<TransformComponent, SpriteComponen
 						if (castNewCurrentFrame >= numSubSprites)
 						{
 							spriteAnimatorComponent.CurrentFrame = FastFmod(newCurrentFrame, static_cast<float>(numSubSprites));
-
-							uint32_t newTextureID = sprite->GetTextureID(0);
-							if (newTextureID != spriteAnimatorComponent.PreviousTextureID)
-							{
-								objectBuffer->textureIDs[numEntities + i] = newTextureID;
-								spriteAnimatorComponent.PreviousTextureID = newTextureID;
-							}
 						}
-					}
-					else
-					{
+						else { spriteAnimatorComponent.CurrentFrame = newCurrentFrame; }
 
-						uint32_t newTextureID = sprite->GetTextureID(0);
-						if (newTextureID != spriteAnimatorComponent.PreviousTextureID)
-						{
-							objectBuffer->textureIDs[numEntities + i] = sprite->GetTextureID(0);
-							spriteAnimatorComponent.PreviousTextureID = newTextureID;
-						}
+						objectBuffer->textureIDs[numEntities + i] = sprite->GetTextureID(static_cast<uint32_t>(spriteAnimatorComponent.CurrentFrame));
 					}
+					else { objectBuffer->textureIDs[numEntities + i] = sprite->GetTextureID(0); }
 				});
 
 				numEntities += entities.size();
@@ -385,7 +372,6 @@ class SpriteRenderSystem : public ECS::System<TransformComponent, SpriteComponen
 		std::vector<std::unique_ptr<Rendering::Texture2D>> _texturePages;
 
 		std::ranges::iota_view<size_t, size_t> _indexes;
-
 };
 
 // Example of a simple physics system that changes an entities transform component based on a physicscomponents velocity
@@ -418,9 +404,8 @@ int main()
 	Application application = Application({});
 	application.Initialize();
 
-	Input::RegisterAxis2D(InputAction::Move, {SDLK_a, SDLK_d}, {SDLK_s, SDLK_w});
-	Input::RegisterAxis(InputAction::Rotate, {SDLK_DOWN, SDLK_UP});
-	Input::RegisterButtonAction(InputAction::Fire, SDLK_SPACE);
+	Input::RegisterAxis2D(InputAction::Move, {KeyCode::A, KeyCode::D}, {KeyCode::S, KeyCode::W});
+	Input::RegisterButtonAction(InputAction::Fire, KeyCode::MOUSE_LEFT);
 
 	AssetDatabase& assetDatabase = application.GetAssetDatabase();
 
@@ -442,13 +427,16 @@ int main()
 	// Create texture page and sprite assets
 	Tools::ImagePacker texturePacker = Tools::ImagePacker();
 
-	uint64_t floppaPackerID = texturePacker.AddImage("res/textures/floppa.png");
+	uint64_t floppaPackerID = texturePacker.AddRelatedImages(Tools::ImageSlicer::Slice("res/textures/floppa.png", {2}));
 	uint64_t salicePackerID = texturePacker.AddRelatedImages(Tools::ImageSlicer::Slice("res/textures/salice_move_front.png", {5}));
 
 	Tools::ImagePacker::PackingData packingData = texturePacker.Pack(2048);
 
 	AssetHandle<Rendering::Sprite> floppaSprite = assetDatabase.CreateAsset<Rendering::Sprite>(Sprite::Floppa, {floppaPackerID, packingData});
 	AssetHandle<Rendering::Sprite> saliceSprite = assetDatabase.CreateAsset<Rendering::Sprite>(Sprite::Salice, {salicePackerID, packingData});
+
+
+	LOG("floppa num sub {0}", floppaSprite->_numSubSprites);
 
 	// Setup ECS
 	ECS::Registry& ecs = application.GetECSRegistry();
@@ -471,7 +459,6 @@ int main()
 	 * 	Systems can be registered multiple times and parameters get forwarded to the systems constructor
 	 * 	Systems can be registered as the game is running, so no need to preregister all at the start if you don't want to
 	 */
-
 
 	ecs.RegisterSystem<PhysicsSystem>(ECS::Stage::Gameplay, 0);
 	ecs.RegisterSystem<AudioSystem>(ECS::Stage::Gameplay, 0);
@@ -752,10 +739,10 @@ int main()
 
 
 	// Create entities
-	for (int i = 0; i < 1'024'000; ++i) { ecs.CreateEntity<TransformComponent, SpriteComponent>({glm::ballRand(100.0f), 0.0f}, {floppaSprite, 6.0f, 0}); }
+	for (int i = 0; i < 1'024'000; ++i) { ecs.CreateEntity<TransformComponent, SpriteComponent>({glm::ballRand(100.0f), 0.0f}, {floppaSprite, 1.0f, 0}); }
 
 
-	uint64_t playerEntity = ecs.CreateEntity<TransformComponent, PhysicsComponent, PlayerComponent, SpriteComponent>({}, {}, {}, {floppaSprite});
+	uint64_t playerEntity = ecs.CreateEntity<TransformComponent, PhysicsComponent, PlayerComponent, SpriteComponent>({}, {}, {}, {floppaSprite, 1.0f});
 	ecs.CreateEntity<TransformComponent, CameraComponent>({}, {playerEntity});
 
 

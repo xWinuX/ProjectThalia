@@ -1,5 +1,6 @@
 #pragma once
 
+#include "KeyCode.hpp"
 #include "glm/common.hpp"
 #include "glm/fwd.hpp"
 #include "glm/vec4.hpp"
@@ -19,23 +20,24 @@ namespace SplitEngine
 		public:
 			struct PressedAxis
 			{
-					bool Positive;
-					bool Negative;
+				public:
+					bool Positive = false;
+					bool Negative = false;
 			};
 
 			struct Axis
 			{
 				public:
-					SDL_KeyCode NegativeKey = SDLK_UNKNOWN;
-					SDL_KeyCode PositiveKey = SDLK_UNKNOWN;
+					KeyCode NegativeKey = KeyCode::UNKNOWN;
+					KeyCode PositiveKey = KeyCode::UNKNOWN;
 			};
 
 			struct ButtonAction
 			{
 				public:
-					std::vector<SDL_KeyCode> KeyCodes {};
-					bool                     Value  = false;
-					bool                     Cached = false;
+					std::vector<KeyCode> KeyCodes {};
+					bool                 Value  = false;
+					bool                 Cached = false;
 			};
 
 			struct AxisAction
@@ -131,7 +133,7 @@ namespace SplitEngine
 			}
 
 			template<typename T>
-			static void RegisterButtonAction(T actionKey, SDL_KeyCode key)
+			static void RegisterButtonAction(T actionKey, KeyCode key)
 			{
 				_buttonActions[static_cast<int>(actionKey)].KeyCodes.push_back(key);
 			}
@@ -150,9 +152,9 @@ namespace SplitEngine
 
 			static void ProvideWorldMouseOffset(glm::ivec2 offset);
 
-			static bool GetDown(SDL_KeyCode keyCode);
+			static bool GetDown(KeyCode keyCode);
 
-			static bool GetPressed(SDL_KeyCode keyCode);
+			static bool GetPressed(KeyCode keyCode);
 
 			static const glm::ivec2 GetMousePosition();
 
@@ -172,6 +174,8 @@ namespace SplitEngine
 
 			static std::unordered_map<int, bool>         _keyDownStates;
 			static std::unordered_map<int, PressedState> _keyPressedStates;
+
+			static std::unordered_map<int, KeyCode> _mouseToKeyCode;
 
 			static void Update(const SDL_Event& event);
 
@@ -238,5 +242,4 @@ namespace SplitEngine
 				return ret;
 			}
 	};
-
 }

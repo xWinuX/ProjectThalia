@@ -10,26 +10,48 @@ namespace SplitEngine
 	std::unordered_map<int, Input::ButtonAction> Input::_buttonActions {};
 	std::unordered_map<int, Input::AxisAction>   Input::_axisActions {};
 
+	std::unordered_map<int, KeyCode> Input::_mouseToKeyCode {
+			{SDL_BUTTON_LEFT, KeyCode::MOUSE_LEFT},
+			{SDL_BUTTON_RIGHT, KeyCode::MOUSE_RIGHT},
+	};
+
 	glm::ivec2 Input::_mousePosition {};
 	glm::ivec2 Input::_mousePositionWorldOffset {};
 
-	bool Input::GetDown(SDL_KeyCode keyCode) { return _keyDownStates[keyCode]; }
+	bool Input::GetDown(KeyCode keyCode) { return _keyDownStates[keyCode]; }
 
-	bool Input::GetPressed(SDL_KeyCode keyCode) { return _keyPressedStates[keyCode] == PressedState::Pressed; }
+	bool Input::GetPressed(KeyCode keyCode) { return _keyPressedStates[keyCode] == PressedState::Pressed; }
 
 	void Input::Update(const SDL_Event& event)
 	{
 		switch (event.type)
 		{
+			case SDL_MOUSEBUTTONDOWN:
+			{
+				int buttonCode             = _mouseToKeyCode[event.button.button];
+				_keyDownStates[buttonCode] = true;
+				if (_keyPressedStates[buttonCode] == Ready) { _keyPressedStates[buttonCode] = Pressed; }
+				break;
+			}
+
+			case SDL_MOUSEBUTTONUP:
+			{
+				int buttonCode             = _mouseToKeyCode[event.button.button];
+				_keyDownStates[buttonCode] = false;
+				if (_keyPressedStates[buttonCode] == Waiting) { _keyPressedStates[buttonCode] = Ready; }
+				break;
+			}
+
 			case SDL_KEYDOWN:
 				_keyDownStates[event.key.keysym.sym] = true;
 				if (_keyPressedStates[event.key.keysym.sym] == Ready) { _keyPressedStates[event.key.keysym.sym] = Pressed; }
 				break;
+
 			case SDL_KEYUP:
 				_keyDownStates[event.key.keysym.sym] = false;
-
 				if (_keyPressedStates[event.key.keysym.sym] == Waiting) { _keyPressedStates[event.key.keysym.sym] = Ready; }
 				break;
+
 			case SDL_MOUSEMOTION:
 				SDL_GetMouseState(&_mousePosition.x, &_mousePosition.y);
 				_mousePosition += _mousePositionWorldOffset;

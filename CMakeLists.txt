@@ -65,6 +65,7 @@ set(SOURCE_FILES
         include/SplitEngine/Utility/String.hpp
         include/SplitEngine/Rendering/Vulkan/BufferFactory.hpp
         include/SplitEngine/Rendering/Vulkan/InFlightResource.hpp
+        include/SplitEngine/KeyCode.hpp
 )
 
 if (NOT HEADLESS)
