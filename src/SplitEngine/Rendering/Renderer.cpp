@@ -1,4 +1,5 @@
 #include "SplitEngine/Rendering/Renderer.hpp"
+#include "SplitEngine/Debug/Performance.hpp"
 #include "SplitEngine/ErrorHandler.hpp"
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_vulkan.h>
@@ -67,6 +68,7 @@ namespace SplitEngine::Rendering
 		Vulkan::Device* device = Vulkan::Context::GetDevice();
 
 		device->GetVkDevice().waitForFences(_vulkanContext.GetInFlightFence(), vk::True, UINT64_MAX);
+		device->GetVkDevice().resetFences(_vulkanContext.GetInFlightFence());
 
 		vk::ResultValue<uint32_t> imageIndexResult = device->GetVkDevice().acquireNextImageKHR(device->GetSwapchain().GetVkSwapchain(),
 																							   UINT64_MAX,
@@ -89,7 +91,6 @@ namespace SplitEngine::Rendering
 			ErrorHandler::ThrowRuntimeError("failed to acquire swap chain image!");
 		}
 
-		device->GetVkDevice().resetFences(_vulkanContext.GetInFlightFence());
 
 		const vk::CommandBuffer& commandBuffer = _vulkanContext.GetCommandBuffer();
 
@@ -122,8 +123,6 @@ namespace SplitEngine::Rendering
 		commandBuffer.setScissor(0, 1, &scissor);
 
 		commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
-
-
 	}
 
 	void Renderer::EndRender()
@@ -134,8 +133,8 @@ namespace SplitEngine::Rendering
 			return;
 		}
 
+		Vulkan::Device* device = Vulkan::Context::GetDevice();
 		const vk::CommandBuffer& commandBuffer = _vulkanContext.GetCommandBuffer();
-		Vulkan::Device*          device        = Vulkan::Context::GetDevice();
 
 		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
@@ -164,6 +163,8 @@ namespace SplitEngine::Rendering
 			device->CreateSwapchain(_vulkanContext.GetInstance().GetVkSurface(), _window.GetSize());
 		}
 		else if (presentResult != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("failed to present swap chain image!"); }
+
+		device->AdvanceFrame();
 
 		StartImGuiFrame();
 	}

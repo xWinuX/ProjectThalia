@@ -18,13 +18,7 @@ namespace SplitEngine::Rendering
 	Shader::Shader(const CreateInfo& createInfo) :
 		_shaderPath(createInfo.ShaderPath)
 	{
-		_shaderProperties = Properties(this, &_pipeline.GetPerPipelineDescriptorSetAllocation());
-
-		if (!_globalPropertiesDefined)
-		{
-			_globalProperties        = Properties(this, &Vulkan::Pipeline::GetGlobalDescriptorSetAllocation());
-			_globalPropertiesDefined = true;
-		}
+		_device = Vulkan::Context::GetDevice();
 
 		std::vector<std::filesystem::path> files;
 		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(_shaderPath))
@@ -67,7 +61,15 @@ namespace SplitEngine::Rendering
 			shaderInfos.push_back({file.string(), shaderType});
 		}
 
-		_pipeline = Vulkan::Pipeline(Vulkan::Context::GetDevice(), "main", shaderInfos);
+		_pipeline = Vulkan::Pipeline(_device, "main", shaderInfos);
+
+		_shaderProperties = Properties(this, &_pipeline.GetPerPipelineDescriptorSetAllocation());
+
+		if (!_globalPropertiesDefined)
+		{
+			_globalProperties        = Properties(this, &Vulkan::Pipeline::GetGlobalDescriptorSetAllocation());
+			_globalPropertiesDefined = true;
+		}
 	}
 
 	Vulkan::Pipeline& Shader::GetPipeline() { return _pipeline; }
@@ -83,7 +85,7 @@ namespace SplitEngine::Rendering
 										 _pipeline.GetLayout(),
 										 1,
 										 1,
-										 &_shaderProperties._descriptorSetAllocation->DescriptorSet,
+										 &_shaderProperties._descriptorSetAllocation->DescriptorSets.Get(),
 										 0,
 										 nullptr);
 	}
@@ -98,7 +100,7 @@ namespace SplitEngine::Rendering
 										 _pipeline.GetLayout(),
 										 0,
 										 1,
-										 &_globalProperties._descriptorSetAllocation->DescriptorSet,
+										 &_globalProperties._descriptorSetAllocation->DescriptorSets.Get(),
 										 0,
 										 nullptr);
 	}
@@ -117,11 +119,11 @@ namespace SplitEngine::Rendering
 	{
 		for (int i = 0; i < textures.size(); ++i)
 		{
-			LOG("image infos {0}", _descriptorSetAllocation->ImageInfos.size());
-			LOG("image infos {0}", _descriptorSetAllocation->ImageInfos[bindingPoint].size());
-			_descriptorSetAllocation->ImageInfos[bindingPoint][i + offset] = vk::DescriptorImageInfo(*textures[i]->GetSampler(),
-																									 textures[i]->GetImage().GetView(),
-																									 textures[i]->GetImage().GetLayout());
+			uint32_t index = _descriptorSetAllocation->SparseImageLookup[bindingPoint];
+
+			_descriptorSetAllocation->ImageInfos[index][i + offset] = vk::DescriptorImageInfo(*textures[i]->GetSampler(),
+																							  textures[i]->GetImage().GetView(),
+																							  textures[i]->GetImage().GetLayout());
 		}
 
 		SetWriteDescriptorSetDirty(bindingPoint);
@@ -130,28 +132,37 @@ namespace SplitEngine::Rendering
 	void Shader::Properties::SetTextures(uint32_t bindingPoint, size_t offset, std::vector<AssetHandle<Texture2D>>& textures)
 	{
 		// if there's already a set in updates overwrite image info
+
+		uint32_t index = _descriptorSetAllocation->SparseImageLookup[bindingPoint];
+
 		for (vk::WriteDescriptorSet& writeDescriptorSet : _updateImageWriteDescriptorSets)
 		{
-			if (writeDescriptorSet.dstBinding == _descriptorSetAllocation->ImageWriteDescriptorSets[bindingPoint].dstBinding) { return; }
+			if (writeDescriptorSet.dstBinding == _descriptorSetAllocation->ImageWriteDescriptorSets[index].Get().dstBinding) { return; }
 		}
 
-		_updateImageWriteDescriptorSets.push_back(_descriptorSetAllocation->ImageWriteDescriptorSets[bindingPoint]);
+		_updateImageWriteDescriptorSets.push_back(_descriptorSetAllocation->ImageWriteDescriptorSets[index].Get());
 	}
 
 	Shader::Properties::Properties(Shader* shader, Vulkan::DescriptorSetAllocator::Allocation* descriptorSetAllocation) :
 		_shader(shader),
 		_descriptorSetAllocation(descriptorSetAllocation)
-	{}
+	{
+		for (auto& buffers : _descriptorSetAllocation->ShaderBufferPtrs) { _shaderBufferPtrs.push_back(buffers.Get()); }
+	}
 
-	void Shader::Properties::SetWriteDescriptorSetDirty(size_t index)
+	void Shader::Properties::SetWriteDescriptorSetDirty(uint32_t bindingPoint)
 	{
 		// if there's already a set in updates overwrite image info
+		uint32_t index = _descriptorSetAllocation->SparseImageLookup[bindingPoint];
 		for (vk::WriteDescriptorSet& writeDescriptorSet : _updateImageWriteDescriptorSets)
 		{
-			if (writeDescriptorSet.dstBinding == _descriptorSetAllocation->ImageWriteDescriptorSets[index].dstBinding) { return; }
+			if (writeDescriptorSet.dstBinding == _descriptorSetAllocation->ImageWriteDescriptorSets[index].Get().dstBinding) { return; }
 		}
 
-		_updateImageWriteDescriptorSets.push_back(_descriptorSetAllocation->ImageWriteDescriptorSets[index]);
+		for (int i = 0; i < Rendering::Vulkan::Device::MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			_updateImageWriteDescriptorSets.push_back(_descriptorSetAllocation->ImageWriteDescriptorSets[index][i]);
+		}
 	}
 
 	void Shader::Properties::Update()

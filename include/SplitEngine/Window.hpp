@@ -22,7 +22,7 @@ namespace SplitEngine
 			[[nodiscard]] glm::ivec2  GetSize() const;
 			[[nodiscard]] bool        IsMinimized() const;
 
-			Event<int, int> OnResize;
+			Event<int, int> OnResize {};
 
 		private:
 			SDL_Window* _window      = nullptr;

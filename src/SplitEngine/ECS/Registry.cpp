@@ -11,27 +11,28 @@ namespace SplitEngine::ECS
 	{
 		_context.Registry = this;
 		_archetypeRoot    = new Archetype(_sparseEntityLookup, _componentSizes, _archetypeLookup, _entityGraveyard, {});
+		_systems          = std::vector<std::vector<SystemBase*>>(static_cast<uint8_t>(Stage::MAX_VALUE), std::vector<SystemBase*>());
 	}
 
 	Registry::~Registry()
 	{
 		LOG("Shutting down ECS...");
-#ifndef SE_HEADLESS
-		for (const SystemBase* system : _renderSystems) { delete system; }
-#endif
-		for (const SystemBase* system : _gameplaySystems) { delete system; }
+
+		for (const std::vector<SystemBase*>& systems : _systems)
+		{
+			for (const SystemBase* system : systems) { delete system; }
+		}
 
 		for (const Archetype* archetype : _archetypeLookup) { delete archetype; }
 	}
 
-	void Registry::Update(float deltaTime)
+	void Registry::PrepareForExecution(float deltaTime)
 	{
 		MoveQueuedEntities();
 		AddQueuedEntities();
 		DestroyQueuedEntities();
 
 		_context.DeltaTime = deltaTime;
-		for (auto& system : _gameplaySystems) { system->RunExecute(_context); }
 	}
 
 	void Registry::AddQueuedEntities()
@@ -49,14 +50,6 @@ namespace SplitEngine::ECS
 		for (const auto& archetype : _archetypeLookup) { archetype->MoveQueuedEntities(); }
 	}
 
-	void Registry::Render(float deltaTime)
-	{
-#ifndef SE_HEADLESS
-		_context.DeltaTime = deltaTime;
-		for (auto& system : _renderSystems) { system->RunExecute(_context); }
-#endif
-	}
-
 	std::vector<Archetype*> Registry::GetArchetypesWithSignature(const DynamicBitSet& signature)
 	{
 		std::vector<Archetype*> archetypes {};
@@ -69,11 +62,7 @@ namespace SplitEngine::ECS
 		return archetypes;
 	}
 
-	void Registry::DestroyEntity(uint64_t entityID)
-	{
-		_archetypeLookup[_sparseEntityLookup[entityID].archetypeIndex]->DestroyEntity(entityID);
-
-	}
+	void Registry::DestroyEntity(uint64_t entityID) { _archetypeLookup[_sparseEntityLookup[entityID].archetypeIndex]->DestroyEntity(entityID); }
 
 	void Registry::RegisterAssetDatabase(SplitEngine::AssetDatabase* assetDatabase) { _context.AssetDatabase = assetDatabase; }
 
@@ -82,4 +71,10 @@ namespace SplitEngine::ECS
 		Entity& entity = _sparseEntityLookup[entityID];
 		return entity.GetArchetypeIndex() != -1;
 	}
+
+	void Registry::ExecuteSystems(Stage stageToExecute)
+	{
+		for (const auto& system : _systems[static_cast<uint8_t>(stageToExecute)]) { system->RunExecute(_context); }
+	}
+
 }

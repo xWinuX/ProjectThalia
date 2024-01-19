@@ -21,7 +21,7 @@ namespace SplitEngine::Rendering
 										 _shader->GetPipeline().GetLayout(),
 										 2,
 										 1,
-										 &_instanceDescriptorSetAllocation.DescriptorSet,
+										 &_instanceDescriptorSetAllocation.DescriptorSets.Get(),
 										 0,
 										 nullptr);
 	}

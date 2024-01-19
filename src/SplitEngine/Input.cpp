@@ -30,15 +30,9 @@ namespace SplitEngine
 
 				if (_keyPressedStates[event.key.keysym.sym] == Waiting) { _keyPressedStates[event.key.keysym.sym] = Ready; }
 				break;
-			case SDL_MOUSEBUTTONDOWN:
-				break;
-			case SDL_MOUSEBUTTONUP:
-				break;
 			case SDL_MOUSEMOTION:
 				SDL_GetMouseState(&_mousePosition.x, &_mousePosition.y);
 				_mousePosition += _mousePositionWorldOffset;
-				LOG(glm::to_string(_mousePosition));
-				LOG(glm::to_string(_mousePositionWorldOffset));
 				break;
 		}
 	}

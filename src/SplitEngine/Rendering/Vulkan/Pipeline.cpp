@@ -1,16 +1,18 @@
 #include "SplitEngine/Rendering/Vulkan/Pipeline.hpp"
+#include "SplitEngine/Application.hpp"
 #include "SplitEngine/ErrorHandler.hpp"
 #include "SplitEngine/IO/Stream.hpp"
 #include "SplitEngine/Rendering/Vulkan/Utility.hpp"
+#include "SplitEngine/Utility/String.hpp"
 #include "spirv_cross/spirv_cross.hpp"
 
 #include <set>
 
 namespace SplitEngine::Rendering::Vulkan
 {
-	DescriptorSetAllocator                          Pipeline::_globalDescriptorManager {};
-	DescriptorSetAllocator::Allocation              Pipeline::_globalDescriptorSetAllocation;
-	bool                                            Pipeline::_globalDescriptorsProcessed = false;
+	DescriptorSetAllocator             Pipeline::_globalDescriptorManager {};
+	DescriptorSetAllocator::Allocation Pipeline::_globalDescriptorSetAllocation;
+	bool                               Pipeline::_globalDescriptorsProcessed = false;
 
 	Pipeline::Pipeline(Device* device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos) :
 		DeviceObject(device)
@@ -50,6 +52,7 @@ namespace SplitEngine::Rendering::Vulkan
 					uint32_t binding = spirvCompiler.get_decoration(resource.id, spv::DecorationBinding);
 					uint32_t set     = spirvCompiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
 
+					// Exit if a set higher than 2 is specified (it isn't supported)
 					if (set > 2)
 					{
 						ErrorHandler::ThrowRuntimeError(
@@ -57,12 +60,13 @@ namespace SplitEngine::Rendering::Vulkan
 											shaderInfos[i].path));
 					}
 
+					// Skip global descriptor if we've already processed it
 					if (set == 0 && _globalDescriptorsProcessed) { continue; }
 
 					DescriptorSetAllocator::CreateInfo& descriptorSetInfo = _descriptorSetInfos[set];
 
 					// If we already processed the binding we just add the shader stage to it and move on to the next resource
-					if (descriptorSetInfo.alreadyCoveredBindings.contains(binding))
+					if (descriptorSetInfo.bindings.contains(binding))
 					{
 						for (vk::DescriptorSetLayoutBinding& descriptorLayoutBinding : descriptorSetInfo.descriptorLayoutBindings)
 						{
@@ -75,15 +79,13 @@ namespace SplitEngine::Rendering::Vulkan
 						continue;
 					}
 
+					DescriptorSetAllocator::BufferCreateInfo descriptorSetBufferCreateInfo {};
+
 					const spirv_cross::SPIRType& resourceBaseType = spirvCompiler.get_type(resource.base_type_id);
 					const spirv_cross::SPIRType& resourceType     = spirvCompiler.get_type(resource.type_id);
 
 					uint32_t descriptorCount = 1;
-					if (!resourceType.array.empty())
-					{
-						descriptorCount = resourceType.array[0];
-						LOG("descruotri count {0}", descriptorCount);
-					}
+					if (!resourceType.array.empty()) { descriptorCount = resourceType.array[0]; }
 
 					vk::DescriptorSetLayoutBinding layoutBinding = vk::DescriptorSetLayoutBinding(binding,
 																								  type,
@@ -91,26 +93,79 @@ namespace SplitEngine::Rendering::Vulkan
 																								  static_cast<vk::ShaderStageFlagBits>(
 																										  shaderInfos[i].shaderStage));
 
-					vk::DescriptorPoolSize poolSize = vk::DescriptorPoolSize(type, descriptorCount);
-
-					vk::WriteDescriptorSet
-							writeDescriptorSet = vk::WriteDescriptorSet(VK_NULL_HANDLE, binding, 0, descriptorCount, type, nullptr, nullptr, nullptr);
-
 					switch (type)
 					{
 						case vk::DescriptorType::eStorageBuffer:
 						case vk::DescriptorType::eUniformBuffer:
 						{
-							vk::DeviceSize uniformSize     = spirvCompiler.get_declared_struct_size(resourceBaseType);
-							writeDescriptorSet.pBufferInfo = new vk::DescriptorBufferInfo(VK_NULL_HANDLE, 0, uniformSize);
+							const std::string& bufferName = resource.name;
+
+							const ApplicationInfo&   applicationInfo = Application::GetApplicationInfo();
+							std::vector<std::string> splitName = SplitEngine::Utility::String::Split(bufferName, applicationInfo.ShaderBufferModDelimiter, 0);
+
+							for (std::string& split : splitName)
+							{
+								if (!descriptorSetBufferCreateInfo.SingleInstance)
+								{
+									descriptorSetBufferCreateInfo.SingleInstance = std::find(applicationInfo.ShaderBufferSingleInstanceModPrefixes.begin(),
+																							 applicationInfo.ShaderBufferSingleInstanceModPrefixes.end(),
+																							 split) !=
+																				   applicationInfo.ShaderBufferSingleInstanceModPrefixes.end();
+								}
+
+								if (!descriptorSetBufferCreateInfo.DeviceLocal)
+								{
+									descriptorSetBufferCreateInfo.DeviceLocal = std::find(applicationInfo.ShaderBufferDeviceLocalModPrefixes.begin(),
+																						  applicationInfo.ShaderBufferDeviceLocalModPrefixes.end(),
+																						  split) != applicationInfo.ShaderBufferDeviceLocalModPrefixes.end();
+								}
+
+								if (!descriptorSetBufferCreateInfo.Cached)
+								{
+									descriptorSetBufferCreateInfo.Cached = std::find(applicationInfo.ShaderBufferCacheModPrefixes.begin(),
+																					 applicationInfo.ShaderBufferCacheModPrefixes.end(),
+																					 split) != applicationInfo.ShaderBufferCacheModPrefixes.end();
+								}
+							}
+
+							vk::DeviceSize uniformSize = spirvCompiler.get_declared_struct_size(resourceBaseType);
+
+							descriptorSetInfo.writeDescriptorSets.emplace_back();
+
+							size_t offset = 0;
+							for (int j = 0; j < Device::MAX_FRAMES_IN_FLIGHT; ++j)
+							{
+								vk::DeviceSize minAlignment = type == vk::DescriptorType::eStorageBuffer
+																	  ? device->GetPhysicalDevice().GetProperties().limits.minStorageBufferOffsetAlignment
+																	  : device->GetPhysicalDevice().GetProperties().limits.minUniformBufferOffsetAlignment;
+
+								vk::DeviceSize padding = minAlignment - (uniformSize % minAlignment);
+								padding = padding == minAlignment ? 0 : padding;
+
+								descriptorSetInfo.writeDescriptorSets.back()
+										.emplace_back(VK_NULL_HANDLE, binding, 0, descriptorCount, type, nullptr, nullptr, nullptr);
+								descriptorSetInfo.writeDescriptorSets.back().back().pBufferInfo = new vk::DescriptorBufferInfo(VK_NULL_HANDLE,
+																															   offset,
+																															   uniformSize + padding);
+
+								if (!descriptorSetBufferCreateInfo.SingleInstance) { offset += uniformSize + padding; }
+							}
 							break;
 						}
+						case vk::DescriptorType::eCombinedImageSampler:
+							descriptorSetInfo.writeDescriptorSets.emplace_back();
+							for (int j = 0; j < Device::MAX_FRAMES_IN_FLIGHT; ++j)
+							{
+								descriptorSetInfo.writeDescriptorSets.back()
+										.emplace_back(VK_NULL_HANDLE, binding, 0, descriptorCount, type, nullptr, nullptr, nullptr);
+							}
+							break;
 					}
 
+					descriptorSetInfo.bindings.insert(binding);
+					descriptorSetInfo.descriptorPoolSizes.emplace_back(type, descriptorCount * Device::MAX_FRAMES_IN_FLIGHT);
 					descriptorSetInfo.descriptorLayoutBindings.push_back(layoutBinding);
-					descriptorSetInfo.descriptorPoolSizes.push_back(poolSize);
-					descriptorSetInfo.writeDescriptorSets.push_back(writeDescriptorSet);
-					descriptorSetInfo.alreadyCoveredBindings.insert(binding);
+					descriptorSetInfo.bufferCreateInfos.push_back(descriptorSetBufferCreateInfo);
 				}
 			}
 
@@ -129,6 +184,7 @@ namespace SplitEngine::Rendering::Vulkan
 
 			_shaderStages[i] = shaderStageCreateInfo;
 
+
 			// Vertex shader specific init
 			if (shaderInfos[i].shaderStage == ShaderType::Vertex)
 			{
@@ -141,14 +197,17 @@ namespace SplitEngine::Rendering::Vulkan
 					const spirv_cross::SPIRType& type     = spirvCompiler.get_type(stageInput.base_type_id);
 					vk::Format                   format   = GetFormatFromType(type);
 
+
 					vk::VertexInputAttributeDescription vertexInputAttributeDescription = vk::VertexInputAttributeDescription(location,
 																															  binding,
 																															  format,
 																															  offset);
+
 					vertexInputAttributeDescriptions.push_back(vertexInputAttributeDescription);
 
 					offset += (type.width * type.vecsize) / 8;
 				}
+
 
 				// Setup pipeline vertex input state
 				vk::VertexInputBindingDescription vertexInputBindingDescription = vk::VertexInputBindingDescription(0, offset, vk::VertexInputRate::eVertex);
@@ -319,6 +378,7 @@ namespace SplitEngine::Rendering::Vulkan
 
 	void Pipeline::Destroy()
 	{
+		LOG("deallocate shader descriptor Sets");
 		_perPipelineDescriptorSetManager.DeallocateDescriptorSet(_perPipelineDescriptorSetAllocation);
 
 		_perInstanceDescriptorSetManager.Destroy();
@@ -333,13 +393,11 @@ namespace SplitEngine::Rendering::Vulkan
 
 	DescriptorSetAllocator::Allocation& Pipeline::GetPerPipelineDescriptorSetAllocation() { return _perPipelineDescriptorSetAllocation; }
 
-	DescriptorSetAllocator::Allocation Pipeline::AllocatePerInstanceDescriptorSet()
-	{
-		return _perInstanceDescriptorSetManager.AllocateDescriptorSet();
-	}
+	DescriptorSetAllocator::Allocation Pipeline::AllocatePerInstanceDescriptorSet() { return _perInstanceDescriptorSetManager.AllocateDescriptorSet(); }
 
 	void Pipeline::DeallocatePerInstanceDescriptorSet(DescriptorSetAllocator::Allocation& descriptorSetAllocation)
 	{
+		LOG("deallocate instance descriptor Sets");
 		_perInstanceDescriptorSetManager.DeallocateDescriptorSet(descriptorSetAllocation);
 	}
 }

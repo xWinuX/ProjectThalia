@@ -54,18 +54,30 @@ namespace SplitEngine::Rendering::Vulkan
 		vk::SemaphoreCreateInfo semaphoreCreateInfo = vk::SemaphoreCreateInfo();
 		vk::FenceCreateInfo     fenceCreateInfo     = vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
 
-		_imageAvailableSemaphore = _device->GetVkDevice().createSemaphore(semaphoreCreateInfo);
-		_renderFinishedSemaphore = _device->GetVkDevice().createSemaphore(semaphoreCreateInfo);
-		_inFlightFence           = _device->GetVkDevice().createFence(fenceCreateInfo);
+		std::vector<vk::Semaphore> imageAvailableSemaphores;
+		std::vector<vk::Semaphore> renderingFinishedSemaphores;
+		std::vector<vk::Fence>     inFlightFences;
+
+		for (int i = 0; i < Device::MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			imageAvailableSemaphores.push_back(_device->GetVkDevice().createSemaphore(semaphoreCreateInfo));
+			renderingFinishedSemaphores.push_back(_device->GetVkDevice().createSemaphore(semaphoreCreateInfo));
+			inFlightFences.push_back(_device->GetVkDevice().createFence(fenceCreateInfo));
+		}
+
+		_imageAvailableSemaphore = InFlightResource<vk::Semaphore>(_device->GetCurrentFramePtr(), std::move(imageAvailableSemaphores));
+		_renderFinishedSemaphore = InFlightResource<vk::Semaphore>(_device->GetCurrentFramePtr(), std::move(renderingFinishedSemaphores));
+		_inFlightFence           = InFlightResource<vk::Fence>(_device->GetCurrentFramePtr(), std::move(inFlightFences));
 	}
 
 	void Context::CreateCommandBuffers()
 	{
 		vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vk::CommandBufferAllocateInfo(_device->GetGraphicsCommandPool(),
 																								vk::CommandBufferLevel::ePrimary,
-																								1);
+																								Device::MAX_FRAMES_IN_FLIGHT);
 
-		_commandBuffer = _device->GetVkDevice().allocateCommandBuffers(commandBufferAllocateInfo)[0];
+		std::vector<vk::CommandBuffer> commandBuffers = _device->GetVkDevice().allocateCommandBuffers(commandBufferAllocateInfo);
+		_commandBuffer                                = InFlightResource<vk::CommandBuffer>(_device->GetCurrentFramePtr(), std::move(commandBuffers));
 	}
 
 	void Context::Destroy()
@@ -76,9 +88,12 @@ namespace SplitEngine::Rendering::Vulkan
 		Pipeline::_globalDescriptorManager.DeallocateDescriptorSet(Pipeline::_globalDescriptorSetAllocation);
 		Pipeline::_globalDescriptorManager.Destroy();
 
-		_device->GetVkDevice().destroy(_imageAvailableSemaphore);
-		_device->GetVkDevice().destroy(_renderFinishedSemaphore);
-		_device->GetVkDevice().destroy(_inFlightFence);
+		for (int i = 0; i < Device::MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			_device->GetVkDevice().destroy(_imageAvailableSemaphore[i]);
+			_device->GetVkDevice().destroy(_renderFinishedSemaphore[i]);
+			_device->GetVkDevice().destroy(_inFlightFence[i]);
+		}
 
 		ImGui_ImplVulkan_Shutdown();
 
@@ -92,7 +107,7 @@ namespace SplitEngine::Rendering::Vulkan
 
 	void Context::CreateInstance(SDL_Window* sdlWindow)
 	{
-		uint32_t extensionCount;
+		uint32_t extensionCount = 0;
 		SDL_Vulkan_GetInstanceExtensions(sdlWindow, &extensionCount, nullptr);
 
 		std::vector<const char*> extensionNames = std::vector<const char*>(extensionCount, nullptr);
@@ -130,7 +145,9 @@ namespace SplitEngine::Rendering::Vulkan
 											  {vk::DescriptorType::eStorageBufferDynamic, 1000},
 											  {vk::DescriptorType::eInputAttachment, 1000}};
 
-		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1000, poolSizes);
+		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+																							 1000,
+																							 poolSizes);
 
 		_imGuiDescriptorPool = _device->GetVkDevice().createDescriptorPool(descriptorPoolCreateInfo);
 
@@ -161,13 +178,13 @@ namespace SplitEngine::Rendering::Vulkan
 
 	Device* Context::GetDevice() { return _device.get(); }
 
-	const vk::Semaphore& Context::GetImageAvailableSemaphore() const { return _imageAvailableSemaphore; }
+	const vk::Semaphore& Context::GetImageAvailableSemaphore() const { return _imageAvailableSemaphore.Get(); }
 
-	const vk::Semaphore& Context::GetRenderFinishedSemaphore() const { return _renderFinishedSemaphore; }
+	const vk::Semaphore& Context::GetRenderFinishedSemaphore() const { return _renderFinishedSemaphore.Get(); }
 
-	const vk::Fence& Context::GetInFlightFence() const { return _inFlightFence; }
+	const vk::Fence& Context::GetInFlightFence() const { return _inFlightFence.Get(); }
 
 	const Instance& Context::GetInstance() const { return _instance; }
 
-	const vk::CommandBuffer& Context::GetCommandBuffer() const { return _commandBuffer; }
+	const vk::CommandBuffer& Context::GetCommandBuffer() const { return _commandBuffer.Get(); }
 }

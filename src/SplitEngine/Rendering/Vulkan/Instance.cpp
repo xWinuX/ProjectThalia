@@ -2,12 +2,9 @@
 
 namespace SplitEngine::Rendering::Vulkan
 {
-	Instance::Instance(std::vector<const char*> extensionNames, std::vector<const char*> validationLayers, vk::ApplicationInfo applicationInfo)
-	{
-		vk::InstanceCreateInfo instanceCreateInfo = vk::InstanceCreateInfo({}, &applicationInfo, validationLayers, extensionNames);
-
-		_vkInstance = vk::createInstance(instanceCreateInfo);
-	}
+	Instance::Instance(std::vector<const char*> extensionNames, std::vector<const char*> validationLayers, vk::ApplicationInfo applicationInfo) :
+		_vkInstance(vk::createInstance(vk::InstanceCreateInfo({}, &applicationInfo, validationLayers, extensionNames)))
+	{}
 
 	const vk::Instance& Instance::GetVkInstance() const { return _vkInstance; }
 

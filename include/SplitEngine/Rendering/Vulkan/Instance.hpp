@@ -18,7 +18,7 @@ namespace SplitEngine::Rendering::Vulkan
 			void SetVkSurface(const vk::SurfaceKHR& vkSurface);
 
 		private:
-			vk::Instance   _vkInstance;
-			vk::SurfaceKHR _vkSurface;
+			vk::Instance   _vkInstance {};
+			vk::SurfaceKHR _vkSurface {};
 	};
 }

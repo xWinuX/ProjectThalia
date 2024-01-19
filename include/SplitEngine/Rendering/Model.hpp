@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SplitEngine/Rendering/Vulkan/Buffer.hpp"
+#include "SplitEngine/Rendering/Vulkan/BufferFactory.hpp"
 #include "SplitEngine/Rendering/Vulkan/Context.hpp"
 
 namespace SplitEngine::Rendering
@@ -22,7 +22,7 @@ namespace SplitEngine::Rendering
 
 			explicit Model(const CreateInfo& createInfo)
 			{
-				_modelBuffer = Vulkan::Buffer::CreateStagedModelBuffer(Vulkan::Context::GetDevice(), createInfo.Vertices, createInfo.Indices);
+				_modelBuffer = Vulkan::BufferFactory::CreateStagedModelBuffer(Vulkan::Context::GetDevice(), createInfo.Vertices, createInfo.Indices);
 			}
 
 			void Bind(vk::CommandBuffer& commandBuffer);

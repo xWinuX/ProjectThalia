@@ -1,6 +1,6 @@
 #include "SplitEngine/Rendering/Vulkan/Image.hpp"
 #include "SplitEngine/ErrorHandler.hpp"
-#include "SplitEngine/Rendering/Vulkan/Buffer.hpp"
+#include "SplitEngine/Rendering/Vulkan/BufferFactory.hpp"
 #include "SplitEngine/Rendering/Vulkan/Device.hpp"
 #include "SplitEngine/Rendering/Vulkan/Utility.hpp"
 
@@ -32,7 +32,7 @@ namespace SplitEngine::Rendering::Vulkan
 		Buffer transferBuffer;
 		if (pixels)
 		{
-			transferBuffer = Buffer::CreateTransferBuffer(device, pixels, pixelsSizeInBytes);
+			transferBuffer = BufferFactory::CreateTransferBuffer(device, pixels, pixelsSizeInBytes);
 			transferBuffer.CopyData(pixels, pixelsSizeInBytes, 0);
 
 			TransitionLayout(commandBuffer, vk::ImageLayout::eTransferDstOptimal);
@@ -42,7 +42,6 @@ namespace SplitEngine::Rendering::Vulkan
 
 			commandBuffer.copyBufferToImage(transferBuffer.GetVkBuffer(), GetVkImage(), _layout, bufferImageCopy);
 		}
-
 
 		if (createInfo.TransitionLayout != vk::ImageLayout::eDepthStencilAttachmentOptimal)
 		{

@@ -38,16 +38,15 @@ namespace SplitEngine::Rendering::Vulkan
 
 			static std::unique_ptr<Device> _device;
 
-			Instance       _instance;
-			PhysicalDevice _physicalDevice;
+			Instance       _instance {};
+			PhysicalDevice _physicalDevice {};
 
-			vk::CommandBuffer _commandBuffer;
-			vk::Semaphore     _imageAvailableSemaphore;
-			vk::Semaphore     _renderFinishedSemaphore;
-			vk::Fence         _inFlightFence;
+			InFlightResource<vk::CommandBuffer> _commandBuffer {};
+			InFlightResource<vk::Semaphore>     _imageAvailableSemaphore {};
+			InFlightResource<vk::Semaphore>     _renderFinishedSemaphore {};
+			InFlightResource<vk::Fence>         _inFlightFence {};
 
-			vk::DescriptorPool _imGuiDescriptorPool;
-
+			vk::DescriptorPool _imGuiDescriptorPool {};
 
 			void CreateInstance(SDL_Window* sdlWindow);
 			void CreateCommandBuffers();

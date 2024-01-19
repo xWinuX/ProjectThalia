@@ -6,6 +6,7 @@
 #include "Component.hpp"
 #include "Context.hpp"
 #include "Entity.hpp"
+#include "Stage.hpp"
 #include "SystemBase.hpp"
 
 #include <iterator>
@@ -32,13 +33,13 @@ namespace SplitEngine::ECS
 
 			~Registry();
 
-			void Update(float deltaTime);
+			void PrepareForExecution(float deltaTime);
+
+			void ExecuteSystems(Stage stageToExecute);
 
 			void AddQueuedEntities();
 			void DestroyQueuedEntities();
 			void MoveQueuedEntities();
-
-			void Render(float deltaTime);
 
 			template<typename... T>
 			uint64_t CreateEntity(T&&... args)
@@ -99,11 +100,11 @@ namespace SplitEngine::ECS
 			}
 
 			template<typename T, typename... TArgs>
-			void RegisterGameplaySystem(TArgs&&... args)
+			void RegisterSystem(Stage stage, uint64_t order, TArgs&&... args)
 			{
 				static_assert(std::is_base_of<SystemBase, T>::value, "an ECS System needs to derive from SplitEngine::ECS::System");
 
-				_gameplaySystems.emplace_back(new T(std::forward<TArgs>(args)...));
+				_systems[static_cast<uint8_t>(stage)].push_back(new T(std::forward<TArgs>(args)...));
 			}
 
 			template<typename... T>
@@ -133,6 +134,8 @@ namespace SplitEngine::ECS
 
 			std::vector<SystemBase*> _gameplaySystems;
 
+			std::vector<std::vector<SystemBase*>> _systems;
+
 			Context _context {};
 
 #ifndef SE_HEADLESS
@@ -140,17 +143,6 @@ namespace SplitEngine::ECS
 			void RegisterRenderingContext(SplitEngine::Rendering::Vulkan::Context* context) { _context.RenderingContext = context; }
 
 			void RegisterAudioManager(SplitEngine::Audio::Manager* audioManager) { _context.AudioManager = audioManager; }
-
-			template<typename T, typename... TArgs>
-			void RegisterRenderSystem(TArgs&&... args)
-			{
-				static_assert(std::is_base_of<SystemBase, T>::value, "an ECS System needs to derive from SplitEngine::ECS::System");
-
-				_renderSystems.emplace_back(new T(std::forward<TArgs>(args)...));
-			}
-
-		private:
-			std::vector<SystemBase*> _renderSystems;
 #endif
 
 	};

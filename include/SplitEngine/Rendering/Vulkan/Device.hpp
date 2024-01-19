@@ -17,7 +17,7 @@ namespace SplitEngine::Rendering::Vulkan
 	class Device
 	{
 		public:
-			static const int MAX_FRAMES_IN_FLIGHT = 1;
+			static const int MAX_FRAMES_IN_FLIGHT = 2;
 
 			explicit Device(PhysicalDevice& physicalDevice);
 
@@ -28,6 +28,8 @@ namespace SplitEngine::Rendering::Vulkan
 			void CreateDefaultResources();
 
 			void Destroy();
+
+			void AdvanceFrame();
 
 			[[nodiscard]] const Swapchain&                          GetSwapchain() const;
 			[[nodiscard]] const RenderPass&                         GetRenderPass() const;
@@ -41,6 +43,8 @@ namespace SplitEngine::Rendering::Vulkan
 			[[nodiscard]] const Image&                              GetDefaultImage() const;
 			[[nodiscard]] const vk::Sampler*                        GetDefaultSampler() const;
 
+			uint32_t* GetCurrentFramePtr();
+
 
 			[[nodiscard]] int FindMemoryTypeIndex(const vk::MemoryRequirements&                memoryRequirements,
 												  const vk::Flags<vk::MemoryPropertyFlagBits>& memoryPropertyFlags) const;
@@ -49,6 +53,8 @@ namespace SplitEngine::Rendering::Vulkan
 			void                            EndOneshotCommands(vk::CommandBuffer commandBuffer) const;
 
 		private:
+			uint32_t _currentFrame = 0;
+
 			vk::Device      _vkDevice;
 			PhysicalDevice& _physicalDevice;
 			Allocator       _allocator;

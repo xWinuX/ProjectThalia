@@ -52,6 +52,53 @@ namespace SplitEngine::Rendering::Vulkan
 		CreateBuffer(usage, sharingMode, allocationCreateInfo, data);
 	}
 
+	Buffer::Buffer(Device*                               device,
+				   vk::Flags<vk::BufferUsageFlagBits>    usage,
+				   vk::SharingMode                       sharingMode,
+				   Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
+				   uint32_t                              numSubBuffers,
+				   vk::DeviceSize                        subBufferSizeInBytes) :
+		DeviceObject(device)
+	{
+		std::vector<vk::DeviceSize> subBufferSizes = std::vector<vk::DeviceSize>(numSubBuffers, subBufferSizeInBytes);
+		InitializeSubBuffers(numSubBuffers, subBufferSizes.data(), subBufferSizes.data(), subBufferSizes.data());
+
+		CreateBuffer(usage, sharingMode, allocationCreateInfo, EMPTY_DATA);
+	}
+
+	Buffer::Buffer(Device*                               device,
+				   vk::Flags<vk::BufferUsageFlagBits>    usage,
+				   vk::SharingMode                       sharingMode,
+				   Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
+				   vk::DeviceSize                        numSubBuffers,
+				   const char**                          data,
+				   const vk::DeviceSize*                 bufferSizesInBytes,
+				   const size_t*                         dataSizesInBytes,
+				   const vk::DeviceSize*                 dataElementSizesInBytes) :
+		Buffer(device, usage, sharingMode, allocationCreateInfo, 0, numSubBuffers, data, bufferSizesInBytes, dataSizesInBytes, dataElementSizesInBytes)
+	{}
+
+	Buffer::Buffer(Device*                               device,
+				   vk::Flags<vk::BufferUsageFlagBits>    usage,
+				   vk::SharingMode                       sharingMode,
+				   Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
+				   vk::DeviceSize                        bufferSizeInBytes,
+				   const char*                           data,
+				   vk::DeviceSize                        dataSizeInBytes,
+				   vk::DeviceSize                        dataElementSizeInBytes) :
+		Buffer(device, usage, sharingMode, allocationCreateInfo, bufferSizeInBytes, 1, &data, &dataSizeInBytes, &bufferSizeInBytes, &dataElementSizeInBytes)
+	{}
+
+	Buffer::Buffer(Device*                               device,
+				   vk::Flags<vk::BufferUsageFlagBits>    usage,
+				   vk::SharingMode                       sharingMode,
+				   Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
+				   const char*                           data,
+				   vk::DeviceSize                        bufferSizeInBytes,
+				   vk::DeviceSize                        dataElementSizeInBytes) :
+		Buffer(device, usage, sharingMode, allocationCreateInfo, bufferSizeInBytes, 1, &data, &bufferSizeInBytes, &bufferSizeInBytes, &dataElementSizeInBytes)
+	{}
+
 	void Buffer::CreateBuffer(vk::Flags<vk::BufferUsageFlagBits>    usage,
 							  vk::SharingMode                       sharingMode,
 							  Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
@@ -103,39 +150,6 @@ namespace SplitEngine::Rendering::Vulkan
 			if (bufferSizeFromSubBuffers) { _bufferSize += bufferSizesInBytes[i]; }
 		}
 	}
-
-	Buffer::Buffer(Device*                               device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
-				   vk::DeviceSize                        numSubBuffers,
-				   const char**                          data,
-				   const vk::DeviceSize*                 bufferSizesInBytes,
-				   const size_t*                         dataSizesInBytes,
-				   const vk::DeviceSize*                 dataElementSizesInBytes) :
-		Buffer(device, usage, sharingMode, allocationCreateInfo, 0, numSubBuffers, data, bufferSizesInBytes, dataSizesInBytes, dataElementSizesInBytes)
-	{}
-
-	Buffer::Buffer(Device*                               device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
-				   vk::DeviceSize                        bufferSizeInBytes,
-				   const char*                           data,
-				   vk::DeviceSize                        dataSizeInBytes,
-				   vk::DeviceSize                        dataElementSizeInBytes) :
-		Buffer(device, usage, sharingMode, allocationCreateInfo, bufferSizeInBytes, 1, &data, &dataSizeInBytes, &bufferSizeInBytes, &dataElementSizeInBytes)
-	{}
-
-	Buffer::Buffer(Device*                               device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
-				   const char*                           data,
-				   vk::DeviceSize                        bufferSizeInBytes,
-				   vk::DeviceSize                        dataElementSizeInBytes) :
-		Buffer(device, usage, sharingMode, allocationCreateInfo, bufferSizeInBytes, 1, &data, &bufferSizeInBytes, &bufferSizeInBytes, &dataElementSizeInBytes)
-	{}
 
 	const vk::Buffer& Buffer::GetVkBuffer() const { return _bufferAllocation.Buffer; }
 

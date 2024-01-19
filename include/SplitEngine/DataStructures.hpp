@@ -164,6 +164,8 @@ namespace SplitEngine
 
 			[[nodiscard]] bool IsEmpty() const { return _cursor == 0; }
 
+			[[nodiscard]] size_t GetSize() const { return _cursor; }
+
 			T* begin() { return _vector.data(); }
 
 			const T* begin() const { return _vector.data(); }

@@ -25,8 +25,8 @@ namespace SplitEngine::Rendering
 			Vulkan::Context& GetContext();
 
 		private:
-			Window          _window;
-			Vulkan::Context _vulkanContext;
+			Window          _window {};
+			Vulkan::Context _vulkanContext {};
 
 
 			bool     _wasSkipped             = false;
