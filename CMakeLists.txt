@@ -61,7 +61,7 @@ set(SOURCE_FILES
         include/SplitEngine/Audio/Manager.hpp
         src/SplitEngine/Audio/SoundEffect.cpp
         include/SplitEngine/ECS/Stage.hpp
-        src/Utility/String.cpp
+        src/SplitEngine/Utility/String.cpp
         include/SplitEngine/Utility/String.hpp
         include/SplitEngine/Rendering/Vulkan/BufferFactory.hpp
         include/SplitEngine/Rendering/Vulkan/InFlightResource.hpp
