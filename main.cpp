@@ -85,6 +85,11 @@ struct CameraComponent
 		uint64_t TargetEntity;
 };
 
+struct CircleColliderComponent
+{
+		float Radius = 1.0f;
+};
+
 class CameraSystem : public ECS::System<TransformComponent, CameraComponent>
 {
 	public:
@@ -168,7 +173,8 @@ class PlayerSystem : public ECS::System<TransformComponent, PlayerComponent, Phy
 
 					context.Registry->CreateEntity<TransformComponent, PhysicsComponent, SpriteComponent>({transformComponent.Position,
 																										   transformComponent.Rotation},
-																										  {false, glm::vec3(direction.x, -direction.y, 0.0f)},
+																										  {false,
+																										   glm::vec3(direction.x, -direction.y, 0.0f) * 10.0f},
 																										  {_bulletSprite});
 				}
 			}
@@ -200,6 +206,78 @@ class AudioSystem : public ECS::System<AudioSourceComponent>
 
 	private:
 		std::ranges::iota_view<size_t, size_t> _indexes;
+};
+
+class CollisionSystem : public ECS::System<TransformComponent, CircleColliderComponent>
+{
+	public:
+		CollisionSystem() :
+			ECS::System<TransformComponent, CircleColliderComponent>()
+		{}
+
+		void ExecuteArchetypes(std::vector<ECS::Archetype*>& archetypes, ECS::Context& context) override
+		{
+			size_t numEntities = 0;
+
+			for (const auto& archetype : archetypes)
+			{
+				TransformComponent*      transformComponents      = archetype->GetComponents<TransformComponent>();
+				CircleColliderComponent* circleColliderComponents = archetype->GetComponents<CircleColliderComponent>();
+
+				std::vector<uint64_t>& entities = archetype->Entities;
+
+				_entities.push_back(&entities);
+				_transformComponents.push_back(transformComponents);
+				_circleComponents.push_back(circleColliderComponents);
+			}
+
+			for (int currentIndex = 0; currentIndex < _entities.size(); ++currentIndex)
+			{
+				std::vector<uint64_t>* currentEntities = _entities[currentIndex];
+
+				_indexes = std::ranges::iota_view((size_t) 0, currentEntities->size());
+				std::for_each(std::execution::par, _indexes.begin(), _indexes.end(), [this, &currentEntities, &currentIndex](size_t currentSubIndex ) {
+					//for (int currentSubIndex = 0; currentSubIndex < currentEntities->size(); ++currentSubIndex)
+					//{
+					uint64_t   currentEntityID = currentEntities->at(currentSubIndex);
+					glm::vec3& currentPosition = _transformComponents[currentIndex][currentSubIndex].Position;
+					float&     currentRadius   = _circleComponents[currentIndex][currentSubIndex].Radius;
+
+					for (int index = 0; index < _entities.size(); ++index)
+					{
+						//_indexes = std::ranges::iota_view((size_t) 0, _entities.size());
+						//std::for_each(std::execution::par, _indexes.begin(), _indexes.end(), [this, &currentEntityID, &currentRadius, &currentPosition](size_t index) {
+						std::vector<uint64_t>* entities = _entities[index];
+						for (int subIndex = 0; subIndex < entities->size(); ++subIndex)
+						{
+							uint64_t entityID = entities->at(subIndex);
+
+							if (currentEntityID == entityID) { continue; }
+
+							glm::vec3& position = _transformComponents[index][subIndex].Position;
+							float&     radius   = _circleComponents[index][subIndex].Radius;
+
+							float distance = sqrt(pow(position.x - currentPosition.x, 2) + pow(position.y - currentPosition.y, 2));
+
+							bool intersects = distance <= (currentRadius + radius);
+
+							// if (intersects) { LOG("Entity {0} intersects with entity {1}", currentEntityID, entityID); }
+						}
+					} //);
+				});
+			}
+
+			_entities.clear();
+			_transformComponents.clear();
+			_circleComponents.clear();
+		}
+
+	private:
+		std::ranges::iota_view<size_t, size_t> _indexes;
+
+		std::vector<std::vector<uint64_t>*>   _entities {};
+		std::vector<TransformComponent*>      _transformComponents {};
+		std::vector<CircleColliderComponent*> _circleComponents {};
 };
 
 // Systems can be as complex as you want and can contain a lot of state
@@ -414,15 +492,8 @@ int main()
 	 * That means you can also create custom assets
 	 * The key can be anything as long as it can be cast into an int, so no magic strings!
 	 */
-	LOG("Before Create shader");
-	AssetHandle<Rendering::Shader> shader = assetDatabase.CreateAsset<Rendering::Shader>(Shader::Sprite, {"res/shaders/debug"});
-	LOG("After  Create shader");
-
+	AssetHandle<Rendering::Shader>   shader   = assetDatabase.CreateAsset<Rendering::Shader>(Shader::Sprite, {"res/shaders/debug"});
 	AssetHandle<Rendering::Material> material = assetDatabase.CreateAsset<Rendering::Material>(Material::Sprite, {shader});
-
-	AssetHandle<Audio::SoundEffect> hey = assetDatabase.CreateAsset<Audio::SoundEffect>(SoundEffect::Hey,
-																						{IO::AudioLoader::LoadStream("res/audio/CarstenBlasterSound.wav"),
-																						 1.0f});
 
 	// Create texture page and sprite assets
 	Tools::ImagePacker texturePacker = Tools::ImagePacker();
@@ -434,9 +505,6 @@ int main()
 
 	AssetHandle<Rendering::Sprite> floppaSprite = assetDatabase.CreateAsset<Rendering::Sprite>(Sprite::Floppa, {floppaPackerID, packingData});
 	AssetHandle<Rendering::Sprite> saliceSprite = assetDatabase.CreateAsset<Rendering::Sprite>(Sprite::Salice, {salicePackerID, packingData});
-
-
-	LOG("floppa num sub {0}", floppaSprite->_numSubSprites);
 
 	// Setup ECS
 	ECS::Registry& ecs = application.GetECSRegistry();
@@ -451,6 +519,7 @@ int main()
 	ecs.RegisterComponent<AudioSourceComponent>();
 	ecs.RegisterComponent<PlayerComponent>();
 	ecs.RegisterComponent<CameraComponent>();
+	ecs.RegisterComponent<CircleColliderComponent>();
 
 	/**
 	 * 	Each system can either be registered as a gameplay system or as a render system
@@ -459,296 +528,31 @@ int main()
 	 * 	Systems can be registered multiple times and parameters get forwarded to the systems constructor
 	 * 	Systems can be registered as the game is running, so no need to preregister all at the start if you don't want to
 	 */
-
 	ecs.RegisterSystem<PhysicsSystem>(ECS::Stage::Gameplay, 0);
 	ecs.RegisterSystem<AudioSystem>(ECS::Stage::Gameplay, 0);
 	ecs.RegisterSystem<PlayerSystem>(ECS::Stage::Gameplay, 0, floppaSprite);
 	ecs.RegisterSystem<CameraSystem>(ECS::Stage::Gameplay, 0);
+	ecs.RegisterSystem<CollisionSystem>(ECS::Stage::Gameplay, 0);
 	ecs.RegisterSystem<SpriteRenderSystem>(ECS::Stage::Rendering, 0, material, packingData);
 
-	constexpr uint64_t numEntities   = 2'000'000;
-	constexpr uint64_t numIterations = 0;
-
-	LOG("---Begin ECS Benchmark---");
-	LOG("Benchmarking with {0} iterations", numEntities);
-
-	std::vector<uint64_t> _entityIDs = std::vector<uint64_t>(numEntities, -1);
-
-	for (int iteration = 0; iteration < numIterations; ++iteration)
+	// Create entities
+	for (int i = 0; i < 10'000; ++i)
 	{
-		LOG("");
-		LOG("-- {0} --", iteration);
-		LOG("-Begin Entity Create Benchmark-");
-		BENCHMARK_BEGIN
-		for (int i = 0; i < numEntities; ++i)
-		{
-			_entityIDs[i] = ecs.CreateEntity<TransformComponent, PhysicsComponent>({{591.0f, 31245.0f, -553.0f}, 0.0f}, {true, {591.0f, 31245.0f, -553.0f}});
-		}
-		BENCHMARK_END("Initial Creation Call time")
-
-		BENCHMARK_BEGIN
-		ecs.MoveQueuedEntities();
-		ecs.AddQueuedEntities();
-		BENCHMARK_END("Actual creation time")
-
-		LOG("");
-		LOG("-Begin Entity Component Remove Benchmark-");
-		BENCHMARK_BEGIN
-		for (int i = 0; i < numEntities; ++i) { ecs.RemoveComponent<PhysicsComponent>(_entityIDs[i]); }
-		BENCHMARK_END("Initial Remove Call time")
-
-		BENCHMARK_BEGIN
-		ecs.MoveQueuedEntities();
-		ecs.AddQueuedEntities();
-		BENCHMARK_END("Actual Remove Time")
-
-		LOG("");
-		LOG("-Begin Entity Component Add Benchmark-");
-		BENCHMARK_BEGIN
-		for (int i = 0; i < numEntities; ++i) { ecs.AddComponent<PhysicsComponent>(_entityIDs[i], {true, {591.0f, 31245.0f, -553.0f}}); }
-		BENCHMARK_END("Initial Add Call time")
-
-		BENCHMARK_BEGIN
-		LOG("move");
-		ecs.MoveQueuedEntities();
-		LOG("add");
-		ecs.AddQueuedEntities();
-		BENCHMARK_END("Actual Add Time")
-
-		LOG("");
-		LOG("-Begin Entity Component Remove Multiple Benchmark-");
-		BENCHMARK_BEGIN
-		for (int i = 0; i < numEntities; ++i)
-		{
-			ecs.RemoveComponent<TransformComponent>(_entityIDs[i]);
-			ecs.RemoveComponent<PhysicsComponent>(_entityIDs[i]);
-		}
-		BENCHMARK_END("Initial Remove Call time")
-
-		BENCHMARK_BEGIN
-		ecs.MoveQueuedEntities();
-		ecs.AddQueuedEntities();
-		BENCHMARK_END("Actual Remove Multiple Time")
-
-		LOG("");
-		LOG("-Begin Entity Component Add Multiple Benchmark-");
-		BENCHMARK_BEGIN
-		for (int i = 0; i < numEntities; ++i)
-		{
-			ecs.AddComponent<TransformComponent>(_entityIDs[i], {{591.0f, 31245.0f, -553.0f}, 0.0f});
-			ecs.AddComponent<PhysicsComponent>(_entityIDs[i], {true, {591.0f, 31245.0f, -553.0f}});
-		}
-		BENCHMARK_END("Initial Add Multiple Call time")
-
-		BENCHMARK_BEGIN
-		ecs.MoveQueuedEntities();
-		ecs.AddQueuedEntities();
-		BENCHMARK_END("Actual Add Time")
-
-		LOG("");
-		LOG("-Begin Entity Component Remove Multiple (Batched) Benchmark-");
-		BENCHMARK_BEGIN
-		for (int i = 0; i < numEntities; ++i) { ecs.RemoveComponent<TransformComponent, PhysicsComponent>(_entityIDs[i]); }
-		BENCHMARK_END("Initial Remove (Batched) Call time")
-
-		BENCHMARK_BEGIN
-		ecs.MoveQueuedEntities();
-		ecs.AddQueuedEntities();
-		BENCHMARK_END("Actual Remove Multiple (Batched) Time")
-
-		LOG("");
-		LOG("-Begin Entity Component Add Multiple (Batched) Benchmark-");
-		BENCHMARK_BEGIN
-		for (int i = 0; i < numEntities; ++i)
-		{
-			ecs.AddComponent<TransformComponent, PhysicsComponent>(_entityIDs[i], {{591.0f, 31245.0f, -553.0f}, 0.0f}, {true, {591.0f, 31245.0f, -553.0f}});
-		}
-		BENCHMARK_END("Initial Add Multiple (Batched) Call time")
-
-		BENCHMARK_BEGIN
-		ecs.MoveQueuedEntities();
-		ecs.AddQueuedEntities();
-		BENCHMARK_END("Actual Add (Batched) Time")
-
-		LOG("");
-		LOG("-Begin Entity Component Add/Remove Benchmark-");
-		BENCHMARK_BEGIN
-		for (int i = 0; i < numEntities; ++i)
-		{
-			ecs.RemoveComponent<TransformComponent>(_entityIDs[i]);
-			ecs.RemoveComponent<PhysicsComponent>(_entityIDs[i]);
-
-			ecs.AddComponent<TransformComponent>(_entityIDs[i], {{591.0f, 31245.0f, -553.0f}, 0.0f});
-			ecs.AddComponent<PhysicsComponent>(_entityIDs[i], {true, {591.0f, 31245.0f, -553.0f}});
-
-			ecs.RemoveComponent<TransformComponent>(_entityIDs[i]);
-
-			ecs.AddComponent<PlayerComponent>(_entityIDs[i], {});
-
-			ecs.RemoveComponent<PhysicsComponent>(_entityIDs[i]);
-
-			ecs.AddComponent<TransformComponent>(_entityIDs[i], {{591.0f, 31245.0f, -553.0f}, 0.0f});
-		}
-		BENCHMARK_END("Initial Add/Remove Call time")
-
-		BENCHMARK_BEGIN
-		ecs.MoveQueuedEntities();
-		ecs.AddQueuedEntities();
-		BENCHMARK_END("Actual Add (Batched) Time")
-
-		LOG("");
-		LOG("-Begin Entity Destroy Benchmark-");
-		BENCHMARK_BEGIN
-		for (int i = 0; i < numEntities; ++i) { ecs.DestroyEntity(_entityIDs[i]); }
-		BENCHMARK_END("Initial Destroy Call time")
-
-		BENCHMARK_BEGIN
-		ecs.DestroyQueuedEntities();
-		BENCHMARK_END("Actual Destroy Time")
-
-		LOG("-Begin Entity Create Split Benchmark-");
-		BENCHMARK_BEGIN
-		for (int i = 0; i < numEntities; ++i)
-		{
-			_entityIDs[i] = ecs.CreateEntity();
-			ecs.AddComponent<TransformComponent>(_entityIDs[i], {{591.0f, 31245.0f, -553.0f}, 0.0f});
-			ecs.AddComponent<PhysicsComponent>(_entityIDs[i], {true, {591.0f, 31245.0f, -553.0f}});
-		}
-		BENCHMARK_END("Initial Creation Call time")
-
-		BENCHMARK_BEGIN
-		ecs.MoveQueuedEntities();
-		ecs.AddQueuedEntities();
-		BENCHMARK_END("Actual creation time")
-
-		LOG("");
-		LOG("-Begin Entity Component Remove Benchmark-");
-		BENCHMARK_BEGIN
-		for (int i = 0; i < numEntities; ++i) { ecs.RemoveComponent<PhysicsComponent>(_entityIDs[i]); }
-		BENCHMARK_END("Initial Remove Call time")
-
-		BENCHMARK_BEGIN
-		ecs.MoveQueuedEntities();
-		ecs.AddQueuedEntities();
-		BENCHMARK_END("Actual Remove Time")
-
-		LOG("");
-		LOG("-Begin Entity Component Add Benchmark-");
-		BENCHMARK_BEGIN
-		for (int i = 0; i < numEntities; ++i) { ecs.AddComponent<PhysicsComponent>(_entityIDs[i], {true, {591.0f, 31245.0f, -553.0f}}); }
-		BENCHMARK_END("Initial Add Call time")
-
-		BENCHMARK_BEGIN
-		LOG("move");
-		ecs.MoveQueuedEntities();
-		LOG("add");
-		ecs.AddQueuedEntities();
-		BENCHMARK_END("Actual Add Time")
-
-		LOG("");
-		LOG("-Begin Entity Component Remove Multiple Benchmark-");
-		BENCHMARK_BEGIN
-		for (int i = 0; i < numEntities; ++i)
-		{
-			ecs.RemoveComponent<TransformComponent>(_entityIDs[i]);
-			ecs.RemoveComponent<PhysicsComponent>(_entityIDs[i]);
-		}
-		BENCHMARK_END("Initial Remove Call time")
-
-		BENCHMARK_BEGIN
-		ecs.MoveQueuedEntities();
-		ecs.AddQueuedEntities();
-		BENCHMARK_END("Actual Remove Multiple Time")
-
-		LOG("");
-		LOG("-Begin Entity Component Add Multiple Benchmark-");
-		BENCHMARK_BEGIN
-		for (int i = 0; i < numEntities; ++i)
-		{
-			ecs.AddComponent<TransformComponent>(_entityIDs[i], {{591.0f, 31245.0f, -553.0f}, 0.0f});
-			ecs.AddComponent<PhysicsComponent>(_entityIDs[i], {true, {591.0f, 31245.0f, -553.0f}});
-		}
-		BENCHMARK_END("Initial Add Multiple Call time")
-
-		BENCHMARK_BEGIN
-		ecs.MoveQueuedEntities();
-		ecs.AddQueuedEntities();
-		BENCHMARK_END("Actual Add Time")
-
-		LOG("");
-		LOG("-Begin Entity Component Remove Multiple (Batched) Benchmark-");
-		BENCHMARK_BEGIN
-		for (int i = 0; i < numEntities; ++i) { ecs.RemoveComponent<TransformComponent, PhysicsComponent>(_entityIDs[i]); }
-		BENCHMARK_END("Initial Remove (Batched) Call time")
-
-		BENCHMARK_BEGIN
-		ecs.MoveQueuedEntities();
-		ecs.AddQueuedEntities();
-		BENCHMARK_END("Actual Remove Multiple (Batched) Time")
-
-		LOG("");
-		LOG("-Begin Entity Component Add Multiple (Batched) Benchmark-");
-		BENCHMARK_BEGIN
-		for (int i = 0; i < numEntities; ++i)
-		{
-			ecs.AddComponent<TransformComponent, PhysicsComponent>(_entityIDs[i], {{591.0f, 31245.0f, -553.0f}, 0.0f}, {true, {591.0f, 31245.0f, -553.0f}});
-		}
-		BENCHMARK_END("Initial Add Multiple (Batched) Call time")
-
-		BENCHMARK_BEGIN
-		ecs.MoveQueuedEntities();
-		ecs.AddQueuedEntities();
-		BENCHMARK_END("Actual Add (Batched) Time")
-
-		LOG("");
-		LOG("-Begin Entity Component Add/Remove Benchmark-");
-		BENCHMARK_BEGIN
-		for (int i = 0; i < numEntities; ++i)
-		{
-			ecs.RemoveComponent<TransformComponent>(_entityIDs[i]);
-			ecs.RemoveComponent<PhysicsComponent>(_entityIDs[i]);
-
-			ecs.AddComponent<TransformComponent>(_entityIDs[i], {{591.0f, 31245.0f, -553.0f}, 0.0f});
-			ecs.AddComponent<PhysicsComponent>(_entityIDs[i], {true, {591.0f, 31245.0f, -553.0f}});
-
-			ecs.RemoveComponent<TransformComponent>(_entityIDs[i]);
-
-			ecs.AddComponent<PlayerComponent>(_entityIDs[i], {});
-
-			ecs.RemoveComponent<PhysicsComponent>(_entityIDs[i]);
-
-			ecs.AddComponent<TransformComponent>(_entityIDs[i], {{591.0f, 31245.0f, -553.0f}, 0.0f});
-		}
-		BENCHMARK_END("Initial Add/Remove Call time")
-
-		BENCHMARK_BEGIN
-		ecs.MoveQueuedEntities();
-		ecs.AddQueuedEntities();
-		BENCHMARK_END("Actual Add (Batched) Time")
-
-		LOG("");
-		LOG("-Begin Entity Destroy Benchmark-");
-		BENCHMARK_BEGIN
-		for (int i = 0; i < numEntities; ++i) { ecs.DestroyEntity(_entityIDs[i]); }
-		BENCHMARK_END("Initial Destroy Call time")
-
-		BENCHMARK_BEGIN
-		ecs.DestroyQueuedEntities();
-		BENCHMARK_END("Actual Destroy Time")
+		ecs.CreateEntity<TransformComponent, SpriteComponent, CircleColliderComponent>({glm::ballRand(100.0f), 0.0f}, {floppaSprite, 1.0f, 0}, {1.0f});
 	}
 
+	uint64_t playerEntity = ecs.CreateEntity<TransformComponent, PhysicsComponent, PlayerComponent, SpriteComponent, CircleColliderComponent>({},
+																																			  {},
+																																			  {},
+																																			  {floppaSprite,
+																																			   1.0f},
+																																			  {1.0f});
+	ecs.CreateEntity<TransformComponent, SpriteComponent, CircleColliderComponent>({{5.0f, 5.0f, 0.0f}}, {saliceSprite, 1.0f}, {1.0f});
 
-	// Create entities
-	for (int i = 0; i < 1'024'000; ++i) { ecs.CreateEntity<TransformComponent, SpriteComponent>({glm::ballRand(100.0f), 0.0f}, {floppaSprite, 1.0f, 0}); }
-
-
-	uint64_t playerEntity = ecs.CreateEntity<TransformComponent, PhysicsComponent, PlayerComponent, SpriteComponent>({}, {}, {}, {floppaSprite, 1.0f});
 	ecs.CreateEntity<TransformComponent, CameraComponent>({}, {playerEntity});
-
 
 	// Run Game
 	application.Run();
-
 
 	return 0;
 }
