@@ -37,10 +37,6 @@ namespace SplitEngine::ECS
 
 			void ExecuteSystems(Stage stageToExecute);
 
-			void AddQueuedEntities();
-			void DestroyQueuedEntities();
-			void MoveQueuedEntities();
-
 			template<typename... T>
 			uint64_t CreateEntity(T&&... args)
 			{
@@ -49,8 +45,8 @@ namespace SplitEngine::ECS
 				uint64_t entityID = 0;
 				if (!_entityGraveyard.IsEmpty())
 				{
-					entityID                                     = _entityGraveyard.Pop();
-					uint64_t componentIndex                      = archetype->AddEntity(entityID, std::forward<T>(args)...);
+					entityID                                         = _entityGraveyard.Pop();
+					uint64_t componentIndex                          = archetype->AddEntity(entityID, std::forward<T>(args)...);
 					_sparseEntityLookup[entityID].moveArchetypeIndex = archetype->ID;
 					_sparseEntityLookup[entityID].moveComponentIndex = componentIndex;
 				}
@@ -100,12 +96,28 @@ namespace SplitEngine::ECS
 			}
 
 			template<typename T, typename... TArgs>
-			void RegisterSystem(Stage stage, uint64_t order, TArgs&&... args)
+			uint64_t AddSystem(Stage stage, int64_t order, TArgs&&... args)
 			{
 				static_assert(std::is_base_of<SystemBase, T>::value, "an ECS System needs to derive from SplitEngine::ECS::System");
 
-				_systems[static_cast<uint8_t>(stage)].push_back(new T(std::forward<TArgs>(args)...));
+				uint64_t          systemID;
+				if (_systemGraveyard.IsEmpty())
+				{
+					systemID = _systemID++;
+					_sparseSystemLookup.push_back({stage, _systemsToAdd[static_cast<uint64_t>(stage)].size()});
+				}
+				else
+				{
+					systemID                      = _systemGraveyard.Pop();
+					_sparseSystemLookup[systemID] = {stage, _systemsToAdd[static_cast<uint64_t>(stage)].size()};
+				}
+
+				_systemsToAdd[static_cast<uint64_t>(stage)].push_back({systemID, new T(std::forward<TArgs>(args)...), order});
+
+				return systemID;
 			}
+
+			void RemoveSystem(uint64_t systemID);
 
 			template<typename... T>
 			Archetype* GetArchetype()
@@ -117,26 +129,55 @@ namespace SplitEngine::ECS
 
 			bool IsEntityValid(uint64_t entityID);
 
-			void RegisterAssetDatabase(SplitEngine::AssetDatabase* assetDatabase);
+			bool IsSystemValid(uint64_t systemID);
 
+			void RegisterAssetDatabase(SplitEngine::AssetDatabase* assetDatabase);
 
 			[[nodiscard]] std::vector<Archetype*> GetArchetypesWithSignature(const DynamicBitSet& signature);
 
 		private:
-			std::vector<Entity> _sparseEntityLookup;
-			std::vector<size_t> _componentSizes;
+			std::vector<Entity> _sparseEntityLookup {};
+			std::vector<size_t> _componentSizes {};
 
 			Archetype* _archetypeRoot = nullptr;
 
-			std::vector<Archetype*> _archetypeLookup;
+			std::vector<Archetype*> _archetypeLookup {};
 
-			AvailableStack<uint64_t> _entityGraveyard;
+			AvailableStack<uint64_t> _entityGraveyard {};
 
-			std::vector<SystemBase*> _gameplaySystems;
+			struct SystemEntry
+			{
+				public:
+					uint64_t    ID     = -1;
+					SystemBase* System = nullptr;
+					int64_t     Order  = 0;
+			};
 
-			std::vector<std::vector<SystemBase*>> _systems;
+			struct SystemLookupEntry
+			{
+				public:
+					Stage    Stage = Stage::MAX_VALUE;
+					uint64_t Index = -1;
+					bool     Added = false;
+			};
+
+			uint64_t _systemID = 0;
+
+			std::vector<SystemLookupEntry> _sparseSystemLookup {};
+			AvailableStack<uint64_t>       _systemGraveyard {};
+
+			std::vector<std::vector<SystemEntry>> _systems = std::vector<std::vector<SystemEntry>>(static_cast<uint8_t>(Stage::MAX_VALUE),
+																								   std::vector<SystemEntry>());
+
+			std::vector<std::vector<SystemEntry>> _systemsToAdd = std::vector<std::vector<SystemEntry>>(static_cast<uint8_t>(Stage::MAX_VALUE),
+																										std::vector<SystemEntry>());
+
+			std::vector<uint64_t> _systemsToRemove {};
 
 			Context _context {};
+
+			void AddQueuedSystems();
+			void RemoveQueuedSystems();
 
 #ifndef SE_HEADLESS
 		public:
@@ -144,8 +185,5 @@ namespace SplitEngine::ECS
 
 			void RegisterAudioManager(SplitEngine::Audio::Manager* audioManager) { _context.AudioManager = audioManager; }
 #endif
-
 	};
-
-
 }

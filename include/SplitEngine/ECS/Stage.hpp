@@ -16,6 +16,10 @@ namespace SplitEngine::ECS
 		 * Use this stage to submit commands to the gpu
 		 */
 		Rendering = 1,
+
+		/**
+		 * DO NOT USE
+		 */
 		MAX_VALUE
 	};
 }
