@@ -100,7 +100,7 @@ namespace SplitEngine::ECS
 			{
 				static_assert(std::is_base_of<SystemBase, T>::value, "an ECS System needs to derive from SplitEngine::ECS::System");
 
-				uint64_t          systemID;
+				uint64_t systemID;
 				if (_systemGraveyard.IsEmpty())
 				{
 					systemID = _systemID++;

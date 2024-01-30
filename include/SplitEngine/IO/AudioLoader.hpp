@@ -21,6 +21,5 @@ namespace SplitEngine::IO
 			static Audio LoadStream(const std::string& path);
 
 		private:
-
 	};
 }

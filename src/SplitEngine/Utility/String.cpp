@@ -2,11 +2,11 @@
 
 namespace SplitEngine::Utility
 {
-	std::vector<std::string> String::Split(const std::string& str, char delimiter,  int baseOffset)
+	std::vector<std::string> String::Split(const std::string& str, char delimiter, int baseOffset)
 	{
 		std::vector<std::string> split;
-		int             offset         = baseOffset;
-		int             previousOffset = baseOffset;
+		int                      offset         = baseOffset;
+		int                      previousOffset = baseOffset;
 
 		while (offset < str.length())
 		{

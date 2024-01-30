@@ -140,7 +140,7 @@ namespace SplitEngine::Rendering::Vulkan
 																	  : device->GetPhysicalDevice().GetProperties().limits.minUniformBufferOffsetAlignment;
 
 								vk::DeviceSize padding = minAlignment - (uniformSize % minAlignment);
-								padding = padding == minAlignment ? 0 : padding;
+								padding                = padding == minAlignment ? 0 : padding;
 
 								descriptorSetInfo.writeDescriptorSets.back()
 										.emplace_back(VK_NULL_HANDLE, binding, 0, descriptorCount, type, nullptr, nullptr, nullptr);

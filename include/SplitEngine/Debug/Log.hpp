@@ -31,10 +31,18 @@
 	#define LOG_ERROR(...) PRIVATE_LOG_BOILERPLATE(Error, __VA_ARGS__)
 	#define LOG_FATAL(...) PRIVATE_LOG_BOILERPLATE(Fatal, __VA_ARGS__)
 #else
-	#define LOG(...) do { } while(0)
-	#define LOG_WARNING(...) do { } while(0)
-	#define LOG_ERROR(...) do { } while(0)
-	#define LOG_FATAL(...) do { } while(0)
+	#define LOG(...) \
+		do {         \
+		} while (0)
+	#define LOG_WARNING(...) \
+		do {                 \
+		} while (0)
+	#define LOG_ERROR(...) \
+		do {               \
+		} while (0)
+	#define LOG_FATAL(...) \
+		do {               \
+		} while (0)
 #endif
 
 namespace SplitEngine::Debug

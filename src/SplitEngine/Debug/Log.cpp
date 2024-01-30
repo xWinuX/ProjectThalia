@@ -39,8 +39,11 @@ namespace SplitEngine::Debug
 	}
 
 	void Log::Info(const std::string& message, std::string file, int lineNumber) { Print(message, LogLevel::Info, file, lineNumber); }
+
 	void Log::Warning(const std::string& message, std::string file, int lineNumber) { Print(message, LogLevel::Warning, file, lineNumber); }
+
 	void Log::Error(const std::string& message, std::string file, int lineNumber) { Print(message, LogLevel::Warning, file, lineNumber); }
+
 	void Log::Fatal(const std::string& message, std::string file, int lineNumber) { Print(message, LogLevel::Warning, file, lineNumber); }
 
 	void Log::Print(const std::string& message, LogLevel logLevel, std::string& file, int lineNumber)

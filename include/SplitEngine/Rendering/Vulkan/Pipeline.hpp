@@ -46,9 +46,9 @@ namespace SplitEngine::Rendering::Vulkan
 			vk::Pipeline       _vkPipeline;
 			vk::PipelineLayout _layout;
 
-			static DescriptorSetAllocator                          _globalDescriptorManager;
-			static DescriptorSetAllocator::Allocation              _globalDescriptorSetAllocation;
-			static bool                                            _globalDescriptorsProcessed;
+			static DescriptorSetAllocator             _globalDescriptorManager;
+			static DescriptorSetAllocator::Allocation _globalDescriptorSetAllocation;
+			static bool                               _globalDescriptorsProcessed;
 
 			DescriptorSetAllocator _perInstanceDescriptorSetManager;
 			DescriptorSetAllocator _perPipelineDescriptorSetManager;

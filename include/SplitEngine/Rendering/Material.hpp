@@ -36,8 +36,7 @@ namespace SplitEngine::Rendering
 			AssetHandle<Shader> _shader;
 
 			Vulkan::DescriptorSetAllocator::Allocation _instanceDescriptorSetAllocation;
-			
-			Shader::Properties _instanceProperties {};
 
+			Shader::Properties _instanceProperties {};
 	};
 }

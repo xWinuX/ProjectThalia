@@ -10,7 +10,7 @@ namespace SplitEngine
 
 	class Window
 	{
-		//	friend Rendering::Renderer;
+			//	friend Rendering::Renderer;
 
 		public:
 			Window() = default;

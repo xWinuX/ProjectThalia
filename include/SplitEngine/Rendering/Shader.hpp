@@ -38,7 +38,8 @@ namespace SplitEngine::Rendering
 					template<typename T>
 					T* GetBuffer(uint32_t bindingPoint)
 					{
-						return reinterpret_cast<T*>(_descriptorSetAllocation->ShaderBufferPtrs[_descriptorSetAllocation->SparseShaderBufferLookup[bindingPoint]].Get());
+						return reinterpret_cast<T*>(
+								_descriptorSetAllocation->ShaderBufferPtrs[_descriptorSetAllocation->SparseShaderBufferLookup[bindingPoint]].Get());
 					}
 
 					template<typename T>

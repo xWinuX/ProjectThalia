@@ -129,9 +129,6 @@ namespace SplitEngine::Rendering::Vulkan
 		for (const vk::ImageView& imageView : _imageViews) { Utility::DeleteDeviceHandle(GetDevice(), imageView); }
 		for (const vk::Framebuffer& frameBuffer : _frameBuffers) { Utility::DeleteDeviceHandle(GetDevice(), frameBuffer); }
 
-		if (_depthImage)
-		{
-			_depthImage->Destroy();
-		}
+		if (_depthImage) { _depthImage->Destroy(); }
 	}
 }

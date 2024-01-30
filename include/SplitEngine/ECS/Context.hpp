@@ -23,12 +23,12 @@ namespace SplitEngine::ECS
 
 	struct Context
 	{
-			Registry* Registry;
-			float     DeltaTime;
+			Registry*                   Registry;
+			float                       DeltaTime;
 			SplitEngine::AssetDatabase* AssetDatabase;
 #ifndef SE_HEADLESS
 			SplitEngine::Rendering::Vulkan::Context* RenderingContext;
-			SplitEngine::Audio::Manager* AudioManager;
+			SplitEngine::Audio::Manager*             AudioManager;
 #endif
 	};
 }

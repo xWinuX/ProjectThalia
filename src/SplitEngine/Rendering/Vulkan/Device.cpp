@@ -154,9 +154,6 @@ namespace SplitEngine::Rendering::Vulkan
 
 	uint32_t* Device::GetCurrentFramePtr() { return &_currentFrame; }
 
-	void Device::AdvanceFrame()
-	{
-		_currentFrame = (_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-	}
+	void Device::AdvanceFrame() { _currentFrame = (_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT; }
 
 }

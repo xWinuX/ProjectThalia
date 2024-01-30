@@ -3,7 +3,8 @@
 
 namespace SplitEngine
 {
-	void ErrorHandler::ThrowRuntimeError(const std::string& message) {
+	void ErrorHandler::ThrowRuntimeError(const std::string& message)
+	{
 		LOG_FATAL(message);
 		throw std::runtime_error(message);
 	}

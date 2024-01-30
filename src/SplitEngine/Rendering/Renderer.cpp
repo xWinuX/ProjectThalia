@@ -127,7 +127,7 @@ namespace SplitEngine::Rendering
 
 	void Renderer::EndRender()
 	{
-		Vulkan::Device* device = Vulkan::Context::GetDevice();
+		Vulkan::Device*          device        = Vulkan::Context::GetDevice();
 		const vk::CommandBuffer& commandBuffer = _vulkanContext.GetCommandBuffer();
 
 		if (_wasSkipped)
@@ -146,7 +146,6 @@ namespace SplitEngine::Rendering
                                                    waitStages,
                                                    _vulkanContext.GetCommandBuffer(),
                                                    _vulkanContext.GetRenderFinishedSemaphore());
-
 
 
 		device->GetGraphicsQueue().submit(submitInfo, _vulkanContext.GetInFlightFence());

@@ -40,13 +40,16 @@ namespace SplitEngine::Rendering::Vulkan
 
 		vk::SubpassDependency subpassDependency = vk::SubpassDependency(vk::SubpassExternal,
 																		{},
-																		vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests,
-																		vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests,
+																		vk::PipelineStageFlagBits::eColorAttachmentOutput |
+																				vk::PipelineStageFlagBits::eEarlyFragmentTests,
+																		vk::PipelineStageFlagBits::eColorAttachmentOutput |
+																				vk::PipelineStageFlagBits::eEarlyFragmentTests,
 																		{},
-																		vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite);
+																		vk::AccessFlagBits::eColorAttachmentWrite |
+																				vk::AccessFlagBits::eDepthStencilAttachmentWrite);
 
 		std::vector<vk::AttachmentDescription> attachments          = {colorAttachment, depthAttachment};
-		vk::RenderPassCreateInfo               renderPassCreateInfo = vk::RenderPassCreateInfo({}, attachments,  subpass, subpassDependency);
+		vk::RenderPassCreateInfo               renderPassCreateInfo = vk::RenderPassCreateInfo({}, attachments, subpass, subpassDependency);
 
 		_vkRenderPass = device->GetVkDevice().createRenderPass(renderPassCreateInfo);
 	}

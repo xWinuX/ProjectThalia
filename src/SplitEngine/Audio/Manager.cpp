@@ -16,10 +16,7 @@ namespace SplitEngine::Audio
 		_audioEngine->init();
 	}
 
-	void Manager::PlaySound(SoundEffect& soundEffect, float volume)
-	{
-		_audioEngine->play(*soundEffect.GetAudio(), soundEffect.GetBaseVolume() * volume);
-	}
+	void Manager::PlaySound(SoundEffect& soundEffect, float volume) { _audioEngine->play(*soundEffect.GetAudio(), soundEffect.GetBaseVolume() * volume); }
 
 	void Manager::PlaySound(AssetHandle<SoundEffect>& soundEffect, float volume) { PlaySound(*soundEffect.Get(), volume); }
 }
