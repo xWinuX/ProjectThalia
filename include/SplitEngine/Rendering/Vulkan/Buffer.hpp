@@ -15,91 +15,95 @@ namespace SplitEngine::Rendering::Vulkan
 		private:
 			struct SubBuffer
 			{
-					vk::DeviceSize SizeInBytes;
-					size_t         NumElements;
-					vk::DeviceSize ElementSizeInBytes;
-					vk::DeviceSize OffsetInBytes;
+				vk::DeviceSize SizeInBytes;
+				size_t         NumElements;
+				vk::DeviceSize ElementSizeInBytes;
+				vk::DeviceSize OffsetInBytes;
 			};
 
 		public:
 			Buffer() = default;
 
 			Buffer(Device*                               device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
-				   const char**                          data,
-				   const Buffer&                         buffer);
+			       vk::Flags<vk::BufferUsageFlagBits>    usage,
+			       vk::SharingMode                       sharingMode,
+			       Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
+			       const char**                          data,
+			       const Buffer&                         buffer);
 
 			Buffer(Device*                               device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
-				   uint32_t                              numSubBuffers,
-				   vk::DeviceSize                        subBufferSizeInBytes);
+			       vk::Flags<vk::BufferUsageFlagBits>    usage,
+			       vk::SharingMode                       sharingMode,
+			       Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
+			       uint32_t                              numSubBuffers,
+			       vk::DeviceSize                        subBufferSizeInBytes);
 
 			Buffer(Device*                               device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
-				   vk::DeviceSize                        bufferSizeInBytes,
-				   vk::DeviceSize                        numSubBuffers           = 0,
-				   const char**                          data                    = Buffer::EMPTY_DATA,
-				   const vk::DeviceSize*                 bufferSizesInBytes      = nullptr,
-				   const vk::DeviceSize*                 dataSizesInBytes        = nullptr,
-				   const vk::DeviceSize*                 dataElementSizesInBytes = nullptr);
+			       vk::Flags<vk::BufferUsageFlagBits>    usage,
+			       vk::SharingMode                       sharingMode,
+			       Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
+			       vk::DeviceSize                        bufferSizeInBytes,
+			       vk::DeviceSize                        numSubBuffers           = 0,
+			       const char**                          data                    = Buffer::EMPTY_DATA,
+			       const vk::DeviceSize*                 bufferSizesInBytes      = nullptr,
+			       const vk::DeviceSize*                 dataSizesInBytes        = nullptr,
+			       const vk::DeviceSize*                 dataElementSizesInBytes = nullptr);
 
 			Buffer(Device*                               device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
-				   vk::DeviceSize                        numSubBuffers,
-				   const char**                          data,
-				   const vk::DeviceSize*                 bufferSizesInBytes,
-				   const vk::DeviceSize*                 dataSizesInBytes,
-				   const vk::DeviceSize*                 dataElementSizesInBytes);
+			       vk::Flags<vk::BufferUsageFlagBits>    usage,
+			       vk::SharingMode                       sharingMode,
+			       Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
+			       vk::DeviceSize                        numSubBuffers,
+			       const char**                          data,
+			       const vk::DeviceSize*                 bufferSizesInBytes,
+			       const vk::DeviceSize*                 dataSizesInBytes,
+			       const vk::DeviceSize*                 dataElementSizesInBytes);
 
 			Buffer(Device*                               device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
-				   vk::DeviceSize                        bufferSizeInBytes,
-				   const char*                           data                   = nullptr,
-				   vk::DeviceSize                        dataSizeInBytes        = 0,
-				   vk::DeviceSize                        dataElementSizeInBytes = 0);
+			       vk::Flags<vk::BufferUsageFlagBits>    usage,
+			       vk::SharingMode                       sharingMode,
+			       Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
+			       vk::DeviceSize                        bufferSizeInBytes,
+			       const char*                           data                   = nullptr,
+			       vk::DeviceSize                        dataSizeInBytes        = 0,
+			       vk::DeviceSize                        dataElementSizeInBytes = 0);
 
 			Buffer(Device*                               device,
-				   vk::Flags<vk::BufferUsageFlagBits>    usage,
-				   vk::SharingMode                       sharingMode,
-				   Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
-				   const char*                           data,
-				   vk::DeviceSize                        bufferSizeInBytes,
-				   vk::DeviceSize                        dataElementSizeInBytes);
+			       vk::Flags<vk::BufferUsageFlagBits>    usage,
+			       vk::SharingMode                       sharingMode,
+			       Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
+			       const char*                           data,
+			       vk::DeviceSize                        bufferSizeInBytes,
+			       vk::DeviceSize                        dataElementSizeInBytes);
 
 			void Destroy() override;
 
-			void Copy(const Buffer& destinationBuffer);
+			void Copy(const Buffer& destinationBuffer) const;
 
-			void* Map();
+			[[nodiscard]] void* Map() const;
 
-			void* GetMappedData();
+			[[nodiscard]] void* GetMappedData() const;
 
-			void Unmap();
+			void Unmap() const;
 
-			void Stage(const char** data);
+			void Stage(const char** data) const;
 
-			void Invalidate();
+			void Invalidate() const;
 
-			void Flush();
+			void Flush() const;
 
 			[[nodiscard]] const vk::Buffer& GetVkBuffer() const;
-			[[nodiscard]] size_t            GetNumSubBuffers() const;
-			[[nodiscard]] size_t            GetBufferElementNum(size_t index = 0) const;
-			[[nodiscard]] size_t            GetDataElementNum(size_t index = 0) const;
-			[[nodiscard]] vk::DeviceSize    GetSizeInBytes(size_t index = 0) const;
+
+			[[nodiscard]] size_t GetNumSubBuffers() const;
+
+			[[nodiscard]] size_t GetBufferElementNum(size_t index = 0) const;
+
+			[[nodiscard]] size_t GetDataElementNum(size_t index = 0) const;
+
+			[[nodiscard]] vk::DeviceSize GetSizeInBytes(size_t index = 0) const;
 
 			template<typename T>
-			void CopyData(const T* data, const vk::DeviceSize dataSizeInBytes, uint32_t subBufferIndex = 0)
+			void CopyData(const T* data, const vk::DeviceSize dataSizeInBytes, const uint32_t subBufferIndex = 0)
 			{
 				char* mappedData = GetMappedData() == nullptr ? Map<char>() : static_cast<char*>(GetMappedData());
 				memcpy(mappedData + _subBuffers[subBufferIndex].OffsetInBytes, data, dataSizeInBytes);
@@ -107,16 +111,10 @@ namespace SplitEngine::Rendering::Vulkan
 			}
 
 			template<typename T>
-			T* Map()
-			{
-				return static_cast<T*>(Map());
-			}
+			T* Map() { return static_cast<T*>(Map()); }
 
 			template<typename T>
-			T* GetMappedData()
-			{
-				return static_cast<T*>(GetMappedData());
-			}
+			T* GetMappedData() { return static_cast<T*>(GetMappedData()); }
 
 			static const char* EMPTY_DATA[];
 
@@ -124,16 +122,17 @@ namespace SplitEngine::Rendering::Vulkan
 			Allocator::BufferAllocation _bufferAllocation;
 			vk::DeviceSize              _bufferSize = 0;
 
-			std::vector<SubBuffer> _subBuffers;
+			std::vector<SubBuffer>                _subBuffers;
+			Allocator::MemoryAllocationCreateInfo _allocationCreateInfo;
 
 			void InitializeSubBuffers(unsigned long long int numSubBuffers,
-									  const vk::DeviceSize*  bufferSizesInBytes,
-									  const vk::DeviceSize*  dataSizesInBytes,
-									  const vk::DeviceSize*  dataElementSizesInBytes);
+			                          const vk::DeviceSize*  bufferSizesInBytes,
+			                          const vk::DeviceSize*  dataSizesInBytes,
+			                          const vk::DeviceSize*  dataElementSizesInBytes);
 
 			void CreateBuffer(vk::Flags<vk::BufferUsageFlagBits>    usage,
-							  vk::SharingMode                       sharingMode,
-							  Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
-							  const char* const*                    data);
+			                  vk::SharingMode                       sharingMode,
+			                  Allocator::MemoryAllocationCreateInfo allocationCreateInfo,
+			                  const char* const*                    data);
 	};
 }

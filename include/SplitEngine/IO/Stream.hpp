@@ -31,11 +31,11 @@ namespace SplitEngine::IO
 			template<typename T = char>
 			std::vector<T> ReadRaw()
 			{
-				size_t         fileSize = (size_t) _stream.tellg();
+				const size_t   fileSize = _stream.tellg();
 				std::vector<T> buffer(fileSize / sizeof(T));
 
 				_stream.seekg(0);
-				_stream.read((char*) buffer.data(), static_cast<std::streamsize>(fileSize));
+				_stream.read(reinterpret_cast<char*>(buffer.data()), static_cast<std::streamsize>(fileSize));
 
 				_stream.close();
 

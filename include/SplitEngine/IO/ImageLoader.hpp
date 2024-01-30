@@ -4,11 +4,9 @@
 
 #include <stb_image.h>
 #include <string>
-#include <vector>
 
 namespace SplitEngine::IO
 {
-
 	class ImageLoader
 	{
 		public:
@@ -24,5 +22,4 @@ namespace SplitEngine::IO
 
 			static Image Load(const std::string& filePath, ChannelSetup channelSetup = ChannelSetup::RGBA);
 	};
-
 }

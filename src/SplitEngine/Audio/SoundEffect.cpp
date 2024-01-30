@@ -16,6 +16,6 @@ namespace SplitEngine::Audio
 	SoLoud::AudioSource* SoundEffect::GetAudio() const
 	{
 		if (_audio.Sample != nullptr) { return _audio.Sample; }
-		else { return _audio.Stream; }
+		return _audio.Stream;
 	}
 }

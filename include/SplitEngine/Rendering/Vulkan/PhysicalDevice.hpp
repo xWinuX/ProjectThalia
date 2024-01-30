@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vulkan/vulkan.hpp"
+
 #include <optional>
 
 namespace SplitEngine::Rendering::Vulkan
@@ -29,9 +30,9 @@ namespace SplitEngine::Rendering::Vulkan
 			PhysicalDevice() = default;
 
 			explicit PhysicalDevice(const vk::Instance&      instance,
-									const vk::SurfaceKHR&    surface,
-									std::vector<const char*> _requiredExtensions,
-									std::vector<const char*> _requiredValidationLayers);
+			                        const vk::SurfaceKHR&    surface,
+			                        std::vector<const char*> _requiredExtensions,
+			                        std::vector<const char*> _requiredValidationLayers);
 
 			[[nodiscard]] const vk::PhysicalDevice&           GetVkPhysicalDevice() const;
 			[[nodiscard]] const QueueFamilyIndices&           GetQueueFamilyIndices() const;
@@ -39,7 +40,7 @@ namespace SplitEngine::Rendering::Vulkan
 			[[nodiscard]] const std::vector<const char*>&     GetExtensions() const;
 			[[nodiscard]] const std::vector<const char*>&     GetValidationLayers() const;
 			[[nodiscard]] const vk::SurfaceFormatKHR&         GetImageFormat() const;
-			[[nodiscard]] const vk::Format                    GetDepthImageFormat() const;
+			[[nodiscard]] vk::Format                          GetDepthImageFormat() const;
 			[[nodiscard]] const vk::PhysicalDeviceProperties& GetProperties() const;
 
 		private:
@@ -47,7 +48,7 @@ namespace SplitEngine::Rendering::Vulkan
 			QueueFamilyIndices           _queueFamilyIndices;
 			SwapchainSupportDetails      _swapchainSupportDetails;
 			vk::SurfaceFormatKHR         _imageFormat; // TODO: Does this really belong here?
-			vk::Format                   _depthImageFormat;
+			vk::Format                   _depthImageFormat {};
 			std::vector<const char*>     _extensions;
 			std::vector<const char*>     _validationLayers;
 			vk::PhysicalDeviceProperties _properties;

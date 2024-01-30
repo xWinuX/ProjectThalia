@@ -1,11 +1,7 @@
 #pragma once
 
 #include "Material.hpp"
-#include "Model.hpp"
-
 #include "Vulkan/Context.hpp"
-
-#include "SplitEngine/DataStructures.hpp"
 
 namespace SplitEngine::Rendering
 {
@@ -25,8 +21,8 @@ namespace SplitEngine::Rendering
 			Vulkan::Context& GetContext();
 
 		private:
-			Window          _window {};
-			Vulkan::Context _vulkanContext {};
+			Window          _window{};
+			Vulkan::Context _vulkanContext{};
 
 
 			bool     _wasSkipped             = false;

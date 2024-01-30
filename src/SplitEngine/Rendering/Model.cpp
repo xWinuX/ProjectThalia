@@ -6,11 +6,10 @@ namespace SplitEngine::Rendering
 
 	Model::~Model() { _modelBuffer.Destroy(); }
 
-	void Model::Bind(vk::CommandBuffer& commandBuffer)
+	void Model::Bind(const vk::CommandBuffer& commandBuffer) const
 	{
-
-		vk::Buffer     vertexBuffers[] = {_modelBuffer.GetVkBuffer()};
-		vk::DeviceSize offsets[]       = {0};
+		const vk::Buffer         vertexBuffers[] = { _modelBuffer.GetVkBuffer() };
+		constexpr vk::DeviceSize offsets[]       = { 0 };
 
 		commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 		commandBuffer.bindIndexBuffer(_modelBuffer.GetVkBuffer(), _modelBuffer.GetSizeInBytes(0), vk::IndexType::eUint16);

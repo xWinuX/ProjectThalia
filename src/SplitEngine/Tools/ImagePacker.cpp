@@ -1,24 +1,25 @@
 #include "SplitEngine/Tools/ImagePacker.hpp"
-#include "SplitEngine/Debug/Log.hpp"
 #include <algorithm>
+#include "SplitEngine/Debug/Log.hpp"
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include "stb_rect_pack.h"
 
 #include "SplitEngine/ErrorHandler.hpp"
+#include "SplitEngine/IO/ImageLoader.hpp"
 #include "SplitEngine/Tools/ImageSlicer.hpp"
 
 namespace SplitEngine::Tools
 {
 	uint64_t ImagePacker::AddImage(const std::string& imagePath)
 	{
-		_images.push_back({_id++, IO::ImageLoader::Load(imagePath)});
+		_images.push_back({ _id++, IO::ImageLoader::Load(imagePath) });
 		return _images.back().ID;
 	}
 
 	uint64_t ImagePacker::AddImage(IO::Image&& image)
 	{
-		_images.push_back({_id++, std::move(image)});
+		_images.push_back({ _id++, std::move(image) });
 		return _images.back().ID;
 	}
 
@@ -28,15 +29,15 @@ namespace SplitEngine::Tools
 
 	uint64_t ImagePacker::AddRelatedImages(std::vector<IO::Image>& images)
 	{
-		uint64_t id = _id++;
-		for (IO::Image& image : images) { _images.push_back({id, std::move(image)}); }
+		const uint64_t id = _id++;
+		for (IO::Image& image: images) { _images.push_back({ id, std::move(image) }); }
 		images.clear();
 		return id;
 	}
 
 	ImagePacker::PackingData ImagePacker::Pack(uint32_t pageSize)
 	{
-		PackingData packingData {};
+		PackingData packingData{};
 
 		packingData.PackMapping = std::vector<std::vector<uint64_t>>(_id);
 
@@ -50,13 +51,13 @@ namespace SplitEngine::Tools
 			if (imageEntry.Image.Width > pageSize || imageEntry.Image.Height > pageSize)
 			{
 				ErrorHandler::ThrowRuntimeError(std::format("Image {0} ({1}x{2}) is bigger than the specified page size ({3}x{3})!",
-															_imagePaths[i],
-															imageEntry.Image.Width,
-															imageEntry.Image.Height,
-															pageSize));
+				                                            _imagePaths[i],
+				                                            imageEntry.Image.Width,
+				                                            imageEntry.Image.Height,
+				                                            pageSize));
 			}
 
-			rects.push_back({i, static_cast<int32_t>(imageEntry.Image.Width), static_cast<int32_t>(imageEntry.Image.Height)});
+			rects.push_back({ i, static_cast<int32_t>(imageEntry.Image.Width), static_cast<int32_t>(imageEntry.Image.Height) });
 		}
 
 		// Pack rects
@@ -73,18 +74,17 @@ namespace SplitEngine::Tools
 			pageRects.reserve(numPacked);
 
 			// Remove rects that where packed and add them to the page
-			rects.erase(std::remove_if(rects.begin(),
-									   rects.end(),
-									   [&pageRects](stbrp_rect rect) {
-										   if (rect.was_packed)
-										   {
-											   pageRects.push_back(rect);
-											   return true;
-										   }
+			std::erase_if(rects,
+			              [&pageRects](stbrp_rect rect)
+			              {
+				              if (rect.was_packed)
+				              {
+					              pageRects.push_back(rect);
+					              return true;
+				              }
 
-										   return false;
-									   }),
-						rects.end());
+				              return false;
+			              });
 
 			atlasPageRects.push_back(pageRects);
 
@@ -100,7 +100,7 @@ namespace SplitEngine::Tools
 		{
 			packingData.PageImages.emplace_back(std::vector<std::byte>(pageSize * pageSize * 4, {}), pageSize, pageSize, 4);
 
-			for (const stbrp_rect& rect : atlasPageRects[i])
+			for (const stbrp_rect& rect: atlasPageRects[i])
 			{
 				ImageEntry imageEntry = _images[rect.id];
 
@@ -110,13 +110,13 @@ namespace SplitEngine::Tools
 				float xEnd   = startX + static_cast<float>(rect.w);
 				float yEnd   = startY + static_cast<float>(rect.h);
 
-				PackingInfo packingInfo {};
+				PackingInfo packingInfo{};
 				packingInfo.PageIndex     = i;
 				packingInfo.AspectRatio   = static_cast<float>(rect.w) / static_cast<float>(rect.h);
-				packingInfo.UVTopLeft     = {startX * xStep, startY * yStep};
-				packingInfo.UVTopRight    = {xEnd * xStep, startY * yStep};
-				packingInfo.UVBottomLeft  = {startX * xStep, yEnd * yStep};
-				packingInfo.UVBottomRight = {xEnd * xStep, yEnd * yStep};
+				packingInfo.UVTopLeft     = { startX * xStep, startY * yStep };
+				packingInfo.UVTopRight    = { xEnd * xStep, startY * yStep };
+				packingInfo.UVBottomLeft  = { startX * xStep, yEnd * yStep };
+				packingInfo.UVBottomRight = { xEnd * xStep, yEnd * yStep };
 
 				packingData.PackingInfos.emplace_back(packingInfo);
 
@@ -133,19 +133,17 @@ namespace SplitEngine::Tools
 					size_t yPageOffset = (rect.y * pageSize * 4) + (y * pageSize * 4);
 
 					size_t yOffset = imageEntry.Image.Width * y * 4;
-					memcpy(packingData.PageImages[i].Pixels.data() + xPageOffset + yPageOffset,
-						   imageEntry.Image.Pixels.data() + yOffset,
-						   imageEntry.Image.Width * 4);
+					memcpy(packingData.PageImages[i].Pixels.data() + xPageOffset + yPageOffset, imageEntry.Image.Pixels.data() + yOffset, imageEntry.Image.Width * 4);
 				}
 			}
 		}
 
 		// Dereference rect id to packing index
-		for (std::vector<uint64_t>& mapping : packingData.PackMapping)
+		for (std::vector<uint64_t>& mapping: packingData.PackMapping)
 		{
-			if (mapping.size() > 1) { std::sort(mapping.begin(), mapping.end()); }
+			if (mapping.size() > 1) { std::ranges::sort(mapping); }
 
-			for (uint64_t& packingIndex : mapping) { packingIndex = rectIDToPackingIndex[packingIndex]; }
+			for (uint64_t& packingIndex: mapping) { packingIndex = rectIDToPackingIndex[packingIndex]; }
 		}
 
 		_images.clear();

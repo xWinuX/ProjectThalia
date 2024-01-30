@@ -25,7 +25,7 @@ namespace SplitEngine::Rendering
 				_modelBuffer = Vulkan::BufferFactory::CreateStagedModelBuffer(Vulkan::Context::GetDevice(), createInfo.Vertices, createInfo.Indices);
 			}
 
-			void Bind(vk::CommandBuffer& commandBuffer);
+			void Bind(const vk::CommandBuffer& commandBuffer) const;
 
 			[[nodiscard]] const Vulkan::Buffer& GetModelBuffer() const;
 

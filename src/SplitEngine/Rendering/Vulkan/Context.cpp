@@ -5,18 +5,14 @@
 #include "SplitEngine/Rendering/Vulkan/Device.hpp"
 
 #include "SplitEngine/Application.hpp"
-#include "SplitEngine/Debug/Log.hpp"
 #include "SplitEngine/ErrorHandler.hpp"
-#include "SplitEngine/IO/Stream.hpp"
 
 
-#include <SDL2/SDL_vulkan.h>
 #include <chrono>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_vulkan.h>
 #include <vector>
+#include <SDL2/SDL_vulkan.h>
 
 namespace SplitEngine::Rendering::Vulkan
 {
@@ -51,8 +47,8 @@ namespace SplitEngine::Rendering::Vulkan
 
 	void Context::CreateSyncObjects()
 	{
-		vk::SemaphoreCreateInfo semaphoreCreateInfo = vk::SemaphoreCreateInfo();
-		vk::FenceCreateInfo     fenceCreateInfo     = vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
+		constexpr vk::SemaphoreCreateInfo semaphoreCreateInfo = vk::SemaphoreCreateInfo();
+		constexpr vk::FenceCreateInfo     fenceCreateInfo     = vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
 
 		std::vector<vk::Semaphore> imageAvailableSemaphores;
 		std::vector<vk::Semaphore> renderingFinishedSemaphores;
@@ -72,9 +68,9 @@ namespace SplitEngine::Rendering::Vulkan
 
 	void Context::CreateCommandBuffers()
 	{
-		vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vk::CommandBufferAllocateInfo(_device->GetGraphicsCommandPool(),
-																								vk::CommandBufferLevel::ePrimary,
-																								Device::MAX_FRAMES_IN_FLIGHT);
+		const vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vk::CommandBufferAllocateInfo(_device->GetGraphicsCommandPool(),
+		                                                                                              vk::CommandBufferLevel::ePrimary,
+		                                                                                              Device::MAX_FRAMES_IN_FLIGHT);
 
 		std::vector<vk::CommandBuffer> commandBuffers = _device->GetVkDevice().allocateCommandBuffers(commandBufferAllocateInfo);
 		_commandBuffer                                = InFlightResource<vk::CommandBuffer>(_device->GetCurrentFramePtr(), std::move(commandBuffers));
@@ -113,19 +109,19 @@ namespace SplitEngine::Rendering::Vulkan
 		std::vector<const char*> extensionNames = std::vector<const char*>(extensionCount, nullptr);
 		SDL_Vulkan_GetInstanceExtensions(sdlWindow, &extensionCount, extensionNames.data());
 
-		vk::ApplicationInfo applicationInfo = vk::ApplicationInfo(Application::GetApplicationInfo().Name.c_str(),
-																  VK_MAKE_VERSION(Application::GetApplicationInfo().MajorVersion,
-																				  Application::GetApplicationInfo().MinorVersion,
-																				  Application::GetApplicationInfo().PatchVersion),
-																  "Split Engine",
-																  VK_MAKE_VERSION(1, 0, 0),
-																  VK_API_VERSION_1_3);
+		const vk::ApplicationInfo applicationInfo = vk::ApplicationInfo(Application::GetApplicationInfo().Name.c_str(),
+		                                                                VK_MAKE_VERSION(Application::GetApplicationInfo().MajorVersion,
+		                                                                                Application::GetApplicationInfo().MinorVersion,
+		                                                                                Application::GetApplicationInfo().PatchVersion),
+		                                                                "Split Engine",
+		                                                                VK_MAKE_VERSION(1, 0, 0),
+		                                                                VK_API_VERSION_1_3);
 
 		_instance = Instance(extensionNames, _validationLayers, applicationInfo);
 
 		// Create surface from sdl
-		VkSurfaceKHR surfaceHandle         = VK_NULL_HANDLE;
-		SDL_bool     surfaceCreationResult = SDL_Vulkan_CreateSurface(sdlWindow, static_cast<VkInstance>(_instance.GetVkInstance()), &surfaceHandle);
+		VkSurfaceKHR   surfaceHandle         = VK_NULL_HANDLE;
+		const SDL_bool surfaceCreationResult = SDL_Vulkan_CreateSurface(sdlWindow, _instance.GetVkInstance(), &surfaceHandle);
 		if (surfaceCreationResult == SDL_FALSE) { ErrorHandler::ThrowRuntimeError("Failed to create SDL Vulkan surface!"); }
 
 		_instance.SetVkSurface(surfaceHandle);
@@ -133,21 +129,21 @@ namespace SplitEngine::Rendering::Vulkan
 
 	void Context::InitializeImGui()
 	{
-		vk::DescriptorPoolSize poolSizes[] = {{vk::DescriptorType::eSampler, 1000},
-											  {vk::DescriptorType::eCombinedImageSampler, 1000},
-											  {vk::DescriptorType::eSampledImage, 1000},
-											  {vk::DescriptorType::eStorageImage, 1000},
-											  {vk::DescriptorType::eUniformTexelBuffer, 1000},
-											  {vk::DescriptorType::eStorageTexelBuffer, 1000},
-											  {vk::DescriptorType::eUniformBuffer, 1000},
-											  {vk::DescriptorType::eStorageBuffer, 1000},
-											  {vk::DescriptorType::eUniformBufferDynamic, 1000},
-											  {vk::DescriptorType::eStorageBufferDynamic, 1000},
-											  {vk::DescriptorType::eInputAttachment, 1000}};
+		vk::DescriptorPoolSize poolSizes[] = {
+			{ vk::DescriptorType::eSampler, 1000 },
+			{ vk::DescriptorType::eCombinedImageSampler, 1000 },
+			{ vk::DescriptorType::eSampledImage, 1000 },
+			{ vk::DescriptorType::eStorageImage, 1000 },
+			{ vk::DescriptorType::eUniformTexelBuffer, 1000 },
+			{ vk::DescriptorType::eStorageTexelBuffer, 1000 },
+			{ vk::DescriptorType::eUniformBuffer, 1000 },
+			{ vk::DescriptorType::eStorageBuffer, 1000 },
+			{ vk::DescriptorType::eUniformBufferDynamic, 1000 },
+			{ vk::DescriptorType::eStorageBufferDynamic, 1000 },
+			{ vk::DescriptorType::eInputAttachment, 1000 }
+		};
 
-		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-																							 1000,
-																							 poolSizes);
+		const vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1000, poolSizes);
 
 		_imGuiDescriptorPool = _device->GetVkDevice().createDescriptorPool(descriptorPoolCreateInfo);
 
@@ -167,7 +163,7 @@ namespace SplitEngine::Rendering::Vulkan
 
 		ImGui_ImplVulkan_Init(&initInfo, _device->GetRenderPass().GetVkRenderPass());
 
-		vk::CommandBuffer commandBuffer = _device->BeginOneshotCommands();
+		const vk::CommandBuffer commandBuffer = _device->BeginOneshotCommands();
 
 		ImGui_ImplVulkan_CreateFontsTexture();
 

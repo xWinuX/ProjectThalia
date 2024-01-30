@@ -19,7 +19,8 @@ namespace SplitEngine::Rendering::Vulkan
 
 			void Destroy() override;
 
-#pragma region Memory
+			#pragma region Memory
+
 		public:
 			enum MemoryAllocationCreateFlagBits : uint32_t
 			{
@@ -41,7 +42,7 @@ namespace SplitEngine::Rendering::Vulkan
 			{
 				LocalDevice = VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 				HostCached  = VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-				HostVisible = VkMemoryPropertyFlagBits ::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+				HostVisible = VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
 			};
 
 			struct MemoryAllocationInfo
@@ -52,7 +53,7 @@ namespace SplitEngine::Rendering::Vulkan
 
 			struct MemoryAllocation
 			{
-					friend Allocator;
+				friend Allocator;
 
 				public:
 					MemoryAllocationInfo AllocationInfo;
@@ -81,22 +82,21 @@ namespace SplitEngine::Rendering::Vulkan
 					vk::Flags<MemoryPropertyFlagBits>         RequiredFlags = {};
 			};
 
-			[[nodiscard]] BufferAllocation CreateBuffer(const vk::BufferCreateInfo&       bufferCreateInfo,
-														const MemoryAllocationCreateInfo& memoryAllocationCreateInfo);
+			[[nodiscard]] BufferAllocation CreateBuffer(const vk::BufferCreateInfo& bufferCreateInfo, const MemoryAllocationCreateInfo& memoryAllocationCreateInfo);
 
 			[[nodiscard]] ImageAllocation CreateImage(const vk::ImageCreateInfo& imageCreateInfo, const MemoryAllocationCreateInfo& memoryAllocationCreateInfo);
 
-			void InvalidateBuffer(const BufferAllocation& bufferAllocation);
+			void InvalidateBuffer(const BufferAllocation& bufferAllocation) const;
 
-			void FlushBuffer(const BufferAllocation& bufferAllocation);
+			void FlushBuffer(const BufferAllocation& bufferAllocation) const;
 
 			void DestroyBuffer(const BufferAllocation& bufferAllocation);
 
 			void DestroyImage(const ImageAllocation& imageAllocation);
 
-			void* MapMemory(const MemoryAllocation& memoryAllocation);
+			[[nodiscard]] void* MapMemory(const MemoryAllocation& memoryAllocation) const;
 
-			void UnmapMemory(const MemoryAllocation& memoryAllocation);
+			void UnmapMemory(const MemoryAllocation& memoryAllocation) const;
 
 		private:
 			VmaAllocator _vmaAllocator = nullptr;
@@ -105,9 +105,9 @@ namespace SplitEngine::Rendering::Vulkan
 			size_t _imagesAllocated  = 0;
 
 			static VmaAllocationCreateInfo CreateVmaAllocationCreateInfo(const MemoryAllocationCreateInfo& memoryAllocationCreateInfo);
-#pragma endregion
+			#pragma endregion
 
-#pragma region Memory
+			#pragma region Memory
 
 		public:
 			const vk::Sampler* AllocateSampler(TextureSettings textureSettings);
@@ -115,12 +115,12 @@ namespace SplitEngine::Rendering::Vulkan
 		private:
 			struct SamplerEntry
 			{
-					TextureSettings TextureSettings;
-					vk::Sampler     Sampler;
+				TextureSettings TextureSettings;
+				vk::Sampler     Sampler;
 			};
 
 			std::vector<SamplerEntry> _samplers;
 	};
 
-#pragma endregion
+	#pragma endregion
 }

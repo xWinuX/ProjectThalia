@@ -60,6 +60,6 @@ namespace SplitEngine::Rendering::Vulkan
 
 			std::vector<vk::ShaderModule> _shaderModules;
 
-			[[nodiscard]] vk::Format GetFormatFromType(const spirv_cross::SPIRType& type) const;
+			[[nodiscard]] static vk::Format GetFormatFromType(const spirv_cross::SPIRType& type);
 	};
 }

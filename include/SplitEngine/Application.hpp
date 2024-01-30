@@ -4,17 +4,13 @@
 // TODO: Investigate why this is so broken
 // This needs to be here for it to work for some reason
 #ifndef SE_HEADLESS
-	#include "SplitEngine/Rendering/Renderer.hpp"
+#include "SplitEngine/Rendering/Renderer.hpp"
 #endif
 
 #include "ApplicationInfo.hpp"
 #include "AssetDatabase.hpp"
 #include "ECS/Registry.hpp"
-#include "Event.hpp"
 #include "SplitEngine/Audio/Manager.hpp"
-#include "Window.hpp"
-
-#include <array>
 
 namespace SplitEngine
 {
@@ -22,11 +18,10 @@ namespace SplitEngine
 	{
 		public:
 			explicit Application(ApplicationInfo applicationInfo);
-			void Initialize();
-			void Run();
+			void     Initialize();
+			void     Run();
 
 			static const ApplicationInfo& GetApplicationInfo();
-
 
 			AssetDatabase& GetAssetDatabase();
 			ECS::Registry& GetECSRegistry();
@@ -34,10 +29,10 @@ namespace SplitEngine
 		private:
 			static ApplicationInfo _applicationInfo;
 
-#ifndef SE_HEADLESS
+			#ifndef SE_HEADLESS
 			Rendering::Renderer _renderer;
 			Audio::Manager      _audioManager;
-#endif
+			#endif
 			ECS::Registry _ecsRegistry;
 
 			AssetDatabase _assetDatabase;

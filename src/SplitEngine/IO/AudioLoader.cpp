@@ -1,6 +1,6 @@
 #include "SplitEngine/IO/AudioLoader.hpp"
-#include "SplitEngine/Debug/Log.hpp"
 #include "SplitEngine/ErrorHandler.hpp"
+#include "SplitEngine/Debug/Log.hpp"
 
 namespace SplitEngine::IO
 {

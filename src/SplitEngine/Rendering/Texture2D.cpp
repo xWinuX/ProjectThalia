@@ -1,20 +1,18 @@
 #include "SplitEngine/Rendering/Texture2D.hpp"
-#include "SplitEngine/Rendering/Vulkan/Context.hpp"
 
-#include <utility>
+#include "SplitEngine/Rendering/Vulkan/Context.hpp"
 
 namespace SplitEngine::Rendering
 {
 	Texture2D::Texture2D(const CreateInfo& createInfo) :
-		_textureSettings(createInfo.TextureSettings),
 		_ioImage(createInfo.IoImage),
 		_vulkanImage(Vulkan::Image(Vulkan::Context::GetDevice(),
-								   _ioImage.Pixels.data(),
-								   _ioImage.Width * _ioImage.Height * _ioImage.Channels,
-								   {_ioImage.Width, _ioImage.Height, 1},
-								   {})),
-		_sampler(Vulkan::Context::GetDevice()->GetAllocator().AllocateSampler(createInfo.TextureSettings))
-	{}
+		                           _ioImage.Pixels.data(),
+		                           _ioImage.Width * _ioImage.Height * _ioImage.Channels,
+		                           { _ioImage.Width, _ioImage.Height, 1 },
+		                           {})),
+		_sampler(Vulkan::Context::GetDevice()->GetAllocator().AllocateSampler(createInfo.TextureSettings)),
+		_textureSettings(createInfo.TextureSettings) {}
 
 	Texture2D::~Texture2D() { _vulkanImage.Destroy(); }
 

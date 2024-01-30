@@ -1,26 +1,22 @@
 #include "SplitEngine/Input.hpp"
-#include "SplitEngine/Debug/Log.hpp"
 #include "glm/gtx/string_cast.hpp"
 
 namespace SplitEngine
 {
-	std::unordered_map<int, bool>                Input::_keyDownStates {};
-	std::unordered_map<int, Input::PressedState> Input::_keyPressedStates {};
+	std::unordered_map<int, bool>                Input::_keyDownStates{};
+	std::unordered_map<int, Input::PressedState> Input::_keyPressedStates{};
 
-	std::unordered_map<int, Input::ButtonAction> Input::_buttonActions {};
-	std::unordered_map<int, Input::AxisAction>   Input::_axisActions {};
+	std::unordered_map<int, Input::ButtonAction> Input::_buttonActions{};
+	std::unordered_map<int, Input::AxisAction>   Input::_axisActions{};
 
-	std::unordered_map<int, KeyCode> Input::_mouseToKeyCode {
-			{SDL_BUTTON_LEFT, KeyCode::MOUSE_LEFT},
-			{SDL_BUTTON_RIGHT, KeyCode::MOUSE_RIGHT},
-	};
+	std::unordered_map<int, KeyCode> Input::_mouseToKeyCode{ { SDL_BUTTON_LEFT, KeyCode::MOUSE_LEFT }, { SDL_BUTTON_RIGHT, KeyCode::MOUSE_RIGHT }, };
 
-	glm::ivec2 Input::_mousePosition {};
-	glm::ivec2 Input::_mousePositionWorldOffset {};
+	glm::ivec2 Input::_mousePosition{};
+	glm::ivec2 Input::_mousePositionWorldOffset{};
 
-	bool Input::GetDown(KeyCode keyCode) { return _keyDownStates[keyCode]; }
+	bool Input::GetDown(const KeyCode keyCode) { return _keyDownStates[keyCode]; }
 
-	bool Input::GetPressed(KeyCode keyCode) { return _keyPressedStates[keyCode] == PressedState::Pressed; }
+	bool Input::GetPressed(const KeyCode keyCode) { return _keyPressedStates[keyCode] == PressedState::Pressed; }
 
 	void Input::Update(const SDL_Event& event)
 	{
@@ -28,7 +24,7 @@ namespace SplitEngine
 		{
 			case SDL_MOUSEBUTTONDOWN:
 			{
-				int buttonCode             = _mouseToKeyCode[event.button.button];
+				const int buttonCode       = _mouseToKeyCode[event.button.button];
 				_keyDownStates[buttonCode] = true;
 				if (_keyPressedStates[buttonCode] == Ready) { _keyPressedStates[buttonCode] = Pressed; }
 				break;
@@ -36,7 +32,7 @@ namespace SplitEngine
 
 			case SDL_MOUSEBUTTONUP:
 			{
-				int buttonCode             = _mouseToKeyCode[event.button.button];
+				const int buttonCode       = _mouseToKeyCode[event.button.button];
 				_keyDownStates[buttonCode] = false;
 				if (_keyPressedStates[buttonCode] == Waiting) { _keyPressedStates[buttonCode] = Ready; }
 				break;
@@ -61,21 +57,21 @@ namespace SplitEngine
 
 	void Input::Reset()
 	{
-		for (const auto& pair : _keyPressedStates)
+		for (const std::pair<const int, PressedState>& pair: _keyPressedStates)
 		{
 			if (pair.second == PressedState::Pressed) { _keyPressedStates[pair.first] = PressedState::Waiting; }
 		}
 
-		for (auto& [key, buttonAction] : _buttonActions) { buttonAction.Cached = false; }
+		for (auto& [key, buttonAction]: _buttonActions) { buttonAction.Cached = false; }
 
-		for (auto& [key, axisAction] : _axisActions)
+		for (auto& [key, axisAction]: _axisActions)
 		{
 			axisAction.PressedCached = false;
 			axisAction.DownCached    = false;
 		}
 	}
 
-	const glm::ivec2 Input::GetMousePosition() { return _mousePosition; }
+	glm::ivec2 Input::GetMousePosition() { return _mousePosition; }
 
 	void Input::ProvideWorldMouseOffset(glm::ivec2 offset) { _mousePositionWorldOffset = offset; }
 }

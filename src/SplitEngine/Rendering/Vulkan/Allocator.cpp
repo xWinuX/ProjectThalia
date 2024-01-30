@@ -2,7 +2,6 @@
 
 #include "SplitEngine/Debug/Log.hpp"
 #include "SplitEngine/Rendering/Vulkan/Device.hpp"
-#include "SplitEngine/Rendering/Vulkan/Utility.hpp"
 
 namespace SplitEngine::Rendering::Vulkan
 {
@@ -19,21 +18,16 @@ namespace SplitEngine::Rendering::Vulkan
 		vmaCreateAllocator(&vmaAllocatorCreateInfo, &_vmaAllocator);
 	}
 
-	Allocator::BufferAllocation Allocator::CreateBuffer(const vk::BufferCreateInfo&                  bufferCreateInfo,
-														const Allocator::MemoryAllocationCreateInfo& memoryAllocationCreateInfo)
+	Allocator::BufferAllocation Allocator::CreateBuffer(const vk::BufferCreateInfo& bufferCreateInfo, const Allocator::MemoryAllocationCreateInfo& memoryAllocationCreateInfo)
 	{
 		BufferAllocation bufferAllocation;
 
-		VmaAllocationCreateInfo allocationCreateInfo = CreateVmaAllocationCreateInfo(memoryAllocationCreateInfo);
+		const VmaAllocationCreateInfo allocationCreateInfo = CreateVmaAllocationCreateInfo(memoryAllocationCreateInfo);
 
 		VmaAllocationInfo allocationInfo;
 
-		vmaCreateBuffer(_vmaAllocator,
-						reinterpret_cast<const VkBufferCreateInfo*>(&bufferCreateInfo),
-						&allocationCreateInfo,
-						reinterpret_cast<VkBuffer*>(&bufferAllocation.Buffer),
-						&bufferAllocation.VmaAllocation,
-						&allocationInfo);
+		vmaCreateBuffer(_vmaAllocator, reinterpret_cast<const VkBufferCreateInfo*>(&bufferCreateInfo), &allocationCreateInfo, reinterpret_cast<VkBuffer*>(&bufferAllocation.Buffer),
+		                &bufferAllocation.VmaAllocation, &allocationInfo);
 
 		bufferAllocation.AllocationInfo.MappedData = allocationInfo.pMappedData;
 
@@ -42,19 +36,14 @@ namespace SplitEngine::Rendering::Vulkan
 		return bufferAllocation;
 	}
 
-	Allocator::ImageAllocation Allocator::CreateImage(const vk::ImageCreateInfo&                   imageCreateInfo,
-													  const Allocator::MemoryAllocationCreateInfo& memoryAllocationCreateInfo)
+	Allocator::ImageAllocation Allocator::CreateImage(const vk::ImageCreateInfo& imageCreateInfo, const Allocator::MemoryAllocationCreateInfo& memoryAllocationCreateInfo)
 	{
 		ImageAllocation imageAllocation;
 
-		VmaAllocationCreateInfo allocationCreateInfo = CreateVmaAllocationCreateInfo(memoryAllocationCreateInfo);
+		const VmaAllocationCreateInfo allocationCreateInfo = CreateVmaAllocationCreateInfo(memoryAllocationCreateInfo);
 
-		vmaCreateImage(_vmaAllocator,
-					   reinterpret_cast<const VkImageCreateInfo*>(&imageCreateInfo),
-					   &allocationCreateInfo,
-					   reinterpret_cast<VkImage*>(&imageAllocation.Image),
-					   &imageAllocation.VmaAllocation,
-					   nullptr);
+		vmaCreateImage(_vmaAllocator, reinterpret_cast<const VkImageCreateInfo*>(&imageCreateInfo), &allocationCreateInfo, reinterpret_cast<VkImage*>(&imageAllocation.Image),
+		               &imageAllocation.VmaAllocation, nullptr);
 
 		_imagesAllocated++;
 
@@ -73,7 +62,7 @@ namespace SplitEngine::Rendering::Vulkan
 		_imagesAllocated--;
 	}
 
-	void* Allocator::MapMemory(const Allocator::MemoryAllocation& memoryAllocation)
+	void* Allocator::MapMemory(const Allocator::MemoryAllocation& memoryAllocation) const
 	{
 		void* mappedData;
 
@@ -82,17 +71,14 @@ namespace SplitEngine::Rendering::Vulkan
 		return mappedData;
 	}
 
-	void Allocator::UnmapMemory(const Allocator::MemoryAllocation& memoryAllocation) { vmaUnmapMemory(_vmaAllocator, memoryAllocation.VmaAllocation); }
+	void Allocator::UnmapMemory(const Allocator::MemoryAllocation& memoryAllocation) const { vmaUnmapMemory(_vmaAllocator, memoryAllocation.VmaAllocation); }
 
 	void Allocator::Destroy()
 	{
 		LOG("Leaked buffers {0}", _buffersAllocated);
 		LOG("Leaked images {0}", _imagesAllocated);
+
 		vmaDestroyAllocator(_vmaAllocator);
-		for (const SamplerEntry& samplerEntry : _samplers)
-		{
-			//Utility::DeleteDeviceHandle(GetDevice(), samplerEntry.Sampler);
-		}
 	}
 
 	VmaAllocationCreateInfo Allocator::CreateVmaAllocationCreateInfo(const Allocator::MemoryAllocationCreateInfo& memoryAllocationCreateInfo)
@@ -107,40 +93,26 @@ namespace SplitEngine::Rendering::Vulkan
 
 	const vk::Sampler* Allocator::AllocateSampler(TextureSettings textureSettings)
 	{
-		for (const SamplerEntry& samplerEntry : _samplers)
-		{
-			if (samplerEntry.TextureSettings == textureSettings) { return &samplerEntry.Sampler; }
-		}
+		for (const SamplerEntry& samplerEntry: _samplers) { if (samplerEntry.TextureSettings == textureSettings) { return &samplerEntry.Sampler; } }
 
-		vk::SamplerCreateInfo samplerCreateInfo = vk::SamplerCreateInfo({},
-																		static_cast<vk::Filter>(textureSettings.MagnificationFilter),
-																		static_cast<vk::Filter>(textureSettings.MinificationFilter),
-																		static_cast<vk::SamplerMipmapMode>(textureSettings.MipmapMode),
-																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.x),
-																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.y),
-																		static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.z),
-																		textureSettings.MipLodBias,
-																		textureSettings.MaxAnisotropy > 0.0f,
-																		textureSettings.MaxAnisotropy,
-																		vk::False,
-																		vk::CompareOp::eNever,
-																		textureSettings.MinLod,
-																		textureSettings.MaxLod,
-																		vk::BorderColor::eIntOpaqueBlack,
-																		vk::False);
+		const vk::SamplerCreateInfo samplerCreateInfo = vk::SamplerCreateInfo({}, static_cast<vk::Filter>(textureSettings.MagnificationFilter),
+		                                                                      static_cast<vk::Filter>(textureSettings.MinificationFilter),
+		                                                                      static_cast<vk::SamplerMipmapMode>(textureSettings.MipmapMode),
+		                                                                      static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.x),
+		                                                                      static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.y),
+		                                                                      static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.z), textureSettings.MipLodBias,
+		                                                                      textureSettings.MaxAnisotropy > 0.0f, textureSettings.MaxAnisotropy, vk::False, vk::CompareOp::eNever,
+		                                                                      textureSettings.MinLod, textureSettings.MaxLod, vk::BorderColor::eIntOpaqueBlack, vk::False);
 
-		_samplers.push_back({textureSettings, GetDevice()->GetVkDevice().createSampler(samplerCreateInfo)});
+		_samplers.push_back({ textureSettings, GetDevice()->GetVkDevice().createSampler(samplerCreateInfo) });
 
 		return &_samplers.back().Sampler;
 	}
 
-	void Allocator::InvalidateBuffer(const Allocator::BufferAllocation& bufferAllocation)
+	void Allocator::InvalidateBuffer(const Allocator::BufferAllocation& bufferAllocation) const
 	{
 		vmaInvalidateAllocation(_vmaAllocator, bufferAllocation.VmaAllocation, 0, VK_WHOLE_SIZE);
 	}
 
-	void Allocator::FlushBuffer(const Allocator::BufferAllocation& bufferAllocation)
-	{
-		vmaFlushAllocation(_vmaAllocator, bufferAllocation.VmaAllocation, 0, VK_WHOLE_SIZE);
-	}
+	void Allocator::FlushBuffer(const Allocator::BufferAllocation& bufferAllocation) const { vmaFlushAllocation(_vmaAllocator, bufferAllocation.VmaAllocation, 0, VK_WHOLE_SIZE); }
 }

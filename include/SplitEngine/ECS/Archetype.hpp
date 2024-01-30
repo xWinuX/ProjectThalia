@@ -12,48 +12,37 @@ namespace SplitEngine::ECS
 {
 	class Archetype
 	{
-			friend class Registry;
+		friend class Registry;
 
 		public:
 			uint64_t                            ID = 0;
-			std::vector<uint64_t>               Entities {};
-			std::vector<std::vector<std::byte>> ComponentData {};
-			std::vector<uint64_t>               ComponentIDs {};
-			DynamicBitSet                       Signature {};
+			std::vector<uint64_t>               Entities{};
+			std::vector<std::vector<std::byte>> ComponentData{};
+			std::vector<uint64_t>               ComponentIDs{};
+			DynamicBitSet                       Signature{};
 
 			Archetype(std::vector<Entity>&      sparseEntityLookup,
-					  std::vector<size_t>&      componentSizes,
-					  std::vector<Archetype*>&  archetypeLookup,
-					  AvailableStack<uint64_t>& entityGraveyard,
-					  std::vector<uint64_t>&&   componentIDs);
+			          std::vector<size_t>&      componentSizes,
+			          std::vector<Archetype*>&  archetypeLookup,
+			          AvailableStack<uint64_t>& entityGraveyard,
+			          std::vector<uint64_t>&&   componentIDs);
 
 			template<typename T>
-			std::vector<std::byte>& GetComponentsRaw()
-			{
-				return ComponentData[TypeIDGenerator<Component>::GetID<T>()];
-			}
+			std::vector<std::byte>& GetComponentsRaw() { return ComponentData[TypeIDGenerator<Component>::GetID<T>()]; }
 
 			template<class T>
-			T* GetComponents()
-			{
-				return reinterpret_cast<T*>(ComponentData[TypeIDGenerator<Component>::GetID<T>()].data());
-			}
+			T* GetComponents() { return reinterpret_cast<T*>(ComponentData[TypeIDGenerator<Component>::GetID<T>()].data()); }
 
 			template<typename T>
-			T& GetComponent(uint64_t entityComponentIndex)
-			{
-				return GetComponents<T>()[entityComponentIndex];
-			}
+			T& GetComponent(uint64_t entityComponentIndex) { return GetComponents<T>()[entityComponentIndex]; }
 
 			template<typename... T>
 			uint64_t AddEntity(uint64_t entityID, T&&... args)
 			{
 				_entitiesToAdd.push_back(entityID);
 
-				(GetComponentsToAddRaw<T>().insert(GetComponentsToAddRaw<T>().end(),
-												   std::make_move_iterator(reinterpret_cast<const std::byte*>(&args)),
-												   std::make_move_iterator(reinterpret_cast<const std::byte*>(&args) + sizeof(args))),
-				 ...);
+				(GetComponentsToAddRaw<T>().insert(GetComponentsToAddRaw<T>().end(), std::make_move_iterator(reinterpret_cast<const std::byte*>(&args)),
+				                                   std::make_move_iterator(reinterpret_cast<const std::byte*>(&args) + sizeof(args))), ...);
 
 				return (Entities.size() + _entitiesToAdd.size()) - 1;
 			}
@@ -66,12 +55,11 @@ namespace SplitEngine::ECS
 				if (sizeof...(T) == 0) { return this; }
 
 				uint64_t index = -1;
-				(
-						[&] {
-							if (index != -1) { index = _archetypeLookup[index]->GetAddArchetypeID<T>(); }
-							else { index = GetAddArchetypeID<T>(); }
-						}(),
-						...);
+				( [&]
+				{
+					if (index != -1) { index = _archetypeLookup[index]->GetAddArchetypeID<T>(); }
+					else { index = GetAddArchetypeID<T>(); }
+				}(), ...);
 
 				return _archetypeLookup[index];
 			}
@@ -79,13 +67,13 @@ namespace SplitEngine::ECS
 			template<typename T>
 			uint64_t GetAddArchetypeID()
 			{
-				uint64_t componentIDToAdd = TypeIDGenerator<Component>::GetID<T>();
+				const uint64_t componentIDToAdd = TypeIDGenerator<Component>::GetID<T>();
 
 				if (_sparseAddComponentArchetypes[componentIDToAdd] == -1)
 				{
 					std::vector<uint64_t> componentIds = std::vector<uint64_t>(ComponentIDs);
 					componentIds.push_back(componentIDToAdd);
-					Archetype* archetype = new Archetype(_sparseEntityLookup, _componentSizes, _archetypeLookup, _entityGraveyard, std::move(componentIds));
+					const Archetype* archetype = new Archetype(_sparseEntityLookup, _componentSizes, _archetypeLookup, _entityGraveyard, std::move(componentIds));
 					_sparseAddComponentArchetypes[componentIDToAdd] = archetype->ID;
 					return archetype->ID;
 				}
@@ -95,19 +83,16 @@ namespace SplitEngine::ECS
 			template<typename T>
 			uint64_t GetRemoveArchetypeID()
 			{
-				uint64_t componentIDToRemove = TypeIDGenerator<Component>::GetID<T>();
+				const uint64_t componentIDToRemove = TypeIDGenerator<Component>::GetID<T>();
 				if (_sparseRemoveComponentArchetypes[componentIDToRemove] == -1)
 				{
 					std::vector<uint64_t> componentIds;
 					componentIds.reserve(ComponentIDs.size() - 1);
 
-					for (uint64_t& componentID : ComponentIDs)
-					{
-						if (componentID != componentIDToRemove) { componentIds.push_back(componentID); }
-					}
+					for (uint64_t& componentID: ComponentIDs) { if (componentID != componentIDToRemove) { componentIds.push_back(componentID); } }
 
 					Archetype* archetype = new Archetype(_sparseEntityLookup, _componentSizes, _archetypeLookup, _entityGraveyard, std::move(componentIds));
-					_sparseRemoveComponentArchetypes[componentIDToRemove]         = archetype->ID;
+					_sparseRemoveComponentArchetypes[componentIDToRemove] = archetype->ID;
 					archetype->_sparseAddComponentArchetypes[componentIDToRemove] = ID;
 					return archetype->ID;
 				}
@@ -115,22 +100,18 @@ namespace SplitEngine::ECS
 			}
 
 			template<typename... T>
-			void RemoveComponentsFromEntity(uint64_t entityID)
+			void RemoveComponentsFromEntity(const uint64_t entityID)
 			{
 				Entity& entity = _sparseEntityLookup[entityID];
 
-				uint64_t oldArchetypeMoveIndex = entity.moveArchetypeIndex;
+				const uint64_t oldArchetypeMoveIndex = entity.moveArchetypeIndex;
 
 				// Recursively search for archetype in tree
-				(
-						[&] {
-							if (entity.moveArchetypeIndex != -1)
-							{
-								entity.moveArchetypeIndex = _archetypeLookup[entity.moveArchetypeIndex]->GetRemoveArchetypeID<T>();
-							}
-							else { entity.moveArchetypeIndex = GetRemoveArchetypeID<T>(); }
-						}(),
-						...);
+				( [&]
+				{
+					if (entity.moveArchetypeIndex != -1) { entity.moveArchetypeIndex = _archetypeLookup[entity.moveArchetypeIndex]->GetRemoveArchetypeID<T>(); }
+					else { entity.moveArchetypeIndex = GetRemoveArchetypeID<T>(); }
+				}(), ...);
 
 				if (oldArchetypeMoveIndex == -1) { _entitiesToMove.push_back(entityID); }
 				else if (entity.moveComponentIndex != -1)
@@ -143,11 +124,11 @@ namespace SplitEngine::ECS
 					newArchetype->ResizeAddComponentsForNewEntity();
 
 					// Add data from old archetype to new one
-					for (const auto& componentID : newArchetype->ComponentIDs)
+					for (const auto& componentID: newArchetype->ComponentIDs)
 					{
 						std::vector<std::byte>& bytes         = newArchetype->_componentDataToAdd[componentID];
-						size_t&                 componentSize = _componentSizes[componentID];
-						std::byte*              it = oldArchetype->_componentDataToAdd[componentID].data() + (entity.moveComponentIndex * componentSize);
+						const size_t&           componentSize = _componentSizes[componentID];
+						std::byte*              it            = oldArchetype->_componentDataToAdd[componentID].data() + (entity.moveComponentIndex * componentSize);
 
 						std::move(std::make_move_iterator(it), std::make_move_iterator(it + componentSize), bytes.end() - componentSize);
 					}
@@ -164,18 +145,14 @@ namespace SplitEngine::ECS
 			{
 				Entity& entity = _sparseEntityLookup[entityID];
 
-				uint64_t oldArchetypeMoveIndex = entity.moveArchetypeIndex;
+				const uint64_t oldArchetypeMoveIndex = entity.moveArchetypeIndex;
 
 				// Recursively search for archetype in tree
-				(
-						[&] {
-							if (entity.moveArchetypeIndex != -1)
-							{
-								entity.moveArchetypeIndex = _archetypeLookup[entity.moveArchetypeIndex]->GetAddArchetypeID<T>();
-							}
-							else { entity.moveArchetypeIndex = GetAddArchetypeID<T>(); }
-						}(),
-						...);
+				( [&]
+				{
+					if (entity.moveArchetypeIndex != -1) { entity.moveArchetypeIndex = _archetypeLookup[entity.moveArchetypeIndex]->GetAddArchetypeID<T>(); }
+					else { entity.moveArchetypeIndex = GetAddArchetypeID<T>(); }
+				}(), ...);
 
 
 				Archetype* newArchetype = _archetypeLookup[entity.moveArchetypeIndex];
@@ -197,11 +174,11 @@ namespace SplitEngine::ECS
 					Archetype* oldArchetype = _archetypeLookup[oldArchetypeMoveIndex];
 
 					// Add data from old archetype to new one
-					for (const auto& componentID : oldArchetype->ComponentIDs)
+					for (const auto& componentID: oldArchetype->ComponentIDs)
 					{
 						std::vector<std::byte>& bytes         = newArchetype->_componentDataToAdd[componentID];
-						size_t&                 componentSize = _componentSizes[componentID];
-						std::byte*              it = oldArchetype->_componentDataToAdd[componentID].data() + (entity.moveComponentIndex * componentSize);
+						const size_t&           componentSize = _componentSizes[componentID];
+						std::byte*              it            = oldArchetype->_componentDataToAdd[componentID].data() + (entity.moveComponentIndex * componentSize);
 
 						std::move(std::make_move_iterator(it), std::make_move_iterator(it + componentSize), bytes.end() - componentSize);
 					}
@@ -212,27 +189,26 @@ namespace SplitEngine::ECS
 
 
 				(std::move(std::make_move_iterator(reinterpret_cast<const std::byte*>(&newComponentData)),
-						   std::make_move_iterator(reinterpret_cast<const std::byte*>(&newComponentData) + sizeof(newComponentData)),
-						   newArchetype->GetComponentsToAddRaw<T>().end() - sizeof(newComponentData)),
-				 ...);
+				           std::make_move_iterator(reinterpret_cast<const std::byte*>(&newComponentData) + sizeof(newComponentData)),
+				           newArchetype->GetComponentsToAddRaw<T>().end() - sizeof(newComponentData)), ...);
 
 				entity.moveComponentIndex = newArchetype->_entitiesToAdd.size() - 1;
 			}
 
 		protected:
 			// Destroying
-			std::vector<uint64_t> _entitiesToDestroy {};
+			std::vector<uint64_t> _entitiesToDestroy{};
 
 			// Moving
-			std::vector<uint64_t> _entitiesToMove {};
+			std::vector<uint64_t> _entitiesToMove{};
 
 			// Adding
-			std::vector<uint64_t>               _entitiesToAdd {};
-			std::vector<std::vector<std::byte>> _componentDataToAdd {};
+			std::vector<uint64_t>               _entitiesToAdd{};
+			std::vector<std::vector<std::byte>> _componentDataToAdd{};
 
 			// Graph variables
-			std::vector<uint64_t> _sparseAddComponentArchetypes {};
-			std::vector<uint64_t> _sparseRemoveComponentArchetypes {};
+			std::vector<uint64_t> _sparseAddComponentArchetypes{};
+			std::vector<uint64_t> _sparseRemoveComponentArchetypes{};
 
 			void DestroyQueuedEntities();
 
@@ -243,14 +219,14 @@ namespace SplitEngine::ECS
 			AvailableStack<uint64_t>& _entityGraveyard;
 
 			template<typename T>
-			std::vector<std::byte>& GetComponentsToAddRaw()
-			{
-				return _componentDataToAdd[TypeIDGenerator<Component>::GetID<T>()];
-			}
+			std::vector<std::byte>& GetComponentsToAddRaw() { return _componentDataToAdd[TypeIDGenerator<Component>::GetID<T>()]; }
 
 			void AddQueuedEntities();
+
 			void MoveQueuedEntities();
+
 			void DestroyEntityImmediately(uint64_t entityID);
+
 			void DestroyEntityInAddQueueImmediately(uint64_t entityID);
 
 			void ResizeAddComponentsForNewEntity();

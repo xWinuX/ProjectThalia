@@ -3,8 +3,6 @@
 #include "DeviceObject.hpp"
 #include "Image.hpp"
 
-#include <SDL_video.h>
-#include <optional>
 #include <vulkan/vulkan.hpp>
 
 namespace SplitEngine::Rendering::Vulkan

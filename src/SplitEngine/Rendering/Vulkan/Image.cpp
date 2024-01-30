@@ -10,16 +10,16 @@ namespace SplitEngine::Rendering::Vulkan
 		DeviceObject(device)
 	{
 		vk::ImageCreateInfo imageCreateInfo = vk::ImageCreateInfo({},
-																  vk::ImageType::e2D,
-																  createInfo.Format,
-																  extend,
-																  1,
-																  1,
-																  vk::SampleCountFlagBits::e1,
-																  vk::ImageTiling::eOptimal,
-																  createInfo.Usage);
+		                                                          vk::ImageType::e2D,
+		                                                          createInfo.Format,
+		                                                          extend,
+		                                                          1,
+		                                                          1,
+		                                                          vk::SampleCountFlagBits::e1,
+		                                                          vk::ImageTiling::eOptimal,
+		                                                          createInfo.Usage);
 
-		Allocator::MemoryAllocationCreateInfo allocationCreateInfo {};
+		Allocator::MemoryAllocationCreateInfo allocationCreateInfo{};
 		allocationCreateInfo.Usage         = Allocator::GpuOnly;
 		allocationCreateInfo.RequiredFlags = Allocator::LocalDevice;
 
@@ -38,11 +38,12 @@ namespace SplitEngine::Rendering::Vulkan
 			TransitionLayout(commandBuffer, vk::ImageLayout::eTransferDstOptimal);
 
 			vk::ImageSubresourceLayers imageSubresourceLayers = vk::ImageSubresourceLayers(createInfo.AspectMask, 0, 0, 1);
-			vk::BufferImageCopy        bufferImageCopy        = vk::BufferImageCopy(0, 0, 0, imageSubresourceLayers, {0, 0, 0}, extend);
+			vk::BufferImageCopy        bufferImageCopy        = vk::BufferImageCopy(0, 0, 0, imageSubresourceLayers, { 0, 0, 0 }, extend);
 
 			commandBuffer.copyBufferToImage(transferBuffer.GetVkBuffer(), GetVkImage(), _layout, bufferImageCopy);
 		}
 
+		// TODO: Fix this hack
 		if (createInfo.TransitionLayout != vk::ImageLayout::eDepthStencilAttachmentOptimal)
 		{
 			TransitionLayout(commandBuffer, createInfo.TransitionLayout);
@@ -53,19 +54,14 @@ namespace SplitEngine::Rendering::Vulkan
 
 		// Create image view
 		vk::ImageSubresourceRange imageSubresourceRange = vk::ImageSubresourceRange(createInfo.AspectMask, 0, 1, 0, 1);
-		vk::ImageViewCreateInfo   imageViewCreateInfo   = vk::ImageViewCreateInfo({},
-                                                                              GetVkImage(),
-                                                                              vk::ImageViewType::e2D,
-                                                                              createInfo.Format,
-																				  {},
-                                                                              imageSubresourceRange);
+		vk::ImageViewCreateInfo   imageViewCreateInfo   = vk::ImageViewCreateInfo({}, GetVkImage(), vk::ImageViewType::e2D, createInfo.Format, {}, imageSubresourceRange);
 
 		_view = GetDevice()->GetVkDevice().createImageView(imageViewCreateInfo);
 	}
 
-	void Image::TransitionLayout(vk::ImageLayout newLayout)
+	void Image::TransitionLayout(const vk::ImageLayout newLayout)
 	{
-		vk::CommandBuffer commandBuffer = GetDevice()->BeginOneshotCommands();
+		const vk::CommandBuffer commandBuffer = GetDevice()->BeginOneshotCommands();
 
 		TransitionLayout(commandBuffer, newLayout);
 
@@ -76,18 +72,18 @@ namespace SplitEngine::Rendering::Vulkan
 	{
 		if (newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal) { return; }
 
-		vk::ImageSubresourceRange subresourceRange   = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
-		vk::ImageMemoryBarrier    imageMemoryBarrier = vk::ImageMemoryBarrier({},
-																			  {},
-                                                                           _layout,
-                                                                           newLayout,
-                                                                           vk::QueueFamilyIgnored,
-                                                                           vk::QueueFamilyIgnored,
-                                                                           GetVkImage(),
-                                                                           subresourceRange);
+		constexpr vk::ImageSubresourceRange subresourceRange   = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+		vk::ImageMemoryBarrier              imageMemoryBarrier = vk::ImageMemoryBarrier({},
+		                                                                                {},
+		                                                                                _layout,
+		                                                                                newLayout,
+		                                                                                vk::QueueFamilyIgnored,
+		                                                                                vk::QueueFamilyIgnored,
+		                                                                                GetVkImage(),
+		                                                                                subresourceRange);
 
-		vk::PipelineStageFlagBits sourceStage;
-		vk::PipelineStageFlagBits destinationStage;
+		vk::PipelineStageFlagBits sourceStage{};
+		vk::PipelineStageFlagBits destinationStage{};
 
 		if (_layout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal)
 		{

@@ -9,7 +9,6 @@
 #include "Stage.hpp"
 #include "SystemBase.hpp"
 
-#include <iterator>
 #include <vector>
 
 #ifndef SE_HEADLESS
@@ -46,7 +45,7 @@ namespace SplitEngine::ECS
 				if (!_entityGraveyard.IsEmpty())
 				{
 					entityID                                         = _entityGraveyard.Pop();
-					uint64_t componentIndex                          = archetype->AddEntity(entityID, std::forward<T>(args)...);
+					const uint64_t componentIndex                    = archetype->AddEntity(entityID, std::forward<T>(args)...);
 					_sparseEntityLookup[entityID].moveArchetypeIndex = archetype->ID;
 					_sparseEntityLookup[entityID].moveComponentIndex = componentIndex;
 				}
@@ -63,7 +62,7 @@ namespace SplitEngine::ECS
 			template<typename T>
 			T& GetComponent(uint64_t entityID)
 			{
-				Entity& entity = _sparseEntityLookup[entityID];
+				const Entity& entity = _sparseEntityLookup[entityID];
 
 				return _archetypeLookup[entity.GetArchetypeIndex()]->GetComponent<T>(entity.GetComponentIndex());
 			}
@@ -71,7 +70,7 @@ namespace SplitEngine::ECS
 			template<typename... T>
 			void AddComponent(uint64_t entityID, T&&... components)
 			{
-				Entity& entity = _sparseEntityLookup[entityID];
+				const Entity& entity = _sparseEntityLookup[entityID];
 
 				_archetypeLookup[entity.GetArchetypeIndex()]->AddComponentsToEntity<T...>(entityID, std::forward<T>(components)...);
 			}
@@ -79,7 +78,7 @@ namespace SplitEngine::ECS
 			template<typename... T>
 			void RemoveComponent(uint64_t entityID)
 			{
-				Entity& entity = _sparseEntityLookup[entityID];
+				const Entity& entity = _sparseEntityLookup[entityID];
 
 				_archetypeLookup[entity.GetArchetypeIndex()]->RemoveComponentsFromEntity<T...>(entityID);
 			}
@@ -104,15 +103,15 @@ namespace SplitEngine::ECS
 				if (_systemGraveyard.IsEmpty())
 				{
 					systemID = _systemID++;
-					_sparseSystemLookup.push_back({stage, _systemsToAdd[static_cast<uint64_t>(stage)].size()});
+					_sparseSystemLookup.push_back({ stage, _systemsToAdd[static_cast<uint64_t>(stage)].size() });
 				}
 				else
 				{
 					systemID                      = _systemGraveyard.Pop();
-					_sparseSystemLookup[systemID] = {stage, _systemsToAdd[static_cast<uint64_t>(stage)].size()};
+					_sparseSystemLookup[systemID] = { stage, _systemsToAdd[static_cast<uint64_t>(stage)].size() };
 				}
 
-				_systemsToAdd[static_cast<uint64_t>(stage)].push_back({systemID, new T(std::forward<TArgs>(args)...), order});
+				_systemsToAdd[static_cast<uint64_t>(stage)].push_back({ systemID, new T(std::forward<TArgs>(args)...), order });
 
 				return systemID;
 			}
@@ -136,14 +135,14 @@ namespace SplitEngine::ECS
 			[[nodiscard]] std::vector<Archetype*> GetArchetypesWithSignature(const DynamicBitSet& signature);
 
 		private:
-			std::vector<Entity> _sparseEntityLookup {};
-			std::vector<size_t> _componentSizes {};
+			std::vector<Entity> _sparseEntityLookup{};
+			std::vector<size_t> _componentSizes{};
 
 			Archetype* _archetypeRoot = nullptr;
 
-			std::vector<Archetype*> _archetypeLookup {};
+			std::vector<Archetype*> _archetypeLookup{};
 
-			AvailableStack<uint64_t> _entityGraveyard {};
+			AvailableStack<uint64_t> _entityGraveyard{};
 
 			struct SystemEntry
 			{
@@ -163,27 +162,26 @@ namespace SplitEngine::ECS
 
 			uint64_t _systemID = 0;
 
-			std::vector<SystemLookupEntry> _sparseSystemLookup {};
-			AvailableStack<uint64_t>       _systemGraveyard {};
+			std::vector<SystemLookupEntry> _sparseSystemLookup{};
+			AvailableStack<uint64_t>       _systemGraveyard{};
 
-			std::vector<std::vector<SystemEntry>> _systems = std::vector<std::vector<SystemEntry>>(static_cast<uint8_t>(Stage::MAX_VALUE),
-																								   std::vector<SystemEntry>());
+			std::vector<std::vector<SystemEntry>> _systems = std::vector<std::vector<SystemEntry>>(static_cast<uint8_t>(Stage::MAX_VALUE), std::vector<SystemEntry>());
 
-			std::vector<std::vector<SystemEntry>> _systemsToAdd = std::vector<std::vector<SystemEntry>>(static_cast<uint8_t>(Stage::MAX_VALUE),
-																										std::vector<SystemEntry>());
+			std::vector<std::vector<SystemEntry>> _systemsToAdd = std::vector<std::vector<SystemEntry>>(static_cast<uint8_t>(Stage::MAX_VALUE), std::vector<SystemEntry>());
 
-			std::vector<uint64_t> _systemsToRemove {};
+			std::vector<uint64_t> _systemsToRemove{};
 
-			Context _context {};
+			Context _context{};
 
 			void AddQueuedSystems();
 			void RemoveQueuedSystems();
 
-#ifndef SE_HEADLESS
+			#ifndef SE_HEADLESS
+
 		public:
 			void RegisterRenderingContext(SplitEngine::Rendering::Vulkan::Context* context) { _context.RenderingContext = context; }
 
 			void RegisterAudioManager(SplitEngine::Audio::Manager* audioManager) { _context.AudioManager = audioManager; }
-#endif
+			#endif
 	};
 }

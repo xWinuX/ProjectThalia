@@ -7,7 +7,6 @@
 #include "SplitEngine/DataStructures.hpp"
 #include "vulkan/vulkan.hpp"
 
-#include <stack>
 #include <unordered_set>
 #include <vector>
 
@@ -48,16 +47,16 @@ namespace SplitEngine::Rendering::Vulkan
 
 			struct DescriptorPoolAllocation
 			{
-					uint32_t DescriptorPoolIndex;
-					uint32_t DescriptorSetIndex;
+				uint32_t DescriptorPoolIndex;
+				uint32_t DescriptorSetIndex;
 			};
 
 			struct Allocation
 			{
-					friend DescriptorSetAllocator;
+				friend DescriptorSetAllocator;
 
 				public:
-					InFlightResource<vk::DescriptorSet>                   DescriptorSets {};
+					InFlightResource<vk::DescriptorSet>                   DescriptorSets{};
 					std::vector<Buffer>                                   ShaderBuffers            = std::vector<Buffer>(0);
 					std::vector<InFlightResource<std::byte*>>             ShaderBufferPtrs         = std::vector<InFlightResource<std::byte*>>(0);
 					std::vector<std::vector<vk::DescriptorImageInfo>>     ImageInfos               = std::vector<std::vector<vk::DescriptorImageInfo>>(0);

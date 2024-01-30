@@ -1,20 +1,18 @@
 #pragma once
 
+#include "TextureSettings.hpp"
 #include "SplitEngine/IO/ImageLoader.hpp"
 #include "SplitEngine/Rendering/Vulkan/Image.hpp"
-#include "TextureSettings.hpp"
-#include <string>
 
 namespace SplitEngine::Rendering
 {
-
 	class Texture2D
 	{
 		public:
 			struct CreateInfo
 			{
-					IO::Image       IoImage;
-					TextureSettings TextureSettings = {};
+				IO::Image       IoImage;
+				TextureSettings TextureSettings{};
 			};
 
 		public:
@@ -27,7 +25,7 @@ namespace SplitEngine::Rendering
 		private:
 			IO::Image             _ioImage;
 			Vulkan::Image         _vulkanImage;
-			const vk::Sampler*    _sampler {};
+			const vk::Sampler*    _sampler{};
 			const TextureSettings _textureSettings;
 	};
 }

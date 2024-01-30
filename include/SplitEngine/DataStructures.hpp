@@ -35,32 +35,32 @@ namespace SplitEngine
 		public:
 			DynamicBitSet() = default;
 
-			DynamicBitSet(uint64_t size) { ExtendSizeBy(size); }
+			explicit DynamicBitSet(const uint64_t size) { ExtendSizeBy(size); }
 
-			void ExtendSizeTo(uint64_t newSize)
+			void ExtendSizeTo(const uint64_t newSize)
 			{
 				_numBits = newSize;
 				while (_numBits > _masks.size() * MASK_SIZE) { _masks.push_back(0); }
 			}
 
-			void ExtendSizeBy(uint64_t amountToIncrease = 1)
+			void ExtendSizeBy(const uint64_t amountToIncrease = 1)
 			{
 				_numBits += amountToIncrease;
 				while (_numBits > _masks.size() * MASK_SIZE) { _masks.push_back(0); }
 			}
 
-			void SetBit(uint64_t bitIndex)
+			void SetBit(const uint64_t bitIndex)
 			{
-				uint64_t index         = bitIndex / MASK_SIZE;
-				uint64_t relativeIndex = bitIndex - (index * MASK_SIZE);
+				const uint64_t index         = bitIndex / MASK_SIZE;
+				const uint64_t relativeIndex = bitIndex - (index * MASK_SIZE);
 
 				_masks[index] |= static_cast<uint64_t>(1) << relativeIndex;
 			}
 
-			void UnsetBit(uint64_t bitIndex)
+			void UnsetBit(const uint64_t bitIndex)
 			{
-				uint64_t index         = bitIndex / MASK_SIZE;
-				uint64_t relativeIndex = bitIndex - (index * MASK_SIZE);
+				const uint64_t index         = bitIndex / MASK_SIZE;
+				const uint64_t relativeIndex = bitIndex - (index * MASK_SIZE);
 
 				_masks[index] &= ~(static_cast<uint64_t>(1) << relativeIndex);
 			}
@@ -72,10 +72,7 @@ namespace SplitEngine
 			{
 				PRIVATE_COMPARE_SIZE(other)
 
-				for (uint64_t i = 0; i < _masks.size(); ++i)
-				{
-					if (_masks[i] != other._masks[i]) { return false; }
-				}
+				for (uint64_t i = 0; i < _masks.size(); ++i) { if (_masks[i] != other._masks[i]) { return false; } }
 
 				return true;
 			}
@@ -90,10 +87,7 @@ namespace SplitEngine
 			{
 				PRIVATE_COMPARE_SIZE(other)
 
-				for (uint64_t i = 0; i < _masks.size(); ++i)
-				{
-					if ((_masks[i] & other._masks[i]) != _masks[i]) { return false; }
-				}
+				for (uint64_t i = 0; i < _masks.size(); ++i) { if ((_masks[i] & other._masks[i]) != _masks[i]) { return false; } }
 
 				return true;
 			}
@@ -112,13 +106,12 @@ namespace SplitEngine
 			IncrementVector() = default;
 
 			explicit IncrementVector(size_t capacity) :
-				_size(capacity),
-				_vector(std::vector<T>(capacity))
-			{}
+				_vector(std::vector<T>(capacity)),
+				_size(capacity) {}
 
 			void PushBack(T element)
 			{
-				size_t newCursor = _cursor + 1;
+				const size_t newCursor = _cursor + 1;
 				if (newCursor == _size) { _vector.push_back(element); }
 				else { _vector[_cursor] = element; }
 				_cursor = newCursor;
@@ -147,8 +140,7 @@ namespace SplitEngine
 
 			explicit AvailableStack(size_t capacity) :
 				_vector(std::vector<T>(capacity, {})),
-				_cursor(capacity)
-			{}
+				_cursor(capacity) {}
 
 			T Pop() { return _vector[--_cursor]; }
 
@@ -175,7 +167,7 @@ namespace SplitEngine
 			const T* end() const { return _vector.data() + _cursor; }
 
 		private:
-			std::vector<T> _vector {};
+			std::vector<T> _vector{};
 			uint64_t       _cursor = 0;
 	};
 }

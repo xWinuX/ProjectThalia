@@ -9,7 +9,6 @@
 #include "Swapchain.hpp"
 
 #include <glm/glm.hpp>
-#include <vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
 namespace SplitEngine::Rendering::Vulkan
@@ -17,7 +16,7 @@ namespace SplitEngine::Rendering::Vulkan
 	class Device
 	{
 		public:
-			static const int MAX_FRAMES_IN_FLIGHT = 2;
+			static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
 			explicit Device(PhysicalDevice& physicalDevice);
 
@@ -46,8 +45,7 @@ namespace SplitEngine::Rendering::Vulkan
 			uint32_t* GetCurrentFramePtr();
 
 
-			[[nodiscard]] int FindMemoryTypeIndex(const vk::MemoryRequirements&                memoryRequirements,
-												  const vk::Flags<vk::MemoryPropertyFlagBits>& memoryPropertyFlags) const;
+			[[nodiscard]] int FindMemoryTypeIndex(const vk::MemoryRequirements& memoryRequirements, const vk::Flags<vk::MemoryPropertyFlagBits>& memoryPropertyFlags) const;
 
 			[[nodiscard]] vk::CommandBuffer BeginOneshotCommands() const;
 			void                            EndOneshotCommands(vk::CommandBuffer commandBuffer) const;
@@ -63,7 +61,7 @@ namespace SplitEngine::Rendering::Vulkan
 			RenderPass _renderPass;
 
 			Image              _defaultImage;
-			const vk::Sampler* _defaultSampler;
+			const vk::Sampler* _defaultSampler = nullptr;
 
 			vk::CommandPool _graphicsCommandPool;
 

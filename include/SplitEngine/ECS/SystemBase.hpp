@@ -7,7 +7,7 @@ namespace SplitEngine::ECS
 	class SystemBase
 	{
 		public:
-			virtual ~SystemBase() {};
+			virtual      ~SystemBase() = default;
 			virtual void RunExecute(Context& context) = 0;
 	};
 }

@@ -6,7 +6,6 @@ namespace SplitEngine::Rendering::Vulkan
 	Swapchain::Swapchain(Device* device, const vk::SurfaceKHR& surface, vk::Extent2D size) :
 		DeviceObject(device)
 	{
-
 		const PhysicalDevice& physicalDevice = GetDevice()->GetPhysicalDevice();
 
 		// Select surface format
@@ -14,7 +13,7 @@ namespace SplitEngine::Rendering::Vulkan
 
 		// Select present mode
 		vk::PresentModeKHR presentMode = vk::PresentModeKHR::eFifo;
-		for (const auto& availablePresentMode : swapchainSupportDetails.PresentModes)
+		for (const auto& availablePresentMode: swapchainSupportDetails.PresentModes)
 		{
 			if (availablePresentMode == vk::PresentModeKHR::eMailbox)
 			{
@@ -41,18 +40,18 @@ namespace SplitEngine::Rendering::Vulkan
 
 		// Create swap chain
 		vk::SwapchainCreateInfoKHR swapChainCreateInfo = vk::SwapchainCreateInfoKHR({},
-																					surface,
-																					imageCount,
-																					physicalDevice.GetImageFormat().format,
-																					physicalDevice.GetImageFormat().colorSpace,
-																					size,
-																					1,
-																					vk::ImageUsageFlagBits::eColorAttachment);
+		                                                                            surface,
+		                                                                            imageCount,
+		                                                                            physicalDevice.GetImageFormat().format,
+		                                                                            physicalDevice.GetImageFormat().colorSpace,
+		                                                                            size,
+		                                                                            1,
+		                                                                            vk::ImageUsageFlagBits::eColorAttachment);
 
 		const PhysicalDevice::QueueFamilyIndices& queueFamilyIndices = physicalDevice.GetQueueFamilyIndices();
 		if (queueFamilyIndices.GraphicsFamily != queueFamilyIndices.PresentFamily)
 		{
-			std::vector<uint32_t> queueFamilies = {queueFamilyIndices.GraphicsFamily.value(), queueFamilyIndices.PresentFamily.value()};
+			std::vector<uint32_t> queueFamilies = { queueFamilyIndices.GraphicsFamily.value(), queueFamilyIndices.PresentFamily.value() };
 			swapChainCreateInfo.setImageSharingMode(vk::SharingMode::eConcurrent);
 			swapChainCreateInfo.setQueueFamilyIndices(queueFamilies);
 		}
@@ -73,41 +72,38 @@ namespace SplitEngine::Rendering::Vulkan
 		for (int i = 0; i < _images.size(); ++i)
 		{
 			vk::ImageViewCreateInfo imageViewCreateInfo = vk::ImageViewCreateInfo({},
-																				  _images[i],
-																				  vk::ImageViewType::e2D,
-																				  physicalDevice.GetImageFormat().format,
-																				  {vk::ComponentSwizzle::eIdentity,
-																				   vk::ComponentSwizzle::eIdentity,
-																				   vk::ComponentSwizzle::eIdentity,
-																				   vk::ComponentSwizzle::eIdentity},
-																				  {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
+			                                                                      _images[i],
+			                                                                      vk::ImageViewType::e2D,
+			                                                                      physicalDevice.GetImageFormat().format,
+			                                                                      {
+				                                                                      vk::ComponentSwizzle::eIdentity,
+				                                                                      vk::ComponentSwizzle::eIdentity,
+				                                                                      vk::ComponentSwizzle::eIdentity,
+				                                                                      vk::ComponentSwizzle::eIdentity
+			                                                                      },
+			                                                                      { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 });
 
 			_imageViews[i] = GetDevice()->GetVkDevice().createImageView(imageViewCreateInfo);
 		}
 
 
 		// Create depth image
-		Image::CreateInfo imageCreateInfo {};
+		Image::CreateInfo imageCreateInfo{};
 		imageCreateInfo.Usage            = vk::ImageUsageFlagBits::eDepthStencilAttachment;
 		imageCreateInfo.TransitionLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 		imageCreateInfo.AspectMask       = vk::ImageAspectFlagBits::eDepth;
 		imageCreateInfo.Format           = GetDevice()->GetPhysicalDevice().GetDepthImageFormat();
 		imageCreateInfo.RequiredFlags    = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-		_depthImage.reset(new Image(GetDevice(), nullptr, 0, {_extend.width, _extend.height, 1}, imageCreateInfo));
+		_depthImage.reset(new Image(GetDevice(), nullptr, 0, { _extend.width, _extend.height, 1 }, imageCreateInfo));
 
 		// Create frame buffers
 		_frameBuffers.resize(_imageViews.size());
 		for (size_t i = 0; i < _imageViews.size(); i++)
 		{
-			std::vector<vk::ImageView> attachments = {_imageViews[i], _depthImage->GetView()};
+			std::vector<vk::ImageView> attachments = { _imageViews[i], _depthImage->GetView() };
 
-			vk::FramebufferCreateInfo framebufferInfo = vk::FramebufferCreateInfo({},
-																				  device->GetRenderPass().GetVkRenderPass(),
-																				  attachments,
-																				  _extend.width,
-																				  _extend.height,
-																				  1);
+			vk::FramebufferCreateInfo framebufferInfo = vk::FramebufferCreateInfo({}, device->GetRenderPass().GetVkRenderPass(), attachments, _extend.width, _extend.height, 1);
 			_frameBuffers[i]                          = device->GetVkDevice().createFramebuffer(framebufferInfo);
 		}
 	}
@@ -126,8 +122,8 @@ namespace SplitEngine::Rendering::Vulkan
 	{
 		Utility::DeleteDeviceHandle(GetDevice(), _vkSwapchain);
 
-		for (const vk::ImageView& imageView : _imageViews) { Utility::DeleteDeviceHandle(GetDevice(), imageView); }
-		for (const vk::Framebuffer& frameBuffer : _frameBuffers) { Utility::DeleteDeviceHandle(GetDevice(), frameBuffer); }
+		for (const vk::ImageView& imageView: _imageViews) { Utility::DeleteDeviceHandle(GetDevice(), imageView); }
+		for (const vk::Framebuffer& frameBuffer: _frameBuffers) { Utility::DeleteDeviceHandle(GetDevice(), frameBuffer); }
 
 		if (_depthImage) { _depthImage->Destroy(); }
 	}

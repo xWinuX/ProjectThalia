@@ -25,19 +25,16 @@ namespace SplitEngine::ECS
 
 			virtual void ExecuteArchetypes(std::vector<ECS::Archetype*>& archetypes, Context& context)
 			{
-				for (ECS::Archetype* archetype : archetypes)
+				for (ECS::Archetype* archetype: archetypes)
 				{
-					std::apply(
-							[this, &archetype, &context](T*... components) {
-								Execute(components..., archetype->Entities, context);
-							},
-							std::make_tuple(reinterpret_cast<T*>(archetype->GetComponentsRaw<T>().data())...));
+					std::apply([this, &archetype, &context](T*... components) { Execute(components..., archetype->Entities, context); },
+					           std::make_tuple(reinterpret_cast<T*>(archetype->GetComponentsRaw<T>().data())...));
 				}
 			}
 
-			virtual void Execute(T*..., std::vector<uint64_t>& entities, Context& context) {};
+			virtual void Execute(T*..., std::vector<uint64_t>& entities, Context& context) {}
 
 		private:
-			DynamicBitSet Signature {};
+			DynamicBitSet Signature{};
 	};
 }

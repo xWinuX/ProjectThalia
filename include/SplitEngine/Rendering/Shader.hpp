@@ -8,7 +8,6 @@
 
 namespace SplitEngine::Rendering
 {
-
 	class Texture2D;
 
 	class Shader
@@ -22,24 +21,23 @@ namespace SplitEngine::Rendering
 
 			class Properties
 			{
-					friend Shader;
-					friend class Material;
+				friend Shader;
+				friend class Material;
 
 				public:
 					Properties() = default;
 					Properties(Shader* shader, Vulkan::DescriptorSetAllocator::Allocation* descriptorSetAllocation);
 
 					template<typename T>
-					Vulkan::InFlightResource<std::byte*> GetBufferRaw(uint32_t bindingPoint)
+					[[nodiscard]] Vulkan::InFlightResource<std::byte*> GetBufferRaw(const uint32_t bindingPoint) const
 					{
 						return _descriptorSetAllocation->ShaderBufferPtrs[_descriptorSetAllocation->SparseShaderBufferLookup[bindingPoint]];
 					}
 
 					template<typename T>
-					T* GetBuffer(uint32_t bindingPoint)
+					T* GetBuffer(const uint32_t bindingPoint)
 					{
-						return reinterpret_cast<T*>(
-								_descriptorSetAllocation->ShaderBufferPtrs[_descriptorSetAllocation->SparseShaderBufferLookup[bindingPoint]].Get());
+						return reinterpret_cast<T*>(_descriptorSetAllocation->ShaderBufferPtrs[_descriptorSetAllocation->SparseShaderBufferLookup[bindingPoint]].Get());
 					}
 
 					template<typename T>
@@ -55,10 +53,10 @@ namespace SplitEngine::Rendering
 				private:
 					Shader*                                           _shader                  = nullptr;
 					Vulkan::DescriptorSetAllocator::Allocation*       _descriptorSetAllocation = nullptr;
-					std::vector<Vulkan::InFlightResource<std::byte*>> _shaderBuffers {};
-					std::vector<vk::WriteDescriptorSet>               _updateImageWriteDescriptorSets {};
+					std::vector<Vulkan::InFlightResource<std::byte*>> _shaderBuffers{};
+					std::vector<vk::WriteDescriptorSet>               _updateImageWriteDescriptorSets{};
 
-					std::vector<std::byte*> _shaderBufferPtrs {};
+					std::vector<std::byte*> _shaderBufferPtrs{};
 
 					void SetWriteDescriptorSetDirty(uint32_t bindingPoint);
 
@@ -71,9 +69,9 @@ namespace SplitEngine::Rendering
 
 			~Shader();
 
-			void BindGlobal(vk::CommandBuffer& commandBuffer);
+			void BindGlobal(const vk::CommandBuffer& commandBuffer) const;
 
-			void Bind(vk::CommandBuffer& commandBuffer);
+			void Bind(const vk::CommandBuffer& commandBuffer) const;
 
 			static void UpdateGlobal();
 
@@ -86,13 +84,12 @@ namespace SplitEngine::Rendering
 
 		private:
 			Vulkan::Device*  _device = nullptr;
-			Vulkan::Pipeline _pipeline {};
-			std::string      _shaderPath {};
+			Vulkan::Pipeline _pipeline{};
+			std::string      _shaderPath{};
 
 			static Properties _globalProperties;
 			static bool       _globalPropertiesDefined;
 
-			Properties _shaderProperties {};
+			Properties _shaderProperties{};
 	};
-
 }

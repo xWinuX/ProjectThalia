@@ -1,14 +1,12 @@
 #pragma once
-#include "Buffer.hpp"
 #include "DescriptorSetAllocator.hpp"
 #include "Device.hpp"
 #include "Instance.hpp"
 #include "PhysicalDevice.hpp"
 #include "SplitEngine/Window.hpp"
 
-#include <SDL2/SDL.h>
-#include <optional>
 #include <vector>
+#include <SDL2/SDL.h>
 #include <vulkan/vulkan.hpp>
 
 namespace SplitEngine::Rendering::Vulkan
@@ -31,22 +29,22 @@ namespace SplitEngine::Rendering::Vulkan
 			[[nodiscard]] const vk::CommandBuffer& GetCommandBuffer() const;
 
 		private:
-			const std::vector<const char*> _validationLayers = {"VK_LAYER_KHRONOS_validation"};
-			const std::vector<const char*> _deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME};
+			const std::vector<const char*> _validationLayers = { "VK_LAYER_KHRONOS_validation" };
+			const std::vector<const char*> _deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME };
 
 			Window* _window = nullptr; // TODO: Move to renderer
 
 			static std::unique_ptr<Device> _device;
 
-			Instance       _instance {};
-			PhysicalDevice _physicalDevice {};
+			Instance       _instance{};
+			PhysicalDevice _physicalDevice{};
 
-			InFlightResource<vk::CommandBuffer> _commandBuffer {};
-			InFlightResource<vk::Semaphore>     _imageAvailableSemaphore {};
-			InFlightResource<vk::Semaphore>     _renderFinishedSemaphore {};
-			InFlightResource<vk::Fence>         _inFlightFence {};
+			InFlightResource<vk::CommandBuffer> _commandBuffer{};
+			InFlightResource<vk::Semaphore>     _imageAvailableSemaphore{};
+			InFlightResource<vk::Semaphore>     _renderFinishedSemaphore{};
+			InFlightResource<vk::Fence>         _inFlightFence{};
 
-			vk::DescriptorPool _imGuiDescriptorPool {};
+			vk::DescriptorPool _imGuiDescriptorPool{};
 
 			void CreateInstance(SDL_Window* sdlWindow);
 			void CreateCommandBuffers();

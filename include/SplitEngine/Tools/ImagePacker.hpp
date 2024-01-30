@@ -1,12 +1,10 @@
 #pragma once
 
-#include "SplitEngine/IO/ImageLoader.hpp"
-
+#include <string>
+#include <vector>
 #include "ImageSlicer.hpp"
 #include "glm/vec2.hpp"
 #include "glm/vec4.hpp"
-#include <string>
-#include <vector>
 
 namespace SplitEngine::Tools
 {
@@ -23,10 +21,10 @@ namespace SplitEngine::Tools
 					// Multiply the width with this value to get a correct looking quad
 					float AspectRatio = 0.0f;
 
-					glm::vec2 UVTopLeft {};
-					glm::vec2 UVTopRight {};
-					glm::vec2 UVBottomLeft {};
-					glm::vec2 UVBottomRight {};
+					glm::vec2 UVTopLeft{};
+					glm::vec2 UVTopRight{};
+					glm::vec2 UVBottomLeft{};
+					glm::vec2 UVBottomRight{};
 			};
 
 			struct PackingData

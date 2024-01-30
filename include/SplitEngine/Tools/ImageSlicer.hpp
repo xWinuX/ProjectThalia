@@ -2,9 +2,9 @@
 
 #include "SplitEngine/IO/Image.hpp"
 
-#include <glm/glm.hpp>
 #include <string>
 #include <vector>
+#include <glm/glm.hpp>
 
 namespace SplitEngine::Tools
 {
@@ -16,7 +16,7 @@ namespace SplitEngine::Tools
 			struct SliceData
 			{
 				public:
-					std::vector<IO::Image> Images {};
+					std::vector<IO::Image> Images{};
 			};
 
 			struct SliceOptions
@@ -30,7 +30,7 @@ namespace SplitEngine::Tools
 					 * Leaving one of the elements on 0 assumes all sub images are laid out on this axis (x = 0 -> laid out horizontally y = 0 -> laid out vertically)
 					 * Leaving both on 0 requires NumImages to be set, assumes the sub images are laid out horizontally and consume the full height
 					 */
-					glm::uvec2 Size {0, 0};
+					glm::uvec2 Size{ 0, 0 };
 			};
 
 			static SliceData Slice(const std::string& filePath, SliceOptions sliceOptions);

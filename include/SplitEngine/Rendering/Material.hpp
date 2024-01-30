@@ -2,8 +2,6 @@
 
 #include "SplitEngine/AssetDatabase.hpp"
 #include "SplitEngine/Rendering/Shader.hpp"
-#include "SplitEngine/Rendering/Texture2D.hpp"
-#include "SplitEngine/Rendering/Vulkan/Buffer.hpp"
 #include "SplitEngine/Rendering/Vulkan/Pipeline.hpp"
 
 namespace SplitEngine::Rendering
@@ -37,6 +35,6 @@ namespace SplitEngine::Rendering
 
 			Vulkan::DescriptorSetAllocator::Allocation _instanceDescriptorSetAllocation;
 
-			Shader::Properties _instanceProperties {};
+			Shader::Properties _instanceProperties{};
 	};
 }

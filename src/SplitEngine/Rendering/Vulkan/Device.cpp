@@ -1,8 +1,7 @@
 #include "SplitEngine/Rendering/Vulkan/Device.hpp"
-#include "SplitEngine/Debug/Log.hpp"
+#include <set>
 #include "SplitEngine/ErrorHandler.hpp"
 #include "SplitEngine/Rendering/TextureSettings.hpp"
-#include <set>
 
 namespace SplitEngine::Rendering::Vulkan
 {
@@ -11,27 +10,23 @@ namespace SplitEngine::Rendering::Vulkan
 	{
 		// Get queue info
 		const PhysicalDevice::QueueFamilyIndices queueFamilyIndices  = physicalDevice.GetQueueFamilyIndices();
-		std::set<uint32_t>                       uniqueQueueFamilies = {queueFamilyIndices.GraphicsFamily.value(),
-																		queueFamilyIndices.PresentFamily.value()}; // Needs to be a set to filter out same queue features
+		std::set<uint32_t>                       uniqueQueueFamilies = { queueFamilyIndices.GraphicsFamily.value(), queueFamilyIndices.PresentFamily.value() };
+		// Needs to be a set to filter out same queue features
 
 		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos = std::vector<vk::DeviceQueueCreateInfo>(uniqueQueueFamilies.size());
 
 		float queuePriority = 1.0f;
 
 		int i = 0;
-		for (const auto& uniqueQueueFamily : uniqueQueueFamilies)
+		for (const auto& uniqueQueueFamily: uniqueQueueFamilies)
 		{
 			queueCreateInfos[i] = vk::DeviceQueueCreateInfo({}, uniqueQueueFamily, 1, &queuePriority);
 			i++;
 		}
 
 		// Create logical device
-		vk::PhysicalDeviceFeatures deviceFeatures   = _physicalDevice.GetVkPhysicalDevice().getFeatures();
-		vk::DeviceCreateInfo       deviceCreateInfo = vk::DeviceCreateInfo({},
-                                                                     queueCreateInfos,
-                                                                     physicalDevice.GetValidationLayers(),
-                                                                     physicalDevice.GetExtensions(),
-                                                                     &deviceFeatures);
+		vk::PhysicalDeviceFeatures deviceFeatures = _physicalDevice.GetVkPhysicalDevice().getFeatures();
+		vk::DeviceCreateInfo deviceCreateInfo = vk::DeviceCreateInfo({}, queueCreateInfos, physicalDevice.GetValidationLayers(), physicalDevice.GetExtensions(), &deviceFeatures);
 
 		vk::Result vulkanDeviceCreateResult = _physicalDevice.GetVkPhysicalDevice().createDevice(&deviceCreateInfo, nullptr, &_vkDevice);
 		if (vulkanDeviceCreateResult != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("Failed to create logical device!"); }
@@ -46,9 +41,9 @@ namespace SplitEngine::Rendering::Vulkan
 		_defaultSampler = GetAllocator().AllocateSampler({});
 
 		// ImageLoader
-		const std::byte fuchsia[] = {static_cast<const std::byte>(255), static_cast<const std::byte>(0), static_cast<const std::byte>(255)};
+		constexpr std::byte fuchsia[] = { static_cast<const std::byte>(255), static_cast<const std::byte>(0), static_cast<const std::byte>(255) };
 
-		_defaultImage = Image(this, std::begin(fuchsia), 4, {1, 1, 1}, {});
+		_defaultImage = Image(this, std::begin(fuchsia), 4, { 1, 1, 1 }, {});
 	}
 
 	void Device::CreateRenderPass() { _renderPass = RenderPass(this); }
@@ -58,13 +53,13 @@ namespace SplitEngine::Rendering::Vulkan
 		// Destroy previously created swapchain (since the swapchain can be recreated when the window is resized this)
 		_swapchain.Destroy();
 
-		_swapchain = Swapchain(this, surfaceKhr, {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y)});
+		_swapchain = Swapchain(this, surfaceKhr, { static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y) });
 	}
 
 	void Device::CreateGraphicsCommandPool()
 	{
-		vk::CommandPoolCreateInfo commandPoolCreateInfo = vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-																					_physicalDevice.GetQueueFamilyIndices().GraphicsFamily.value());
+		const vk::CommandPoolCreateInfo commandPoolCreateInfo = vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+		                                                                                  _physicalDevice.GetQueueFamilyIndices().GraphicsFamily.value());
 
 		_graphicsCommandPool = _vkDevice.createCommandPool(commandPoolCreateInfo);
 	}
@@ -125,18 +120,18 @@ namespace SplitEngine::Rendering::Vulkan
 
 	vk::CommandBuffer Device::BeginOneshotCommands() const
 	{
-		vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vk::CommandBufferAllocateInfo(_graphicsCommandPool, vk::CommandBufferLevel::ePrimary, 1);
+		const vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vk::CommandBufferAllocateInfo(_graphicsCommandPool, vk::CommandBufferLevel::ePrimary, 1);
 
-		vk::CommandBuffer commandBuffer = _vkDevice.allocateCommandBuffers(commandBufferAllocateInfo)[0];
+		const vk::CommandBuffer commandBuffer = _vkDevice.allocateCommandBuffers(commandBufferAllocateInfo)[0];
 
-		vk::CommandBufferBeginInfo beginInfo = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+		constexpr vk::CommandBufferBeginInfo beginInfo = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
 		commandBuffer.begin(beginInfo);
 
 		return commandBuffer;
 	}
 
-	void Device::EndOneshotCommands(vk::CommandBuffer commandBuffer) const
+	void Device::EndOneshotCommands(const vk::CommandBuffer commandBuffer) const
 	{
 		commandBuffer.end();
 
@@ -155,5 +150,4 @@ namespace SplitEngine::Rendering::Vulkan
 	uint32_t* Device::GetCurrentFramePtr() { return &_currentFrame; }
 
 	void Device::AdvanceFrame() { _currentFrame = (_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT; }
-
 }
