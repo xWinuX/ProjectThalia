@@ -22,67 +22,63 @@ project(SplitEngine VERSION 1.0.0)
 set(SOURCE_FILES
         include/SplitEngine/Application.hpp
         include/SplitEngine/ApplicationInfo.hpp
+        include/SplitEngine/AssetDatabase.hpp
         include/SplitEngine/DataStructures.hpp
         include/SplitEngine/Debug/Log.hpp
+        include/SplitEngine/Debug/Performance.hpp
+        include/SplitEngine/ECS/Archetype.hpp
+        include/SplitEngine/ECS/Component.hpp
+        include/SplitEngine/ECS/Context.hpp
+        include/SplitEngine/ECS/Entity.hpp
+        include/SplitEngine/ECS/Registry.hpp
+        include/SplitEngine/ECS/Stage.hpp
+        include/SplitEngine/ECS/System.hpp
+        include/SplitEngine/ECS/SystemBase.hpp
         include/SplitEngine/ErrorHandler.hpp
         include/SplitEngine/Event.hpp
+        include/SplitEngine/Input.hpp
+        include/SplitEngine/IO/Image.hpp
         include/SplitEngine/IO/ImageLoader.hpp
         include/SplitEngine/IO/Stream.hpp
-        include/SplitEngine/Input.hpp
+        include/SplitEngine/KeyCode.hpp
+        include/SplitEngine/Tools/ImagePacker.hpp
+        include/SplitEngine/Tools/ImageSlicer.hpp
+        include/SplitEngine/Utility/String.hpp
         src/SplitEngine/Application.cpp
         src/SplitEngine/Debug/Log.cpp
+        src/SplitEngine/ECS/Archetype.cpp
+        src/SplitEngine/ECS/Registry.cpp
         src/SplitEngine/ErrorHandler.cpp
         src/SplitEngine/Input.cpp
         src/SplitEngine/IO/ImageLoader.cpp
         src/SplitEngine/IO/Stream.cpp
-        include/SplitEngine/AssetDatabase.hpp
-        include/SplitEngine/Debug/Performance.hpp
-        src/SplitEngine/ECS/Registry.cpp
-        include/SplitEngine/ECS/Registry.hpp
-        include/SplitEngine/ECS/Entity.hpp
-        include/SplitEngine/ECS/Component.hpp
-        src/SplitEngine/ECS/Archetype.cpp
-        include/SplitEngine/ECS/Archetype.hpp
-        include/SplitEngine/ECS/SystemBase.hpp
-        include/SplitEngine/ECS/System.hpp
-        include/SplitEngine/ECS/Context.hpp
         src/SplitEngine/Tools/ImagePacker.cpp
-        include/SplitEngine/Tools/ImagePacker.hpp
         src/SplitEngine/Tools/ImageSlicer.cpp
-        include/SplitEngine/Tools/ImageSlicer.hpp
-        include/SplitEngine/IO/Image.hpp
-        src/SplitEngine/Rendering/Sprite.cpp
-        include/SplitEngine/Rendering/Sprite.hpp
-        include/SplitEngine/Audio/SoundEffect.hpp
-        src/SplitEngine/IO/AudioLoader.cpp
-        include/SplitEngine/IO/AudioLoader.hpp
-        include/SplitEngine/IO/Audio.hpp
-        src/SplitEngine/Audio/Manager.cpp
-        include/SplitEngine/Audio/Manager.hpp
-        src/SplitEngine/Audio/SoundEffect.cpp
-        include/SplitEngine/ECS/Stage.hpp
         src/SplitEngine/Utility/String.cpp
-        include/SplitEngine/Utility/String.hpp
-        include/SplitEngine/Rendering/Vulkan/BufferFactory.hpp
-        include/SplitEngine/Rendering/Vulkan/InFlightResource.hpp
-        include/SplitEngine/KeyCode.hpp
 )
 
 if (NOT HEADLESS)
     set(NON_HEADLESS_FILES
+            include/SplitEngine/Audio/Manager.hpp
+            include/SplitEngine/Audio/SoundEffect.hpp
+            include/SplitEngine/IO/Audio.hpp
+            include/SplitEngine/IO/AudioLoader.hpp
             include/SplitEngine/Rendering/Material.hpp
             include/SplitEngine/Rendering/Model.hpp
             include/SplitEngine/Rendering/Renderer.hpp
             include/SplitEngine/Rendering/Shader.hpp
+            include/SplitEngine/Rendering/Sprite.hpp
             include/SplitEngine/Rendering/Texture2D.hpp
             include/SplitEngine/Rendering/TextureSettings.hpp
             include/SplitEngine/Rendering/Vulkan/Allocator.hpp
             include/SplitEngine/Rendering/Vulkan/Buffer.hpp
+            include/SplitEngine/Rendering/Vulkan/BufferFactory.hpp
             include/SplitEngine/Rendering/Vulkan/Context.hpp
             include/SplitEngine/Rendering/Vulkan/DescriptorSetAllocator.hpp
             include/SplitEngine/Rendering/Vulkan/Device.hpp
             include/SplitEngine/Rendering/Vulkan/DeviceObject.hpp
             include/SplitEngine/Rendering/Vulkan/Image.hpp
+            include/SplitEngine/Rendering/Vulkan/InFlightResource.hpp
             include/SplitEngine/Rendering/Vulkan/Instance.hpp
             include/SplitEngine/Rendering/Vulkan/PhysicalDevice.hpp
             include/SplitEngine/Rendering/Vulkan/Pipeline.hpp
@@ -90,11 +86,15 @@ if (NOT HEADLESS)
             include/SplitEngine/Rendering/Vulkan/Swapchain.hpp
             include/SplitEngine/Rendering/Vulkan/Utility.hpp
             include/SplitEngine/Window.hpp
+            src/SplitEngine/Audio/Manager.cpp
+            src/SplitEngine/Audio/SoundEffect.cpp
+            src/SplitEngine/IO/AudioLoader.cpp
             src/SplitEngine/Rendering/Material.cpp
             src/SplitEngine/Rendering/Material.cpp
             src/SplitEngine/Rendering/Model.cpp
             src/SplitEngine/Rendering/Renderer.cpp
             src/SplitEngine/Rendering/Shader.cpp
+            src/SplitEngine/Rendering/Sprite.cpp
             src/SplitEngine/Rendering/Texture2D.cpp
             src/SplitEngine/Rendering/Texture2D.cpp
             src/SplitEngine/Rendering/Vulkan/Allocator.cpp
@@ -140,9 +140,8 @@ if (NOT HEADLESS)
     list(APPEND SOURCE_FILES ${NON_HEADLESS_FILES})
 endif ()
 
-#add_library(SplitEngine ${SOURCE_FILES})
+add_library(SplitEngine ${SOURCE_FILES})
 
-add_executable(SplitEngine ${SOURCE_FILES} main.cpp)
 target_include_directories(SplitEngine
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

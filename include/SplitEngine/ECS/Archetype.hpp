@@ -41,7 +41,8 @@ namespace SplitEngine::ECS
 			{
 				_entitiesToAdd.push_back(entityID);
 
-				(GetComponentsToAddRaw<T>().insert(GetComponentsToAddRaw<T>().end(), std::make_move_iterator(reinterpret_cast<const std::byte*>(&args)),
+				(GetComponentsToAddRaw<T>().insert(GetComponentsToAddRaw<T>().end(),
+				                                   std::make_move_iterator(reinterpret_cast<const std::byte*>(&args)),
 				                                   std::make_move_iterator(reinterpret_cast<const std::byte*>(&args) + sizeof(args))), ...);
 
 				return (Entities.size() + _entitiesToAdd.size()) - 1;
@@ -186,7 +187,6 @@ namespace SplitEngine::ECS
 					// Remove old data form add arrays
 					oldArchetype->DestroyEntityInAddQueueImmediately(entityID);
 				}
-
 
 				(std::move(std::make_move_iterator(reinterpret_cast<const std::byte*>(&newComponentData)),
 				           std::make_move_iterator(reinterpret_cast<const std::byte*>(&newComponentData) + sizeof(newComponentData)),

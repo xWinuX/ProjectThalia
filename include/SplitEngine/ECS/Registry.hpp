@@ -176,12 +176,12 @@ namespace SplitEngine::ECS
 			void AddQueuedSystems();
 			void RemoveQueuedSystems();
 
-			#ifndef SE_HEADLESS
+#ifndef SE_HEADLESS
 
 		public:
 			void RegisterRenderingContext(SplitEngine::Rendering::Vulkan::Context* context) { _context.RenderingContext = context; }
 
 			void RegisterAudioManager(SplitEngine::Audio::Manager* audioManager) { _context.AudioManager = audioManager; }
-			#endif
+#endif
 	};
 }

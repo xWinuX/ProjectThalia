@@ -47,7 +47,7 @@ namespace SplitEngine
 
 		if (SDL_InitSubSystem(SDL_INIT_EVENTS) < 0) { ErrorHandler::ThrowRuntimeError(std::format("SDL could not initialize! SDL_Error: {0}\n", SDL_GetError())); }
 
-		#ifndef SE_HEADLESS
+#ifndef SE_HEADLESS
 		LOG("Initializing Renderer...");
 		_renderer.Initialize();
 
@@ -58,7 +58,7 @@ namespace SplitEngine
 		_ecsRegistry.RegisterRenderingContext(&_renderer.GetContext());
 		_ecsRegistry.RegisterAudioManager(&_audioManager);
 
-		#endif
+#endif
 		_ecsRegistry.RegisterAssetDatabase(&_assetDatabase);
 	}
 
@@ -130,9 +130,9 @@ namespace SplitEngine
 						quit = true;
 						break;
 				}
-				#ifndef SE_HEADLESS
+#ifndef SE_HEADLESS
 				_renderer.HandleEvents(event);
-				#endif
+#endif
 			}
 
 			_ecsRegistry.PrepareForExecution(deltaTime);
@@ -141,7 +141,7 @@ namespace SplitEngine
 			_ecsRegistry.ExecuteSystems(ECS::Stage::Gameplay);
 			PRIVATE_TIME_MEASURE_END(ecsGameplaySystem)
 
-			#ifndef SE_HEADLESS
+#ifndef SE_HEADLESS
 
 			ImGui::Text("DT: %f", averageDeltaTime);
 			ImGui::Text("Frame Time (ms): %f", averageDeltaTime / 0.001f);
@@ -165,14 +165,14 @@ namespace SplitEngine
 			PRIVATE_TIME_MEASURE_BEGIN(renderEnd)
 			_renderer.EndRender();
 			PRIVATE_TIME_MEASURE_END(renderEnd)
-			#endif
+#endif
 			Input::Reset();
 		}
 
-		#ifndef SE_HEADLESS
+#ifndef SE_HEADLESS
 		LOG("Waiting for frame to finish...");
 		_renderer.GetContext().WaitForIdle();
-		#endif
+#endif
 	}
 
 	const ApplicationInfo& Application::GetApplicationInfo() { return _applicationInfo; }

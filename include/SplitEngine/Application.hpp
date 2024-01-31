@@ -29,10 +29,10 @@ namespace SplitEngine
 		private:
 			static ApplicationInfo _applicationInfo;
 
-			#ifndef SE_HEADLESS
+#ifndef SE_HEADLESS
 			Rendering::Renderer _renderer;
 			Audio::Manager      _audioManager;
-			#endif
+#endif
 			ECS::Registry _ecsRegistry;
 
 			AssetDatabase _assetDatabase;
