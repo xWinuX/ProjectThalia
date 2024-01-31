@@ -1,6 +1,7 @@
-# ProjectThalia
+# This Project is still W.I.P
+# Split Engine
 
-Vulkan & SDL based 2D Sandbox 
+Vulkan & SDL based Engine 
 
 ## VCPKG
 This project uses vcpkg to manage its dependencies. \
@@ -9,10 +10,6 @@ If you do not want that you can set the CMake option "SKIP_AUTOMATE_VCPKG" to tr
 
 ## How to build
 
-You can either run the build.bat like this: \
-`cmd.exe /c build.bat <config>`
-
-Or do it manually like this: \
 `cmake -G "Visual Studio 17 2022" -S . -B build -DCMAKE_BUILD_TYPE=<config>`
 
-`cmake --build build --target ProjectThalia --config <config>`
+`cmake --build build --target SplitEngine --config <config>`
