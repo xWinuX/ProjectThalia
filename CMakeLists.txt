@@ -19,6 +19,9 @@ endif ()
 
 project(SplitEngine VERSION 1.0.0)
 
+set(SOLOUD_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/submodules/soloud/src)
+set(SOLOUD_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/submodules/soloud/include)
+
 set(SOURCE_FILES
         include/SplitEngine/Application.hpp
         include/SplitEngine/ApplicationInfo.hpp
@@ -115,9 +118,6 @@ if (NOT HEADLESS)
 
     # SOLOUD
     add_compile_definitions(WITH_SDL2)
-
-    set(SOLOUD_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/submodules/soloud/src)
-    set(SOLOUD_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/submodules/soloud/include)
 
     file(GLOB_RECURSE
             SOLOUD_SOURCE
@@ -238,3 +238,10 @@ install(
         DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/SplitEngine"
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
+
+if (NOT HEADLESS)
+    install(
+            DIRECTORY ${SOLOUD_INCLUDE_DIR}
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+endif ()
