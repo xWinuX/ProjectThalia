@@ -241,7 +241,7 @@ install(
 
 if (NOT HEADLESS)
     install(
-            DIRECTORY ${SOLOUD_INCLUDE_DIR}
+            DIRECTORY "${SOLOUD_INCLUDE_DIR}/"
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 endif ()
