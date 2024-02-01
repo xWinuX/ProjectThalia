@@ -238,16 +238,3 @@ install(
         DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/SplitEngine"
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
-
-# Copy rename SDL Library because SoLoud doesn't want it that way
-if (CMAKE_BUILD_TYPE MATCHES "Debug")
-    set(SOURCE_FILE "SDL2d.dll")
-
-    set(NEW_FILE_NAME "SDL2.dll")
-
-    add_custom_command(TARGET SplitEngine POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE_DIR:SplitEngine>/${SOURCE_FILE} $<TARGET_FILE_DIR:SplitEngine>/${NEW_FILE_NAME}
-    )
-
-    add_custom_target(RenameSDL2DebugDLL ALL DEPENDS ${CMAKE_BINARY_DIR}/${NEW_FILE_NAME})
-endif ()
