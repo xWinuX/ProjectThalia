@@ -239,42 +239,6 @@ install(
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-
-add_custom_command(TARGET SplitEngine POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/res $<TARGET_FILE_DIR:SplitEngine>/res)
-
-add_custom_target(CopyResources ALL DEPENDS ${CMAKE_SOURCE_DIR}/res)
-
-set(SHADER_FILES
-        "res/shaders/debug/Debug.vert"
-        "res/shaders/debug/Debug.frag"
-)
-
-find_program(glslc_executable NAMES glslc HINTS Vulkan::glslc)
-
-foreach (SHADER_FILE ${SHADER_FILES})
-    set(SPIRV_OUTPUT $<TARGET_FILE_DIR:SplitEngine>/${SHADER_FILE}.spv)
-
-    add_custom_command(TARGET SplitEngine POST_BUILD
-            COMMAND ${glslc_executable}
-            -o ${SPIRV_OUTPUT}
-            $<TARGET_FILE_DIR:SplitEngine>/${SHADER_FILE}
-            DEPENDS ${CMAKE_SOURCE_DIR}/${SHADER_FILE}
-            RESULT_VARIABLE glslang_result
-            OUTPUT_VARIABLE glslang_output
-            ERROR_VARIABLE glslang_error
-            COMMENT "Compiling ${SHADER_FILE} to SPIR-V")
-
-    if (NOT ${glslang_result} EQUAL 0)
-        message(FATAL_ERROR "Error compiling ${SHADER_NAME}: ${glslang_output}\n${glslang_error}")
-    endif ()
-
-    list(APPEND SPIRV_OUTPUTS ${SPIRV_OUTPUT})
-endforeach ()
-
-add_custom_target(CompileShaders ALL DEPENDS ${SPIRV_OUTPUTS})
-
 # Copy rename SDL Library because SoLoud doesn't want it that way
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
     set(SOURCE_FILE "SDL2d.dll")
