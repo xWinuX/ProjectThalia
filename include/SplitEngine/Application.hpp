@@ -36,7 +36,8 @@ namespace SplitEngine
 			explicit Application(CreateInfo createInfo);
 			void     Run();
 
-			[[nodiscard]] Statistics GetStatistics() const;
+			[[nodiscard]] Window& GetWindow();
+			[[nodiscard]] Statistics& GetStatistics();
 
 			AssetDatabase& GetAssetDatabase();
 			ECS::Registry& GetECSRegistry();

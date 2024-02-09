@@ -58,5 +58,21 @@ namespace SplitEngine
 		}
 	}
 
+	void Window::SetSize(uint32_t width, uint32_t height)
+	{
+		SDL_SetWindowSize(_window, static_cast<int>(width), static_cast<int>(height));
+	}
+
+	void Window::SetFullscreen(bool fullscreen)
+	{
+		SDL_SetWindowFullscreen(_window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+		_isInFullscreen = fullscreen;
+	}
+
+	void Window::ToggleFullscreen()
+	{
+		SetFullscreen(!_isInFullscreen);
+	}
+
 	void Window::SetMinimized(bool newState) { _isMinimized = newState; }
 }

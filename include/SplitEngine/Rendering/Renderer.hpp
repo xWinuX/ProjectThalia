@@ -20,6 +20,7 @@ namespace SplitEngine::Rendering
 			void HandleEvents(SDL_Event event);
 
 			[[nodiscard]] Vulkan::Instance& GetVulkanInstance();
+			[[nodiscard]] Window& GetWindow();
 
 		private:
 			Window           _window;

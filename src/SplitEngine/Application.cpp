@@ -167,7 +167,9 @@ namespace SplitEngine
 #endif
 	}
 
-	Application::Statistics Application::GetStatistics() const { return _statistics; }
+	Window& Application::GetWindow() { return _renderer.GetWindow(); }
+
+	Application::Statistics& Application::GetStatistics() { return _statistics; }
 
 	AssetDatabase& Application::GetAssetDatabase() { return _assetDatabase; }
 

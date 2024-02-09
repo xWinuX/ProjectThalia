@@ -45,6 +45,8 @@ namespace SplitEngine::Rendering
 
 	Vulkan::Instance& Renderer::GetVulkanInstance() { return _vulkanInstance; }
 
+	Window& Renderer::GetWindow() { return _window; }
+
 	void Renderer::BeginRender()
 	{
 		if (_window.IsMinimized())

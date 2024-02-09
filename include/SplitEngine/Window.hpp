@@ -22,11 +22,18 @@ namespace SplitEngine
 
 			void HandleEvents(SDL_Event event);
 
+			void SetSize(uint32_t width, uint32_t height);
+
+			void SetFullscreen(bool fullscreen);
+			void ToggleFullscreen();
+
 			Event<int, int> OnResize{};
 
 		private:
-			SDL_Window* _window      = nullptr;
-			bool        _isMinimized = false;
+			SDL_Window* _window         = nullptr;
+
+			bool        _isMinimized    = false;
+			bool        _isInFullscreen = false;
 
 			void SetMinimized(bool newState);
 	};
