@@ -14,7 +14,7 @@
 #ifndef SE_HEADLESS
 namespace SplitEngine::Rendering::Vulkan
 {
-	class Context;
+	class Instance;
 }
 #endif
 
@@ -179,7 +179,7 @@ namespace SplitEngine::ECS
 #ifndef SE_HEADLESS
 
 		public:
-			void RegisterRenderingContext(SplitEngine::Rendering::Vulkan::Context* context) { _context.RenderingContext = context; }
+			void RegisterRenderingContext(SplitEngine::Rendering::Vulkan::Instance* context) { _context.RenderingContext = context; }
 
 			void RegisterAudioManager(SplitEngine::Audio::Manager* audioManager) { _context.AudioManager = audioManager; }
 #endif

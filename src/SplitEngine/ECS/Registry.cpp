@@ -2,7 +2,7 @@
 
 #ifndef SE_HEADLESS
 #include "SplitEngine/Debug/Performance.hpp"
-#include "SplitEngine/Rendering/Vulkan/Context.hpp"
+#include "SplitEngine/Rendering/Vulkan/Instance.hpp"
 #endif
 
 namespace SplitEngine::ECS

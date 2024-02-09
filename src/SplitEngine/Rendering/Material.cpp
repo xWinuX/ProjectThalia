@@ -1,5 +1,4 @@
 #include "SplitEngine/Rendering/Material.hpp"
-#include "SplitEngine/Rendering/Vulkan/Context.hpp"
 
 namespace SplitEngine::Rendering
 {

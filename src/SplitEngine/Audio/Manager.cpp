@@ -2,6 +2,13 @@
 
 namespace SplitEngine::Audio
 {
+	Manager::Manager()
+	{
+		LOG("Initializing Audio...");
+		_audioEngine = new SoLoud::Soloud();
+		_audioEngine->init();
+	}
+
 	Manager::~Manager()
 	{
 		LOG("Shutting down Audio...");
@@ -10,11 +17,6 @@ namespace SplitEngine::Audio
 		delete _audioEngine;
 	}
 
-	void Manager::Initialize()
-	{
-		_audioEngine = new SoLoud::Soloud();
-		_audioEngine->init();
-	}
 
 	void Manager::PlaySound(SoundEffect& soundEffect, float volume) { _audioEngine->play(*soundEffect.GetAudio(), soundEffect.GetBaseVolume() * volume); }
 

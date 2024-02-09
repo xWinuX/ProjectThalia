@@ -1,4 +1,6 @@
 #include "SplitEngine/Rendering/Vulkan/RenderPass.hpp"
+
+#include "SplitEngine/Rendering/Vulkan/PhysicalDevice.hpp"
 #include "SplitEngine/Rendering/Vulkan/Utility.hpp"
 
 namespace SplitEngine::Rendering::Vulkan

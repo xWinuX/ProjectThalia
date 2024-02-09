@@ -1,24 +1,50 @@
 #pragma once
 
-#include "vulkan/vulkan.hpp"
+#include "SplitEngine/RenderingSettings.hpp"
+#include "SplitEngine/ApplicationInfo.hpp"
+#include "SplitEngine/Window.hpp"
+#include "SplitEngine/Rendering/Vulkan/PhysicalDevice.hpp"
+#include "SplitEngine/Rendering/Vulkan/Device.hpp"
+
+#include <vulkan/vulkan.hpp>
 
 namespace SplitEngine::Rendering::Vulkan
 {
 	class Instance
 	{
 		public:
-			Instance() = default;
-			Instance(std::vector<const char*> extensionNames, std::vector<const char*> validationLayers, vk::ApplicationInfo applicationInfo);
+			Instance(Window& window, ApplicationInfo& applicationInfo, RenderingSettings&& renderingSettings);
 
 			void Destroy();
 
-			[[nodiscard]] const vk::Instance&   GetVkInstance() const;
-			[[nodiscard]] const vk::SurfaceKHR& GetVkSurface() const;
+			void CreateAllocator();
 
-			void SetVkSurface(const vk::SurfaceKHR& vkSurface);
+			[[nodiscard]] static Instance& Get();
+
+			[[nodiscard]] const Image&             GetDefaultImage() const;
+			[[nodiscard]] const vk::Sampler*       GetDefaultSampler() const;
+			[[nodiscard]] const RenderingSettings& GetRenderingSettings() const;
+			[[nodiscard]] PhysicalDevice&          GetPhysicalDevice() const;
+			[[nodiscard]] Allocator&               GetAllocator() const;
+			[[nodiscard]] const vk::Instance&      GetVkInstance() const;
+			[[nodiscard]] const vk::SurfaceKHR&    GetVkSurface() const;
 
 		private:
-			vk::Instance   _vkInstance {};
-			vk::SurfaceKHR _vkSurface {};
+			static Instance* _instance;
+
+			RenderingSettings _renderingSettings;
+
+			std::unique_ptr<PhysicalDevice> _physicalDevice;
+			std::unique_ptr<Allocator>      _allocator;
+
+			Image              _defaultImage;
+			const vk::Sampler* _defaultSampler = nullptr;
+
+			vk::Instance   _vkInstance{};
+			vk::SurfaceKHR _vkSurface{};
+
+			vk::DescriptorPool _imGuiDescriptorPool{};
+
+			void InitializeImGui(Window& window);
 	};
 }

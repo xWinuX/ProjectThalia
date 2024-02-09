@@ -2,7 +2,7 @@
 #include "SplitEngine/Application.hpp"
 #include "SplitEngine/ErrorHandler.hpp"
 #include "SplitEngine/Rendering/Texture2D.hpp"
-#include "SplitEngine/Rendering/Vulkan/Context.hpp"
+#include "SplitEngine/Rendering/Vulkan/Instance.hpp"
 #include "SplitEngine/Rendering/Vulkan/Pipeline.hpp"
 
 #include <filesystem>
@@ -17,12 +17,14 @@ namespace SplitEngine::Rendering
 	Shader::Shader(const CreateInfo& createInfo) :
 		_shaderPath(createInfo.ShaderPath)
 	{
-		_device = Vulkan::Context::GetDevice();
+		_device = &Vulkan::Instance::Get().GetPhysicalDevice().GetDevice();
+
+		RenderingSettings renderingSettings = _device->GetPhysicalDevice().GetInstance().GetRenderingSettings();
 
 		std::vector<std::filesystem::path> files;
 		for (const std::filesystem::directory_entry& entry: std::filesystem::directory_iterator(_shaderPath))
 		{
-			const bool hasSpvExtension = entry.path().extension() == std::format(".{0}", Application::GetApplicationInfo().SpirvFileExtension);
+			const bool hasSpvExtension = entry.path().extension() == std::format(".{0}", renderingSettings.SpirvFileExtension);
 			if (std::filesystem::is_regular_file(entry.path()) && hasSpvExtension) { files.push_back(entry.path()); }
 		}
 
@@ -54,8 +56,8 @@ namespace SplitEngine::Rendering
 			Vulkan::Pipeline::ShaderType shaderType       = Vulkan::Pipeline::ShaderType::Vertex;
 
 
-			if (shaderTypeString == Application::GetApplicationInfo().VertexShaderFileExtension) { shaderType = Vulkan::Pipeline::ShaderType::Vertex; }
-			if (shaderTypeString == Application::GetApplicationInfo().FragmentShaderFileExtension) { shaderType = Vulkan::Pipeline::ShaderType::Fragment; }
+			if (shaderTypeString == renderingSettings.VertexShaderFileExtension) { shaderType = Vulkan::Pipeline::ShaderType::Vertex; }
+			if (shaderTypeString == renderingSettings.FragmentShaderFileExtension) { shaderType = Vulkan::Pipeline::ShaderType::Fragment; }
 
 			shaderInfos.push_back({ file.string(), shaderType });
 		}
@@ -159,7 +161,10 @@ namespace SplitEngine::Rendering
 
 	void Shader::Properties::Update()
 	{
-		if (!_updateImageWriteDescriptorSets.empty()) { Vulkan::Context::GetDevice()->GetVkDevice().updateDescriptorSets(_updateImageWriteDescriptorSets, nullptr); }
+		if (!_updateImageWriteDescriptorSets.empty())
+		{
+			Vulkan::Instance::Get().GetPhysicalDevice().GetDevice().GetVkDevice().updateDescriptorSets(_updateImageWriteDescriptorSets, nullptr);
+		}
 
 		_updateImageWriteDescriptorSets.clear();
 	}

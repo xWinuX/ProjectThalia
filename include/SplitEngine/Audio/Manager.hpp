@@ -10,11 +10,9 @@ namespace SplitEngine::Audio
 {
 	class Manager
 	{
-
 		public:
-			Manager() = default;
+			Manager();
 			~Manager();
-			void Initialize();
 
 			void PlaySound(SoundEffect& soundEffect, float volume = 1.0f);
 			void PlaySound(AssetHandle<SoundEffect>& soundEffect, float volume = 1.0f);

@@ -58,6 +58,7 @@ set(SOURCE_FILES
         src/SplitEngine/Tools/ImagePacker.cpp
         src/SplitEngine/Tools/ImageSlicer.cpp
         src/SplitEngine/Utility/String.cpp
+        include/SplitEngine/ApplicationInfo.hpp
 )
 
 if (NOT HEADLESS)
@@ -76,7 +77,6 @@ if (NOT HEADLESS)
             include/SplitEngine/Rendering/Vulkan/Allocator.hpp
             include/SplitEngine/Rendering/Vulkan/Buffer.hpp
             include/SplitEngine/Rendering/Vulkan/BufferFactory.hpp
-            include/SplitEngine/Rendering/Vulkan/Context.hpp
             include/SplitEngine/Rendering/Vulkan/DescriptorSetAllocator.hpp
             include/SplitEngine/Rendering/Vulkan/Device.hpp
             include/SplitEngine/Rendering/Vulkan/DeviceObject.hpp
@@ -102,7 +102,6 @@ if (NOT HEADLESS)
             src/SplitEngine/Rendering/Texture2D.cpp
             src/SplitEngine/Rendering/Vulkan/Allocator.cpp
             src/SplitEngine/Rendering/Vulkan/Buffer.cpp
-            src/SplitEngine/Rendering/Vulkan/Context.cpp
             src/SplitEngine/Rendering/Vulkan/DescriptorSetAllocator.cpp
             src/SplitEngine/Rendering/Vulkan/DescriptorSetAllocator.cpp
             src/SplitEngine/Rendering/Vulkan/Device.cpp
@@ -140,6 +139,7 @@ if (NOT HEADLESS)
     list(APPEND SOURCE_FILES ${NON_HEADLESS_FILES})
 endif ()
 
+#add_executable(SplitEngine ${SOURCE_FILES} main.cpp)
 add_library(SplitEngine ${SOURCE_FILES})
 
 target_include_directories(SplitEngine

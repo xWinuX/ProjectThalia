@@ -37,30 +37,29 @@
 
 namespace SplitEngine
 {
-	ApplicationInfo Application::_applicationInfo = {};
-
-	Application::Application(ApplicationInfo applicationInfo) { _applicationInfo = std::move(applicationInfo); }
-
-	void Application::Initialize()
+#ifndef SE_HEADLESS
+	Application::Application(CreateInfo createInfo):
+		_applicationInfo(std::move(createInfo.ApplicationInfo)),
+		_renderer(Rendering::Renderer(_applicationInfo, std::move(createInfo.RenderingSettings))),
+		_audioManager(Audio::Manager())
+#else
+	Application::Application(CreateInfo createInfo):
+		_info(std::move(createInfo.Info))
+#endif
 	{
 		LOG("Initializing SDL Events...");
-
 		if (SDL_InitSubSystem(SDL_INIT_EVENTS) < 0) { ErrorHandler::ThrowRuntimeError(std::format("SDL could not initialize! SDL_Error: {0}\n", SDL_GetError())); }
-
 #ifndef SE_HEADLESS
-		LOG("Initializing Renderer...");
-		_renderer.Initialize();
 
-		LOG("Initializing Audio...");
-		_audioManager.Initialize();
 
 		LOG("Initializing ECS...");
-		_ecsRegistry.RegisterRenderingContext(&_renderer.GetContext());
+		_ecsRegistry.RegisterRenderingContext(&_renderer.GetVulkanInstance());
 		_ecsRegistry.RegisterAudioManager(&_audioManager);
 
 #endif
 		_ecsRegistry.RegisterAssetDatabase(&_assetDatabase);
 	}
+
 
 	void Application::Run()
 	{
@@ -108,7 +107,11 @@ namespace SplitEngine
 				PRIVATE_TIME_MEASURE_AVERAGE(renderBegin)
 				PRIVATE_TIME_MEASURE_AVERAGE(renderEnd)
 
-				averageFps = static_cast<uint64_t>((1.0f / averageDeltaTime));
+				_statistics.AverageFPS                = static_cast<uint64_t>((1.0f / averageDeltaTime));
+				_statistics.AverageGameplaySystemTime = ecsGameplaySystemAverageTime;
+				_statistics.AverageRenderSystemTime   = ecsRenderSystemAverageTime;
+				_statistics.AverageRenderBeginTime    = renderBeginAverageTime;
+				_statistics.AverageRenderEndTime      = renderEndAverageTime;
 
 				accumulatedDeltaTime = 0.0f;
 
@@ -142,18 +145,6 @@ namespace SplitEngine
 			PRIVATE_TIME_MEASURE_END(ecsGameplaySystem)
 
 #ifndef SE_HEADLESS
-
-			ImGui::Text("DT: %f", averageDeltaTime);
-			ImGui::Text("Frame Time (ms): %f", averageDeltaTime / 0.001f);
-			ImGui::Spacing();
-			PRIVATE_TIME_MEASURE_IMGUI(ecsGameplaySystem, "ECS Gameplay Systems Time (ms)")
-			PRIVATE_TIME_MEASURE_IMGUI(ecsRenderSystem, "ECS Render Systems Time (ms)")
-			ImGui::Spacing();
-			PRIVATE_TIME_MEASURE_IMGUI(renderBegin, "Render Time Begin (ms)")
-			PRIVATE_TIME_MEASURE_IMGUI(renderEnd, "Render Time End (ms)")
-			ImGui::Spacing();
-			ImGui::Text("FPS: %llu", averageFps);
-
 			PRIVATE_TIME_MEASURE_BEGIN(renderBegin)
 			_renderer.BeginRender();
 			PRIVATE_TIME_MEASURE_END(renderBegin)
@@ -168,14 +159,9 @@ namespace SplitEngine
 #endif
 			Input::Reset();
 		}
-
-#ifndef SE_HEADLESS
-		LOG("Waiting for frame to finish...");
-		_renderer.GetContext().WaitForIdle();
-#endif
 	}
 
-	const ApplicationInfo& Application::GetApplicationInfo() { return _applicationInfo; }
+	Application::Statistics Application::GetStatistics() const { return _statistics; }
 
 	AssetDatabase& Application::GetAssetDatabase() { return _assetDatabase; }
 

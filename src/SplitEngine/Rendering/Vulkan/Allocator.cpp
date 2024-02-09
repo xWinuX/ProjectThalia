@@ -2,17 +2,18 @@
 
 #include "SplitEngine/Debug/Log.hpp"
 #include "SplitEngine/Rendering/Vulkan/Device.hpp"
+#include "SplitEngine/Rendering/Vulkan/Instance.hpp"
 
 namespace SplitEngine::Rendering::Vulkan
 {
-	Allocator::Allocator(Device* device, const Instance& instance) :
-		DeviceObject(device)
+	Allocator::Allocator(const Instance& instance):
+		_instance(instance)
 	{
 		// Create VMA Allocator
 		VmaAllocatorCreateInfo vmaAllocatorCreateInfo = VmaAllocatorCreateInfo();
 		vmaAllocatorCreateInfo.vulkanApiVersion       = VK_API_VERSION_1_3;
-		vmaAllocatorCreateInfo.device                 = device->GetVkDevice();
-		vmaAllocatorCreateInfo.physicalDevice         = device->GetPhysicalDevice().GetVkPhysicalDevice();
+		vmaAllocatorCreateInfo.device                 = instance.GetPhysicalDevice().GetDevice().GetVkDevice();
+		vmaAllocatorCreateInfo.physicalDevice         = instance.GetPhysicalDevice().GetVkPhysicalDevice();
 		vmaAllocatorCreateInfo.instance               = instance.GetVkInstance();
 
 		vmaCreateAllocator(&vmaAllocatorCreateInfo, &_vmaAllocator);
@@ -26,8 +27,12 @@ namespace SplitEngine::Rendering::Vulkan
 
 		VmaAllocationInfo allocationInfo;
 
-		vmaCreateBuffer(_vmaAllocator, reinterpret_cast<const VkBufferCreateInfo*>(&bufferCreateInfo), &allocationCreateInfo, reinterpret_cast<VkBuffer*>(&bufferAllocation.Buffer),
-		                &bufferAllocation.VmaAllocation, &allocationInfo);
+		vmaCreateBuffer(_vmaAllocator,
+		                reinterpret_cast<const VkBufferCreateInfo*>(&bufferCreateInfo),
+		                &allocationCreateInfo,
+		                reinterpret_cast<VkBuffer*>(&bufferAllocation.Buffer),
+		                &bufferAllocation.VmaAllocation,
+		                &allocationInfo);
 
 		bufferAllocation.AllocationInfo.MappedData = allocationInfo.pMappedData;
 
@@ -42,8 +47,12 @@ namespace SplitEngine::Rendering::Vulkan
 
 		const VmaAllocationCreateInfo allocationCreateInfo = CreateVmaAllocationCreateInfo(memoryAllocationCreateInfo);
 
-		vmaCreateImage(_vmaAllocator, reinterpret_cast<const VkImageCreateInfo*>(&imageCreateInfo), &allocationCreateInfo, reinterpret_cast<VkImage*>(&imageAllocation.Image),
-		               &imageAllocation.VmaAllocation, nullptr);
+		vmaCreateImage(_vmaAllocator,
+		               reinterpret_cast<const VkImageCreateInfo*>(&imageCreateInfo),
+		               &allocationCreateInfo,
+		               reinterpret_cast<VkImage*>(&imageAllocation.Image),
+		               &imageAllocation.VmaAllocation,
+		               nullptr);
 
 		_imagesAllocated++;
 
@@ -95,16 +104,25 @@ namespace SplitEngine::Rendering::Vulkan
 	{
 		for (const SamplerEntry& samplerEntry: _samplers) { if (samplerEntry.TextureSettings == textureSettings) { return &samplerEntry.Sampler; } }
 
-		const vk::SamplerCreateInfo samplerCreateInfo = vk::SamplerCreateInfo({}, static_cast<vk::Filter>(textureSettings.MagnificationFilter),
+		const vk::SamplerCreateInfo samplerCreateInfo = vk::SamplerCreateInfo({},
+		                                                                      static_cast<vk::Filter>(textureSettings.MagnificationFilter),
 		                                                                      static_cast<vk::Filter>(textureSettings.MinificationFilter),
 		                                                                      static_cast<vk::SamplerMipmapMode>(textureSettings.MipmapMode),
 		                                                                      static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.x),
 		                                                                      static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.y),
-		                                                                      static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.z), textureSettings.MipLodBias,
-		                                                                      textureSettings.MaxAnisotropy > 0.0f, textureSettings.MaxAnisotropy, vk::False, vk::CompareOp::eNever,
-		                                                                      textureSettings.MinLod, textureSettings.MaxLod, vk::BorderColor::eIntOpaqueBlack, vk::False);
+		                                                                      static_cast<vk::SamplerAddressMode>(textureSettings.WrapMode.z),
+		                                                                      textureSettings.MipLodBias,
+		                                                                      textureSettings.MaxAnisotropy > 0.0f,
+		                                                                      textureSettings.MaxAnisotropy,
+		                                                                      vk::False,
+		                                                                      vk::CompareOp::eNever,
+		                                                                      textureSettings.MinLod,
+		                                                                      textureSettings.MaxLod,
+		                                                                      vk::BorderColor::eIntOpaqueBlack,
+		                                                                      vk::False);
 
-		_samplers.push_back({ textureSettings, GetDevice()->GetVkDevice().createSampler(samplerCreateInfo) });
+
+		_samplers.push_back({ textureSettings, _instance.GetPhysicalDevice().GetDevice().GetVkDevice().createSampler(samplerCreateInfo) });
 
 		return &_samplers.back().Sampler;
 	}

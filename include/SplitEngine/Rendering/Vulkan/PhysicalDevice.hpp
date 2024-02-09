@@ -4,8 +4,12 @@
 
 #include <optional>
 
+
 namespace SplitEngine::Rendering::Vulkan
 {
+	class Device;
+	class Instance;
+
 	class PhysicalDevice
 	{
 		public:
@@ -27,13 +31,10 @@ namespace SplitEngine::Rendering::Vulkan
 			};
 
 		public:
-			PhysicalDevice() = default;
+			explicit PhysicalDevice(Instance& instance, std::vector<const char*> _requiredExtensions, std::vector<const char*> _requiredValidationLayers);
 
-			explicit PhysicalDevice(const vk::Instance&      instance,
-			                        const vk::SurfaceKHR&    surface,
-			                        std::vector<const char*> _requiredExtensions,
-			                        std::vector<const char*> _requiredValidationLayers);
-
+			[[nodiscard]] Instance&                           GetInstance() const;
+			[[nodiscard]] Device&                             GetDevice() const;
 			[[nodiscard]] const vk::PhysicalDevice&           GetVkPhysicalDevice() const;
 			[[nodiscard]] const QueueFamilyIndices&           GetQueueFamilyIndices() const;
 			[[nodiscard]] const SwapchainSupportDetails&      GetSwapchainSupportDetails() const;
@@ -43,12 +44,18 @@ namespace SplitEngine::Rendering::Vulkan
 			[[nodiscard]] vk::Format                          GetDepthImageFormat() const;
 			[[nodiscard]] const vk::PhysicalDeviceProperties& GetProperties() const;
 
+			void Destroy();
+
+			void UpdateSwapchainSupportDetails(const vk::SurfaceKHR& surface);
+
 		private:
+			Instance&                    _instance;
 			vk::PhysicalDevice           _vkPhysicalDevice;
+			std::unique_ptr<Device>      _device;
 			QueueFamilyIndices           _queueFamilyIndices;
 			SwapchainSupportDetails      _swapchainSupportDetails;
 			vk::SurfaceFormatKHR         _imageFormat; // TODO: Does this really belong here?
-			vk::Format                   _depthImageFormat {};
+			vk::Format                   _depthImageFormat{};
 			std::vector<const char*>     _extensions;
 			std::vector<const char*>     _validationLayers;
 			vk::PhysicalDeviceProperties _properties;

@@ -2,6 +2,8 @@
 #include "SplitEngine/ErrorHandler.hpp"
 #include "SplitEngine/Rendering/Vulkan/BufferFactory.hpp"
 #include "SplitEngine/Rendering/Vulkan/Device.hpp"
+#include "SplitEngine/Rendering/Vulkan/Instance.hpp"
+#include "SplitEngine/Rendering/Vulkan/PhysicalDevice.hpp"
 #include "SplitEngine/Rendering/Vulkan/Utility.hpp"
 
 namespace SplitEngine::Rendering::Vulkan
@@ -23,7 +25,7 @@ namespace SplitEngine::Rendering::Vulkan
 		allocationCreateInfo.Usage         = Allocator::GpuOnly;
 		allocationCreateInfo.RequiredFlags = Allocator::LocalDevice;
 
-		_imageAllocation = GetDevice()->GetAllocator().CreateImage(imageCreateInfo, allocationCreateInfo);
+		_imageAllocation = GetDevice()->GetPhysicalDevice().GetInstance().GetAllocator().CreateImage(imageCreateInfo, allocationCreateInfo);
 
 		vk::CommandBuffer commandBuffer;
 		if (createInfo.TransitionLayout != vk::ImageLayout::eDepthStencilAttachmentOptimal) { commandBuffer = GetDevice()->BeginOneshotCommands(); }
@@ -119,7 +121,7 @@ namespace SplitEngine::Rendering::Vulkan
 	void Image::Destroy()
 	{
 		Utility::DeleteDeviceHandle(GetDevice(), _view);
-		GetDevice()->GetAllocator().DestroyImage(_imageAllocation);
+		GetDevice()->GetPhysicalDevice().GetInstance().GetAllocator().DestroyImage(_imageAllocation);
 	}
 
 	const vk::Image& Image::GetVkImage() const { return _imageAllocation.Image; }

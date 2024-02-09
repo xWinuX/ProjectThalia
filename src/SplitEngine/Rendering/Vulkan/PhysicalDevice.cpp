@@ -5,16 +5,16 @@
 #include <set>
 #include <utility>
 
+#include "SplitEngine/Rendering/Vulkan/Instance.hpp"
+
 namespace SplitEngine::Rendering::Vulkan
 {
-	PhysicalDevice::PhysicalDevice(const vk::Instance&      instance,
-	                               const vk::SurfaceKHR&    surface,
-	                               std::vector<const char*> _requiredExtensions,
-	                               std::vector<const char*> _requiredValidationLayers) :
+	PhysicalDevice::PhysicalDevice(Instance& instance, std::vector<const char*> _requiredExtensions, std::vector<const char*> _requiredValidationLayers) :
+		_instance(instance),
 		_extensions(_requiredExtensions),
 		_validationLayers(std::move(_requiredValidationLayers))
 	{
-		const std::vector<vk::PhysicalDevice> physicalDevices = instance.enumeratePhysicalDevices();
+		const std::vector<vk::PhysicalDevice> physicalDevices = instance.GetVkInstance().enumeratePhysicalDevices();
 		for (const vk::PhysicalDevice& physicalDevice: physicalDevices)
 		{
 			// Check device type
@@ -37,7 +37,7 @@ namespace SplitEngine::Rendering::Vulkan
 			int  i                     = 0;
 			for (const vk::QueueFamilyProperties& queueFamily: queueFamilyProperties)
 			{
-				const unsigned int presentSupport = physicalDevice.getSurfaceSupportKHR(i, surface);
+				const unsigned int presentSupport = physicalDevice.getSurfaceSupportKHR(i, instance.GetVkSurface());
 
 				if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics && !_queueFamilyIndices.GraphicsFamily.has_value())
 				{
@@ -60,9 +60,9 @@ namespace SplitEngine::Rendering::Vulkan
 			// Check swap chain support
 			_swapchainSupportDetails = SwapchainSupportDetails();
 
-			_swapchainSupportDetails.Capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
-			_swapchainSupportDetails.Formats      = physicalDevice.getSurfaceFormatsKHR(surface);
-			_swapchainSupportDetails.PresentModes = physicalDevice.getSurfacePresentModesKHR(surface);
+			_swapchainSupportDetails.Capabilities = physicalDevice.getSurfaceCapabilitiesKHR(instance.GetVkSurface());
+			_swapchainSupportDetails.Formats      = physicalDevice.getSurfaceFormatsKHR(instance.GetVkSurface());
+			_swapchainSupportDetails.PresentModes = physicalDevice.getSurfacePresentModesKHR(instance.GetVkSurface());
 
 			if (_swapchainSupportDetails.Formats.empty() || _swapchainSupportDetails.PresentModes.empty()) { continue; }
 
@@ -94,6 +94,17 @@ namespace SplitEngine::Rendering::Vulkan
 				break;
 			}
 		}
+
+		_device = std::make_unique<Device>(*this);
+	}
+
+	Instance& PhysicalDevice::GetInstance() const { return _instance; }
+
+	Device& PhysicalDevice::GetDevice() const { return *_device.get(); }
+
+	void PhysicalDevice::UpdateSwapchainSupportDetails(const vk::SurfaceKHR& surface)
+	{
+		_swapchainSupportDetails.Capabilities = _vkPhysicalDevice.getSurfaceCapabilitiesKHR(surface);
 	}
 
 	const vk::PhysicalDevice& PhysicalDevice::GetVkPhysicalDevice() const { return _vkPhysicalDevice; }
@@ -109,6 +120,8 @@ namespace SplitEngine::Rendering::Vulkan
 	const vk::SurfaceFormatKHR& PhysicalDevice::GetImageFormat() const { return _imageFormat; }
 
 	const vk::PhysicalDeviceProperties& PhysicalDevice::GetProperties() const { return _properties; }
+
+	void PhysicalDevice::Destroy() { _device->Destroy(); }
 
 	vk::Format PhysicalDevice::GetDepthImageFormat() const { return _depthImageFormat; }
 }

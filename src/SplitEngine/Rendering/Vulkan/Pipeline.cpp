@@ -27,6 +27,8 @@ namespace SplitEngine::Rendering::Vulkan
 		std::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions = std::vector<vk::VertexInputAttributeDescription>(0);
 		vk::PipelineVertexInputStateCreateInfo           vertexInputStateCreateInfo{};
 
+		const RenderingSettings& renderingSettings = GetDevice()->GetPhysicalDevice().GetInstance().GetRenderingSettings();
+
 		for (int i = 0; i < shaderInfos.size(); i++)
 		{
 			std::vector<uint32_t> shaderCode = IO::Stream::ReadRawAndClose<uint32_t>(shaderInfos[i].path, IO::Binary);
@@ -98,29 +100,28 @@ namespace SplitEngine::Rendering::Vulkan
 						{
 							const std::string& bufferName = resource.name;
 
-							const ApplicationInfo&   applicationInfo = Application::GetApplicationInfo();
-							std::vector<std::string> splitName       = SplitEngine::Utility::String::Split(bufferName, applicationInfo.ShaderBufferModDelimiter, 0);
+							std::vector<std::string> splitName = SplitEngine::Utility::String::Split(bufferName, renderingSettings.ShaderBufferModDelimiter, 0);
 
 							for (std::string& split: splitName)
 							{
 								if (!descriptorSetBufferCreateInfo.SingleInstance)
 								{
 									descriptorSetBufferCreateInfo.SingleInstance =
-											std::ranges::find(applicationInfo.ShaderBufferSingleInstanceModPrefixes, split) != applicationInfo.ShaderBufferSingleInstanceModPrefixes
-											.end();
+											std::ranges::find(renderingSettings.ShaderBufferSingleInstanceModPrefixes, split) != renderingSettings.
+											ShaderBufferSingleInstanceModPrefixes.end();
 								}
 
 								if (!descriptorSetBufferCreateInfo.DeviceLocal)
 								{
 									descriptorSetBufferCreateInfo.DeviceLocal =
-											std::ranges::find(applicationInfo.ShaderBufferDeviceLocalModPrefixes, split) != applicationInfo.ShaderBufferDeviceLocalModPrefixes.
+											std::ranges::find(renderingSettings.ShaderBufferDeviceLocalModPrefixes, split) != renderingSettings.ShaderBufferDeviceLocalModPrefixes.
 											end();
 								}
 
 								if (!descriptorSetBufferCreateInfo.Cached)
 								{
 									descriptorSetBufferCreateInfo.Cached =
-											std::ranges::find(applicationInfo.ShaderBufferCacheModPrefixes, split) != applicationInfo.ShaderBufferCacheModPrefixes.end();
+											std::ranges::find(renderingSettings.ShaderBufferCacheModPrefixes, split) != renderingSettings.ShaderBufferCacheModPrefixes.end();
 								}
 							}
 

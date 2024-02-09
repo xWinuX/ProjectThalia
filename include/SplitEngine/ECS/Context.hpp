@@ -5,7 +5,7 @@ namespace SplitEngine
 {
 	namespace Rendering::Vulkan
 	{
-		class Context;
+		class Instance;
 	}
 
 	namespace Audio
@@ -23,12 +23,12 @@ namespace SplitEngine::ECS
 
 	struct Context
 	{
-			Registry*                   Registry;
-			float                       DeltaTime;
-			SplitEngine::AssetDatabase* AssetDatabase;
+		Registry*                   Registry;
+		float                       DeltaTime;
+		SplitEngine::AssetDatabase* AssetDatabase;
 #ifndef SE_HEADLESS
-			SplitEngine::Rendering::Vulkan::Context* RenderingContext;
-			SplitEngine::Audio::Manager*             AudioManager;
+		SplitEngine::Rendering::Vulkan::Instance* RenderingContext;
+		SplitEngine::Audio::Manager*              AudioManager;
 #endif
 	};
 }

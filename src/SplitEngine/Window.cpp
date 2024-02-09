@@ -3,15 +3,22 @@
 
 #include <format>
 
+#include "SplitEngine/Debug/Log.hpp"
+
 namespace SplitEngine
 {
-	void Window::Open()
+	Window::Window(const std::string& windowTitle, uint32_t width, uint32_t height)
 	{
-		const int SCREEN_WIDTH  = 2000;
-		const int SCREEN_HEIGHT = 1000;
+		LOG("Initializing Window...");
+		if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0) { ErrorHandler::ThrowRuntimeError(std::format("SDL could not initialize! SDL_Error: {0}\n", SDL_GetError())); }
 
-		// Create _window
-		_window = SDL_CreateWindow("Project Thalia", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN);
+		LOG("Opening Window...");
+		_window = SDL_CreateWindow(windowTitle.c_str(),
+		                           SDL_WINDOWPOS_CENTERED,
+		                           SDL_WINDOWPOS_CENTERED,
+		                           static_cast<int>(width),
+		                           static_cast<int>(height),
+		                           SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
 
 		if (_window == nullptr) { ErrorHandler::ThrowRuntimeError(std::format("Window could not be created! SDL_Error: {0}\n", SDL_GetError())); }
 	}
@@ -34,6 +41,22 @@ namespace SplitEngine
 	}
 
 	bool Window::IsMinimized() const { return _isMinimized; }
+
+	void Window::HandleEvents(SDL_Event event)
+	{
+		switch (event.window.event)
+		{
+			case SDL_WINDOWEVENT_SIZE_CHANGED:
+				OnResize.Invoke(event.window.data1, event.window.data2);
+				break;
+			case SDL_WINDOWEVENT_MINIMIZED:
+				SetMinimized(true);
+				break;
+			case SDL_WINDOWEVENT_RESTORED:
+				SetMinimized(false);
+				break;
+		}
+	}
 
 	void Window::SetMinimized(bool newState) { _isMinimized = newState; }
 }

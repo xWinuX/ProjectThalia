@@ -1,6 +1,8 @@
 #include "SplitEngine/Rendering/Vulkan/Buffer.hpp"
 #include "SplitEngine/ErrorHandler.hpp"
 #include "SplitEngine/Rendering/Vulkan/Device.hpp"
+#include "SplitEngine/Rendering/Vulkan/Instance.hpp"
+#include "SplitEngine/Rendering/Vulkan/PhysicalDevice.hpp"
 
 namespace SplitEngine::Rendering::Vulkan
 {
@@ -90,12 +92,12 @@ namespace SplitEngine::Rendering::Vulkan
 	{
 		const vk::BufferCreateInfo bufferCreateInfo = vk::BufferCreateInfo({}, _bufferSize, usage, sharingMode);
 
-		_bufferAllocation = GetDevice()->GetAllocator().CreateBuffer(bufferCreateInfo, allocationCreateInfo);
+		_bufferAllocation = GetDevice()->GetPhysicalDevice().GetInstance().GetAllocator().CreateBuffer(bufferCreateInfo, allocationCreateInfo);
 
 		// Copy data
 		if (data != nullptr)
 		{
-			char*  mappedData = nullptr;
+			char*  mappedData    = nullptr;
 			size_t offsetInBytes = 0;
 			bool   mappedBuffer  = false;
 			for (int i = 0; i < _subBuffers.size(); i++)
@@ -145,7 +147,7 @@ namespace SplitEngine::Rendering::Vulkan
 		GetDevice()->EndOneshotCommands(commandBuffer);
 	}
 
-	void Buffer::Destroy() { GetDevice()->GetAllocator().DestroyBuffer(_bufferAllocation); }
+	void Buffer::Destroy() { GetDevice()->GetPhysicalDevice().GetInstance().GetAllocator().DestroyBuffer(_bufferAllocation); }
 
 	size_t Buffer::GetDataElementNum(const size_t index) const { return _subBuffers[index].NumElements; }
 
@@ -155,9 +157,9 @@ namespace SplitEngine::Rendering::Vulkan
 
 	vk::DeviceSize Buffer::GetSizeInBytes(const size_t index) const { return _subBuffers[index].SizeInBytes; }
 
-	void* Buffer::Map() const { return GetDevice()->GetAllocator().MapMemory(_bufferAllocation); }
+	void* Buffer::Map() const { return GetDevice()->GetPhysicalDevice().GetInstance().GetAllocator().MapMemory(_bufferAllocation); }
 
-	void Buffer::Unmap() const { GetDevice()->GetAllocator().UnmapMemory(_bufferAllocation); }
+	void Buffer::Unmap() const { GetDevice()->GetPhysicalDevice().GetInstance().GetAllocator().UnmapMemory(_bufferAllocation); }
 
 	void Buffer::Stage(const char** data) const
 	{
@@ -169,7 +171,7 @@ namespace SplitEngine::Rendering::Vulkan
 
 	void* Buffer::GetMappedData() const { return _bufferAllocation.AllocationInfo.MappedData; }
 
-	void Buffer::Invalidate() const { GetDevice()->GetAllocator().InvalidateBuffer(_bufferAllocation); }
+	void Buffer::Invalidate() const { GetDevice()->GetPhysicalDevice().GetInstance().GetAllocator().InvalidateBuffer(_bufferAllocation); }
 
-	void Buffer::Flush() const { GetDevice()->GetAllocator().FlushBuffer(_bufferAllocation); }
+	void Buffer::Flush() const { GetDevice()->GetPhysicalDevice().GetInstance().GetAllocator().FlushBuffer(_bufferAllocation); }
 }

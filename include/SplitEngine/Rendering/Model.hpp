@@ -1,7 +1,7 @@
 #pragma once
 
 #include "SplitEngine/Rendering/Vulkan/BufferFactory.hpp"
-#include "SplitEngine/Rendering/Vulkan/Context.hpp"
+#include "SplitEngine/Rendering/Vulkan/Instance.hpp"
 
 namespace SplitEngine::Rendering
 {
@@ -22,7 +22,7 @@ namespace SplitEngine::Rendering
 
 			explicit Model(const CreateInfo& createInfo)
 			{
-				_modelBuffer = Vulkan::BufferFactory::CreateStagedModelBuffer(Vulkan::Context::GetDevice(), createInfo.Vertices, createInfo.Indices);
+				_modelBuffer = Vulkan::BufferFactory::CreateStagedModelBuffer(&Vulkan::Instance::Get().GetPhysicalDevice().GetDevice(), createInfo.Vertices, createInfo.Indices);
 			}
 
 			void Bind(const vk::CommandBuffer& commandBuffer) const;

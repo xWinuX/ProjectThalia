@@ -8,6 +8,7 @@
 #endif
 
 #include "ApplicationInfo.hpp"
+#include "RenderingSettings.hpp"
 #include "AssetDatabase.hpp"
 #include "ECS/Registry.hpp"
 #include "SplitEngine/Audio/Manager.hpp"
@@ -17,17 +18,33 @@ namespace SplitEngine
 	class Application
 	{
 		public:
-			explicit Application(ApplicationInfo applicationInfo);
-			void     Initialize();
+			struct Statistics
+			{
+				uint64_t AverageFPS;
+				float    AverageGameplaySystemTime;
+				float    AverageRenderSystemTime;
+				float    AverageRenderBeginTime;
+				float    AverageRenderEndTime;
+			};
+
+			struct CreateInfo
+			{
+				ApplicationInfo   ApplicationInfo{};
+				RenderingSettings RenderingSettings{};
+			};
+
+			explicit Application(CreateInfo createInfo);
 			void     Run();
 
-			static const ApplicationInfo& GetApplicationInfo();
+			[[nodiscard]] Statistics GetStatistics() const;
 
 			AssetDatabase& GetAssetDatabase();
 			ECS::Registry& GetECSRegistry();
 
 		private:
-			static ApplicationInfo _applicationInfo;
+			ApplicationInfo _applicationInfo{};
+
+			Statistics _statistics{};
 
 #ifndef SE_HEADLESS
 			Rendering::Renderer _renderer;

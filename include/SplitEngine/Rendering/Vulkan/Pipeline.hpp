@@ -13,7 +13,7 @@ namespace SplitEngine::Rendering::Vulkan
 	class Pipeline final : DeviceObject
 	{
 		public:
-			friend class Context;
+			friend class Instance;
 
 			enum class ShaderType
 			{

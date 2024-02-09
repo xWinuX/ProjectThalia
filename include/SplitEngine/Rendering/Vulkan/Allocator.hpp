@@ -1,25 +1,23 @@
 #pragma once
 
-#include "DeviceObject.hpp"
-#include "Instance.hpp"
 #include "SplitEngine/Rendering/TextureSettings.hpp"
 
 #include <unordered_map>
+
 #include <vk_mem_alloc.h>
 
 namespace SplitEngine::Rendering::Vulkan
 {
-	class Device;
+	class Instance;
 
-	class Allocator : DeviceObject
+	class Allocator
 	{
 		public:
-			Allocator() = default;
-			Allocator(Device* device, const Instance& instance);
+			explicit Allocator(const Instance& instance);
 
-			void Destroy() override;
+			void Destroy();
 
-			#pragma region Memory
+#pragma region Memory
 
 		public:
 			enum MemoryAllocationCreateFlagBits : uint32_t
@@ -99,15 +97,16 @@ namespace SplitEngine::Rendering::Vulkan
 			void UnmapMemory(const MemoryAllocation& memoryAllocation) const;
 
 		private:
-			VmaAllocator _vmaAllocator = nullptr;
+			VmaAllocator    _vmaAllocator = nullptr;
+			const Instance& _instance;
 
 			size_t _buffersAllocated = 0;
 			size_t _imagesAllocated  = 0;
 
 			static VmaAllocationCreateInfo CreateVmaAllocationCreateInfo(const MemoryAllocationCreateInfo& memoryAllocationCreateInfo);
-			#pragma endregion
+#pragma endregion
 
-			#pragma region Memory
+#pragma region Memory
 
 		public:
 			const vk::Sampler* AllocateSampler(TextureSettings textureSettings);
@@ -122,5 +121,5 @@ namespace SplitEngine::Rendering::Vulkan
 			std::vector<SamplerEntry> _samplers;
 	};
 
-	#pragma endregion
+#pragma endregion
 }
