@@ -18,8 +18,7 @@ namespace SplitEngine::Tools
 				public:
 					uint32_t PageIndex = 0;
 
-					// Multiply the width with this value to get a correct looking quad
-					float AspectRatio = 0.0f;
+					glm::uvec2 Size{};
 
 					glm::vec2 UVTopLeft{};
 					glm::vec2 UVTopRight{};

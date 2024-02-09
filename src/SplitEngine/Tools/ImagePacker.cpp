@@ -112,7 +112,7 @@ namespace SplitEngine::Tools
 
 				PackingInfo packingInfo{};
 				packingInfo.PageIndex     = i;
-				packingInfo.AspectRatio   = static_cast<float>(rect.w) / static_cast<float>(rect.h);
+				packingInfo.Size          = { rect.w, rect.h };
 				packingInfo.UVTopLeft     = { startX * xStep, startY * yStep };
 				packingInfo.UVTopRight    = { xEnd * xStep, startY * yStep };
 				packingInfo.UVBottomLeft  = { startX * xStep, yEnd * yStep };
