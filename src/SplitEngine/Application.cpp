@@ -33,8 +33,6 @@
 
 #define PRIVATE_TIME_MEASURE_END(varName) varName##EndTime = SDL_GetPerformanceCounter();
 
-#define PRIVATE_TIME_MEASURE_IMGUI(varName, text) ImGui::Text(std::format("{0}: %f", text).c_str(), varName##AverageTime);
-
 namespace SplitEngine
 {
 #ifndef SE_HEADLESS
@@ -75,6 +73,7 @@ namespace SplitEngine
 		float    accumulatedDeltaTime = 0.0f;
 		uint64_t accumulatedFrames    = 0;
 
+		PRIVATE_TIME_MEASURE_INIT(ecsPrepare)
 		PRIVATE_TIME_MEASURE_INIT(ecsGameplaySystem)
 		PRIVATE_TIME_MEASURE_INIT(ecsRenderSystem)
 		PRIVATE_TIME_MEASURE_INIT(renderBegin)
@@ -90,6 +89,7 @@ namespace SplitEngine
 
 			deltaTime = (static_cast<float>((currentTime - previousTime)) * 1000.0f / static_cast<float>(SDL_GetPerformanceFrequency())) * 0.001f;
 
+			PRIVATE_TIME_MEASURE_ACCUMULATE(ecsPrepare)
 			PRIVATE_TIME_MEASURE_ACCUMULATE(ecsGameplaySystem)
 			PRIVATE_TIME_MEASURE_ACCUMULATE(ecsRenderSystem)
 			PRIVATE_TIME_MEASURE_ACCUMULATE(renderBegin)
@@ -103,12 +103,15 @@ namespace SplitEngine
 			{
 				averageDeltaTime = accumulatedDeltaTime / static_cast<float>(accumulatedFrames);
 
+				PRIVATE_TIME_MEASURE_AVERAGE(ecsPrepare)
 				PRIVATE_TIME_MEASURE_AVERAGE(ecsGameplaySystem)
 				PRIVATE_TIME_MEASURE_AVERAGE(ecsRenderSystem)
 				PRIVATE_TIME_MEASURE_AVERAGE(renderBegin)
 				PRIVATE_TIME_MEASURE_AVERAGE(renderEnd)
 
 				_statistics.AverageFPS                = static_cast<uint64_t>((1.0f / averageDeltaTime));
+				_statistics.AverageDeltaTime          = averageDeltaTime;
+				_statistics.AverageECSPrepareTime     = ecsPrepareAverageTime;
 				_statistics.AverageGameplaySystemTime = ecsGameplaySystemAverageTime;
 				_statistics.AverageRenderSystemTime   = ecsRenderSystemAverageTime;
 				_statistics.AverageRenderBeginTime    = renderBeginAverageTime;
@@ -139,7 +142,9 @@ namespace SplitEngine
 #endif
 			}
 
+			PRIVATE_TIME_MEASURE_BEGIN(ecsPrepare)
 			_ecsRegistry.PrepareForExecution(deltaTime);
+			PRIVATE_TIME_MEASURE_END(ecsPrepare)
 
 			PRIVATE_TIME_MEASURE_BEGIN(ecsGameplaySystem)
 			_ecsRegistry.ExecuteSystems(ECS::Stage::Gameplay);

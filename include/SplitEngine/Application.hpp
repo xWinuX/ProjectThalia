@@ -21,6 +21,8 @@ namespace SplitEngine
 			struct Statistics
 			{
 				uint64_t AverageFPS;
+				float    AverageDeltaTime;
+				float    AverageECSPrepareTime;
 				float    AverageGameplaySystemTime;
 				float    AverageRenderSystemTime;
 				float    AverageRenderBeginTime;
@@ -36,7 +38,7 @@ namespace SplitEngine
 			explicit Application(CreateInfo createInfo);
 			void     Run();
 
-			[[nodiscard]] Window& GetWindow();
+			[[nodiscard]] Window&     GetWindow();
 			[[nodiscard]] Statistics& GetStatistics();
 
 			AssetDatabase& GetAssetDatabase();
