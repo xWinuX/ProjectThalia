@@ -43,6 +43,8 @@ namespace SplitEngine::Rendering
 		_window.HandleEvents(event);
 	}
 
+	bool Renderer::WasSkipped() { return _wasSkipped; }
+
 	Vulkan::Instance& Renderer::GetVulkanInstance() { return _vulkanInstance; }
 
 	Window& Renderer::GetWindow() { return _window; }

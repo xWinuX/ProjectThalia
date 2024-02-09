@@ -19,6 +19,8 @@ namespace SplitEngine::Rendering
 
 			void HandleEvents(SDL_Event event);
 
+
+			[[nodiscard]] bool WasSkipped();
 			[[nodiscard]] Vulkan::Instance& GetVulkanInstance();
 			[[nodiscard]] Window& GetWindow();
 

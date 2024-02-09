@@ -151,17 +151,19 @@ namespace SplitEngine
 			PRIVATE_TIME_MEASURE_END(ecsGameplaySystem)
 
 #ifndef SE_HEADLESS
+
 			PRIVATE_TIME_MEASURE_BEGIN(renderBegin)
 			_renderer.BeginRender();
 			PRIVATE_TIME_MEASURE_END(renderBegin)
 
 			PRIVATE_TIME_MEASURE_BEGIN(ecsRenderSystem)
-			_ecsRegistry.ExecuteSystems(ECS::Stage::Rendering);
+			if (!_renderer.WasSkipped()) { _ecsRegistry.ExecuteSystems(ECS::Stage::Rendering); }
 			PRIVATE_TIME_MEASURE_END(ecsRenderSystem)
 
 			PRIVATE_TIME_MEASURE_BEGIN(renderEnd)
 			_renderer.EndRender();
 			PRIVATE_TIME_MEASURE_END(renderEnd)
+
 #endif
 			Input::Reset();
 		}
