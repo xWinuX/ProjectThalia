@@ -1,8 +1,9 @@
 #pragma once
 
-#ifndef SE_HEADLESS
+
 namespace SplitEngine
 {
+#ifndef SE_HEADLESS
 	namespace Rendering::Vulkan
 	{
 		class Instance;
@@ -12,10 +13,11 @@ namespace SplitEngine
 	{
 		class Manager;
 	}
-
+#endif
+	class Application;
 	class AssetDatabase;
 }
-#endif
+
 
 namespace SplitEngine::ECS
 {
@@ -23,12 +25,14 @@ namespace SplitEngine::ECS
 
 	struct Context
 	{
-		Registry*                   Registry;
-		float                       DeltaTime;
-		SplitEngine::AssetDatabase* AssetDatabase;
+		float          DeltaTime;
+		Application*   Application;
+		Registry*      Registry;
+		AssetDatabase* AssetDatabase;
+
 #ifndef SE_HEADLESS
-		SplitEngine::Rendering::Vulkan::Instance* RenderingContext;
-		SplitEngine::Audio::Manager*              AudioManager;
+		Rendering::Vulkan::Instance* RenderingContext;
+		Audio::Manager*              AudioManager;
 #endif
 	};
 }

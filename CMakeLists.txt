@@ -71,7 +71,6 @@ if (NOT HEADLESS)
             include/SplitEngine/Rendering/Model.hpp
             include/SplitEngine/Rendering/Renderer.hpp
             include/SplitEngine/Rendering/Shader.hpp
-            include/SplitEngine/Rendering/Sprite.hpp
             include/SplitEngine/Rendering/Texture2D.hpp
             include/SplitEngine/Rendering/TextureSettings.hpp
             include/SplitEngine/Rendering/Vulkan/Allocator.hpp
@@ -97,7 +96,6 @@ if (NOT HEADLESS)
             src/SplitEngine/Rendering/Model.cpp
             src/SplitEngine/Rendering/Renderer.cpp
             src/SplitEngine/Rendering/Shader.cpp
-            src/SplitEngine/Rendering/Sprite.cpp
             src/SplitEngine/Rendering/Texture2D.cpp
             src/SplitEngine/Rendering/Texture2D.cpp
             src/SplitEngine/Rendering/Vulkan/Allocator.cpp

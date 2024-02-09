@@ -57,6 +57,7 @@ namespace SplitEngine
 		_ecsRegistry.RegisterAudioManager(&_audioManager);
 
 #endif
+		_ecsRegistry.RegisterApplication(this);
 		_ecsRegistry.RegisterAssetDatabase(&_assetDatabase);
 	}
 

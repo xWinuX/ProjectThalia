@@ -130,6 +130,8 @@ namespace SplitEngine::ECS
 
 			bool IsSystemValid(uint64_t systemID);
 
+			void RegisterApplication(Application* application);
+
 			void RegisterAssetDatabase(SplitEngine::AssetDatabase* assetDatabase);
 
 			[[nodiscard]] std::vector<Archetype*> GetArchetypesWithSignature(const DynamicBitSet& signature);

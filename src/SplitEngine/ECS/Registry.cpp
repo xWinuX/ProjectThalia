@@ -135,6 +135,8 @@ namespace SplitEngine::ECS
 		return systemLookupEntry.Index != -1;
 	}
 
+	void Registry::RegisterApplication(Application* application) { _context.Application = application; }
+
 	void Registry::ExecuteSystems(Stage stageToExecute)
 	{
 		for (const auto& systemEntry: _systems[static_cast<uint8_t>(stageToExecute)]) { systemEntry.System->RunExecute(_context); }
