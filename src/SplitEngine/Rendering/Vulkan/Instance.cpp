@@ -70,8 +70,6 @@ namespace SplitEngine::Rendering::Vulkan
 
 	void Instance::Destroy()
 	{
-		_physicalDevice->GetDevice().WaitForIdle();
-
 		Pipeline::_globalDescriptorManager.DeallocateDescriptorSet(Pipeline::_globalDescriptorSetAllocation);
 		Pipeline::_globalDescriptorManager.Destroy();
 

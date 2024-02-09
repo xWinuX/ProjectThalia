@@ -159,6 +159,11 @@ namespace SplitEngine
 #endif
 			Input::Reset();
 		}
+
+#ifndef SE_HEADLESS
+		LOG("Waiting for frame to finish...");
+		_renderer.GetVulkanInstance().GetPhysicalDevice().GetDevice().WaitForIdle();
+#endif
 	}
 
 	Application::Statistics Application::GetStatistics() const { return _statistics; }
