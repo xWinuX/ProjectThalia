@@ -264,7 +264,7 @@ namespace SplitEngine::Rendering::Vulkan
 		                                                                                                        vk::BlendOp::eAdd,
 		                                                                                                        vk::BlendFactor::eOne,
 		                                                                                                        vk::BlendFactor::eZero,
-		                                                                                                        vk::BlendOp::eSubtract,
+		                                                                                                        vk::BlendOp::eAdd,
 		                                                                                                        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
 		                                                                                                        vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
 
