@@ -10,7 +10,7 @@ namespace SplitEngine::ECS
 	Registry::Registry()
 	{
 		_context.Registry = this;
-		_archetypeRoot    = new Archetype(_sparseEntityLookup, _componentSizes, _archetypeLookup, _entityGraveyard, {});
+		_archetypeRoot    = new Archetype(_sparseEntityLookup, _sparseComponentLookup, _archetypeLookup, _entityGraveyard, {});
 	}
 
 	Registry::~Registry()

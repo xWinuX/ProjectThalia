@@ -89,7 +89,15 @@ namespace SplitEngine::ECS
 			void RegisterComponent()
 			{
 				TypeIDGenerator<Component>::GetID<T>();
-				_componentSizes.push_back(sizeof(T));
+
+				_sparseComponentLookup.push_back({
+				sizeof(T),
+					[] (std::byte* rawComponent)
+					{
+						T* component = reinterpret_cast<T*>(rawComponent);
+						component->~T();
+					}
+				});
 
 				_archetypeRoot->Resize();
 			}
@@ -138,7 +146,7 @@ namespace SplitEngine::ECS
 
 		private:
 			std::vector<Entity> _sparseEntityLookup{};
-			std::vector<size_t> _componentSizes{};
+			std::vector<Component> _sparseComponentLookup{};
 
 			Archetype* _archetypeRoot = nullptr;
 

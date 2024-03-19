@@ -22,7 +22,7 @@ namespace SplitEngine::ECS
 			DynamicBitSet                       Signature{};
 
 			Archetype(std::vector<Entity>&      sparseEntityLookup,
-			          std::vector<size_t>&      componentSizes,
+			          std::vector<Component>&   sparseComponentLookup,
 			          std::vector<Archetype*>&  archetypeLookup,
 			          AvailableStack<uint64_t>& entityGraveyard,
 			          std::vector<uint64_t>&&   componentIDs);
@@ -41,9 +41,14 @@ namespace SplitEngine::ECS
 			{
 				_entitiesToAdd.push_back(entityID);
 
-				(GetComponentsToAddRaw<T>().insert(GetComponentsToAddRaw<T>().end(),
-				                                   std::make_move_iterator(reinterpret_cast<const std::byte*>(&args)),
-				                                   std::make_move_iterator(reinterpret_cast<const std::byte*>(&args) + sizeof(args))), ...);
+				([&]
+				{
+					std::vector<std::byte>& bytes   = GetComponentsToAddRaw<T>();
+					size_t                  oldSize = bytes.size();
+					bytes.resize(oldSize + sizeof(args));
+					T* comp = reinterpret_cast<T*>(bytes.data() + oldSize);
+					*comp   = std::move(args);
+				}(), ...);
 
 				return (Entities.size() + _entitiesToAdd.size()) - 1;
 			}
@@ -74,7 +79,7 @@ namespace SplitEngine::ECS
 				{
 					std::vector<uint64_t> componentIds = std::vector<uint64_t>(ComponentIDs);
 					componentIds.push_back(componentIDToAdd);
-					const Archetype* archetype = new Archetype(_sparseEntityLookup, _componentSizes, _archetypeLookup, _entityGraveyard, std::move(componentIds));
+					const Archetype* archetype = new Archetype(_sparseEntityLookup, _sparseComponentLookup, _archetypeLookup, _entityGraveyard, std::move(componentIds));
 					_sparseAddComponentArchetypes[componentIDToAdd] = archetype->ID;
 					return archetype->ID;
 				}
@@ -92,7 +97,7 @@ namespace SplitEngine::ECS
 
 					for (uint64_t& componentID: ComponentIDs) { if (componentID != componentIDToRemove) { componentIds.push_back(componentID); } }
 
-					Archetype* archetype = new Archetype(_sparseEntityLookup, _componentSizes, _archetypeLookup, _entityGraveyard, std::move(componentIds));
+					Archetype* archetype = new Archetype(_sparseEntityLookup, _sparseComponentLookup, _archetypeLookup, _entityGraveyard, std::move(componentIds));
 					_sparseRemoveComponentArchetypes[componentIDToRemove] = archetype->ID;
 					archetype->_sparseAddComponentArchetypes[componentIDToRemove] = ID;
 					return archetype->ID;
@@ -128,7 +133,7 @@ namespace SplitEngine::ECS
 					for (const auto& componentID: newArchetype->ComponentIDs)
 					{
 						std::vector<std::byte>& bytes         = newArchetype->_componentDataToAdd[componentID];
-						const size_t&           componentSize = _componentSizes[componentID];
+						const size_t&           componentSize = _sparseComponentLookup[componentID].Size;
 						std::byte*              it            = oldArchetype->_componentDataToAdd[componentID].data() + (entity.moveComponentIndex * componentSize);
 
 						std::move(std::make_move_iterator(it), std::make_move_iterator(it + componentSize), bytes.end() - componentSize);
@@ -178,7 +183,7 @@ namespace SplitEngine::ECS
 					for (const auto& componentID: oldArchetype->ComponentIDs)
 					{
 						std::vector<std::byte>& bytes         = newArchetype->_componentDataToAdd[componentID];
-						const size_t&           componentSize = _componentSizes[componentID];
+						const size_t&           componentSize = _sparseComponentLookup[componentID].Size;
 						std::byte*              it            = oldArchetype->_componentDataToAdd[componentID].data() + (entity.moveComponentIndex * componentSize);
 
 						std::move(std::make_move_iterator(it), std::make_move_iterator(it + componentSize), bytes.end() - componentSize);
@@ -214,7 +219,7 @@ namespace SplitEngine::ECS
 
 		private:
 			std::vector<Entity>&      _sparseEntityLookup;
-			std::vector<size_t>&      _componentSizes;
+			std::vector<Component>&   _sparseComponentLookup;
 			std::vector<Archetype*>&  _archetypeLookup;
 			AvailableStack<uint64_t>& _entityGraveyard;
 
@@ -225,7 +230,7 @@ namespace SplitEngine::ECS
 
 			void MoveQueuedEntities();
 
-			void DestroyEntityImmediately(uint64_t entityID);
+			void DestroyEntityImmediately(uint64_t entityID, bool callComponentDestructor);
 
 			void DestroyEntityInAddQueueImmediately(uint64_t entityID);
 
