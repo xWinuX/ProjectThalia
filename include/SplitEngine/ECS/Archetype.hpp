@@ -37,18 +37,11 @@ namespace SplitEngine::ECS
 			T& GetComponent(uint64_t entityComponentIndex) { return GetComponents<T>()[entityComponentIndex]; }
 
 			template<typename... T>
-			uint64_t AddEntity(uint64_t entityID, T&&... args)
+			uint64_t AddEntity(uint64_t entityID, T&&... components)
 			{
 				_entitiesToAdd.push_back(entityID);
 
-				([&]
-				{
-					std::vector<std::byte>& bytes   = GetComponentsToAddRaw<T>();
-					size_t                  oldSize = bytes.size();
-					bytes.resize(oldSize + sizeof(args));
-					T* comp = reinterpret_cast<T*>(bytes.data() + oldSize);
-					*comp   = std::move(args);
-				}(), ...);
+				AddComponents(std::forward<T>(components)...);
 
 				return (Entities.size() + _entitiesToAdd.size()) - 1;
 			}
@@ -140,7 +133,7 @@ namespace SplitEngine::ECS
 					}
 
 					// Remove old data form add arrays
-					oldArchetype->DestroyEntityInAddQueueImmediately(entityID);
+					oldArchetype->DestroyEntityInAddQueueImmediately(entityID, true);
 
 					entity.moveComponentIndex = newArchetype->_entitiesToAdd.size() - 1;
 				}
@@ -190,12 +183,10 @@ namespace SplitEngine::ECS
 					}
 
 					// Remove old data form add arrays
-					oldArchetype->DestroyEntityInAddQueueImmediately(entityID);
+					oldArchetype->DestroyEntityInAddQueueImmediately(entityID, false);
 				}
 
-				(std::move(std::make_move_iterator(reinterpret_cast<const std::byte*>(&newComponentData)),
-				           std::make_move_iterator(reinterpret_cast<const std::byte*>(&newComponentData) + sizeof(newComponentData)),
-				           newArchetype->GetComponentsToAddRaw<T>().end() - sizeof(newComponentData)), ...);
+				AddComponents(std::forward<T>(newComponentData)...);
 
 				entity.moveComponentIndex = newArchetype->_entitiesToAdd.size() - 1;
 			}
@@ -224,7 +215,20 @@ namespace SplitEngine::ECS
 			AvailableStack<uint64_t>& _entityGraveyard;
 
 			template<typename T>
-			std::vector<std::byte>& GetComponentsToAddRaw() { return _componentDataToAdd[TypeIDGenerator<Component>::GetID<T>()]; }
+			inline std::vector<std::byte>& GetComponentsToAddRaw() { return _componentDataToAdd[TypeIDGenerator<Component>::GetID<T>()]; }
+
+			template<typename... T>
+			inline void AddComponents(T&&... components)
+			{
+				([&]
+				{
+					std::vector<std::byte>& bytes   = GetComponentsToAddRaw<T>();
+					size_t                  oldSize = bytes.size();
+					bytes.resize(oldSize + sizeof(components));
+					T* comp = reinterpret_cast<T*>(bytes.data() + oldSize);
+					*comp   = std::forward<T>(components);
+				}(), ...);
+			}
 
 			void AddQueuedEntities();
 
@@ -232,7 +236,7 @@ namespace SplitEngine::ECS
 
 			void DestroyEntityImmediately(uint64_t entityID, bool callComponentDestructor);
 
-			void DestroyEntityInAddQueueImmediately(uint64_t entityID);
+			void DestroyEntityInAddQueueImmediately(uint64_t entityID, bool callComponentDestructor);
 
 			void ResizeAddComponentsForNewEntity();
 

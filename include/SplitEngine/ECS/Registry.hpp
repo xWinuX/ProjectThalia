@@ -76,7 +76,7 @@ namespace SplitEngine::ECS
 			}
 
 			template<typename... T>
-			void RemoveComponent(uint64_t entityID)
+			void RemoveComponent(const uint64_t entityID) const
 			{
 				const Entity& entity = _sparseEntityLookup[entityID];
 
@@ -91,13 +91,13 @@ namespace SplitEngine::ECS
 				TypeIDGenerator<Component>::GetID<T>();
 
 				_sparseComponentLookup.push_back({
-				sizeof(T),
-					[] (std::byte* rawComponent)
-					{
-						T* component = reinterpret_cast<T*>(rawComponent);
-						component->~T();
-					}
-				});
+					                                 sizeof(T),
+					                                 [](std::byte* rawComponent)
+					                                 {
+						                                 T* component = reinterpret_cast<T*>(rawComponent);
+						                                 component->~T();
+					                                 }
+				                                 });
 
 				_archetypeRoot->Resize();
 			}
@@ -127,7 +127,7 @@ namespace SplitEngine::ECS
 			void RemoveSystem(uint64_t systemID);
 
 			template<typename... T>
-			Archetype* GetArchetype()
+			[[nodiscard]] Archetype* GetArchetype() const
 			{
 				static uint64_t archetypeID = _archetypeRoot->FindArchetype<T...>()->ID;
 
@@ -140,12 +140,12 @@ namespace SplitEngine::ECS
 
 			void RegisterApplication(Application* application);
 
-			void RegisterAssetDatabase(SplitEngine::AssetDatabase* assetDatabase);
+			void RegisterAssetDatabase(AssetDatabase* assetDatabase);
 
 			[[nodiscard]] std::vector<Archetype*> GetArchetypesWithSignature(const DynamicBitSet& signature);
 
 		private:
-			std::vector<Entity> _sparseEntityLookup{};
+			std::vector<Entity>    _sparseEntityLookup{};
 			std::vector<Component> _sparseComponentLookup{};
 
 			Archetype* _archetypeRoot = nullptr;
@@ -189,9 +189,9 @@ namespace SplitEngine::ECS
 #ifndef SE_HEADLESS
 
 		public:
-			void RegisterRenderingContext(SplitEngine::Rendering::Vulkan::Instance* context) { _context.RenderingContext = context; }
+			void RegisterRenderingContext(Rendering::Vulkan::Instance* context) { _context.RenderingContext = context; }
 
-			void RegisterAudioManager(SplitEngine::Audio::Manager* audioManager) { _context.AudioManager = audioManager; }
+			void RegisterAudioManager(Audio::Manager* audioManager) { _context.AudioManager = audioManager; }
 #endif
 	};
 }

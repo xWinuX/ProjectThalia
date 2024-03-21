@@ -1,24 +1,5 @@
 #include "SplitEngine/ECS/Archetype.hpp"
 
-#define DESTROY_ENTITY_IMPL(entityVector, componentVector)                                          \
-	entityVector.pop_back();                                                                        \
-                                                                                                    \
-	for (uint64_t & ComponentID : ComponentIDs)                                                     \
-	{                                                                                               \
-		std::vector<std::byte>& bytes                   = componentVector[ComponentID];             \
-		size_t&                 componentSize           = _sparseComponentLookup[ComponentID].Size; \
-		size_t                  indexToRemoveWithOffset = indexToRemove * componentSize;            \
-                                                                                                    \
-		if (lastIndex != indexToRemove)                                                             \
-		{                                                                                           \
-			std::swap_ranges(bytes.data() + indexToRemoveWithOffset,                                \
-							 bytes.data() + indexToRemoveWithOffset + componentSize,                \
-							 bytes.data() + (lastIndex * componentSize));                           \
-		}                                                                                           \
-                                                                                                    \
-		bytes.erase(bytes.end() - componentSize, bytes.end());                                      \
-	}
-
 namespace SplitEngine::ECS
 {
 	Archetype::Archetype(std::vector<Entity>&      sparseEntityLookup,
@@ -59,20 +40,21 @@ namespace SplitEngine::ECS
 		}
 
 		Entities.pop_back();
-		for (uint64_t& ComponentID: ComponentIDs)
+		for (const uint64_t& ComponentID: ComponentIDs)
 		{
 			std::vector<std::byte>& bytes                   = ComponentData[ComponentID];
-			size_t&                 componentSize           = _sparseComponentLookup[ComponentID].Size;
-			size_t                  indexToRemoveWithOffset = indexToRemove * componentSize;
+			Component&              component               = _sparseComponentLookup[ComponentID];
+			const size_t&           componentSize           = component.Size;
+			const size_t            indexToRemoveWithOffset = indexToRemove * componentSize;
 			std::byte*              start                   = bytes.data() + indexToRemoveWithOffset;
 
-			if (callComponentDestructor) { _sparseComponentLookup[ComponentID].Destructor(start); }
+			if (callComponentDestructor) { component.Destructor(start); }
 			if (lastIndex != indexToRemove) { std::swap_ranges(start, start + componentSize, bytes.data() + (lastIndex * componentSize)); }
 			bytes.erase(bytes.end() - componentSize, bytes.end());
 		}
 	}
 
-	void Archetype::DestroyEntityInAddQueueImmediately(uint64_t entityID)
+	void Archetype::DestroyEntityInAddQueueImmediately(uint64_t entityID, bool callComponentDestructor)
 	{
 		const size_t indexToRemove = _sparseEntityLookup[entityID].moveComponentIndex;
 		const size_t lastIndex     = _entitiesToAdd.size() - 1;
@@ -86,7 +68,19 @@ namespace SplitEngine::ECS
 			std::swap(_entitiesToAdd[indexToRemove], _entitiesToAdd[lastIndex]);
 		}
 
-		DESTROY_ENTITY_IMPL(_entitiesToAdd, _componentDataToAdd)
+		_entitiesToAdd.pop_back();
+		for (const uint64_t& ComponentID: ComponentIDs)
+		{
+			std::vector<std::byte>& bytes                   = ComponentData[ComponentID];
+			Component&              component               = _sparseComponentLookup[ComponentID];
+			const size_t&           componentSize           = component.Size;
+			const size_t            indexToRemoveWithOffset = indexToRemove * componentSize;
+			std::byte*              start                   = bytes.data() + indexToRemoveWithOffset;
+
+			if (callComponentDestructor) { component.Destructor(start); }
+			if (lastIndex != indexToRemove) { std::swap_ranges(start, start + componentSize, bytes.data() + (lastIndex * componentSize)); }
+			bytes.erase(bytes.end() - componentSize, bytes.end());
+		}
 	}
 
 	void Archetype::AddQueuedEntities()
