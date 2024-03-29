@@ -12,12 +12,18 @@ namespace SplitEngine::IO
 		public:
 			ImageLoader() = delete;
 
-			enum ChannelSetup
+			enum class ChannelSetup
 			{
-				Mono      = STBI_grey,
-				MonoAlpha = STBI_grey_alpha,
-				RGB       = STBI_rgb,
-				RGBA      = STBI_rgb_alpha
+				Mono      = 1,
+
+				MonoAlpha = 2,
+
+				RGBA = 4,
+
+				/**
+				 * Since most gpus don't support 24 bit images RGB images will still be 32 bit (RGBA) images
+				 */
+				RGB = RGBA,
 			};
 
 			static Image Load(const std::string& filePath, ChannelSetup channelSetup = ChannelSetup::RGBA);

@@ -10,7 +10,7 @@ namespace SplitEngine::Rendering
 		                           _ioImage.Pixels.data(),
 		                           _ioImage.Width * _ioImage.Height * _ioImage.Channels,
 		                           { _ioImage.Width, _ioImage.Height, 1 },
-		                           {})),
+		                           { .Format = GetVulkanFormat(_ioImage) })),
 		_sampler(Vulkan::Instance::Get().GetAllocator().AllocateSampler(createInfo.TextureSettings)),
 		_textureSettings(createInfo.TextureSettings) {}
 
@@ -19,4 +19,25 @@ namespace SplitEngine::Rendering
 	const Vulkan::Image& Texture2D::GetImage() const { return _vulkanImage; }
 
 	const vk::Sampler* Texture2D::GetSampler() const { return _sampler; }
+
+	vk::Format Texture2D::GetVulkanFormat(const IO::Image& image)
+	{
+		vk::Format format{};
+		switch (image.Channels)
+		{
+			case 1:
+				format = vk::Format::eR8Unorm;
+				break;
+			case 2:
+				format = vk::Format::eR8G8Unorm;
+				break;
+			case 4:
+				format = vk::Format::eR8G8B8A8Srgb;
+				break;
+			default:
+				format = vk::Format::eR8G8B8A8Srgb;
+		}
+
+		return format;
+	}
 }

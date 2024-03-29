@@ -27,5 +27,7 @@ namespace SplitEngine::Rendering
 			Vulkan::Image         _vulkanImage;
 			const vk::Sampler*    _sampler{};
 			const TextureSettings _textureSettings;
+
+			static vk::Format GetVulkanFormat(const IO::Image& image);
 	};
 }

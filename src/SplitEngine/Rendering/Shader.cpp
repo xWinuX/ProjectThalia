@@ -110,7 +110,8 @@ namespace SplitEngine::Rendering
 
 	void Shader::Properties::SetTexture(uint32_t bindingPoint, const Texture2D& texture)
 	{
-		_descriptorSetAllocation->ImageInfos[bindingPoint][0] = vk::DescriptorImageInfo(*texture.GetSampler(), texture.GetImage().GetView(), texture.GetImage().GetLayout());
+		const uint32_t index = _descriptorSetAllocation->SparseImageLookup[bindingPoint];
+		_descriptorSetAllocation->ImageInfos[index][0] = vk::DescriptorImageInfo(*texture.GetSampler(), texture.GetImage().GetView(), texture.GetImage().GetLayout());
 		SetWriteDescriptorSetDirty(bindingPoint);
 	}
 
@@ -130,14 +131,16 @@ namespace SplitEngine::Rendering
 
 	void Shader::Properties::SetTextures(const uint32_t bindingPoint, const size_t offset, std::vector<AssetHandle<Texture2D>>& textures)
 	{
-		const uint32_t index = _descriptorSetAllocation->SparseImageLookup[bindingPoint] + offset;
-
-		for (const vk::WriteDescriptorSet& writeDescriptorSet: _updateImageWriteDescriptorSets)
+		for (int i = 0; i < textures.size(); ++i)
 		{
-			if (writeDescriptorSet.dstBinding == _descriptorSetAllocation->ImageWriteDescriptorSets[index].Get().dstBinding) { return; }
+			const uint32_t index = _descriptorSetAllocation->SparseImageLookup[bindingPoint];
+
+			_descriptorSetAllocation->ImageInfos[index][i + offset] = vk::DescriptorImageInfo(*textures[i]->GetSampler(),
+																							  textures[i]->GetImage().GetView(),
+																							  textures[i]->GetImage().GetLayout());
 		}
 
-		_updateImageWriteDescriptorSets.push_back(_descriptorSetAllocation->ImageWriteDescriptorSets[index].Get());
+		SetWriteDescriptorSetDirty(bindingPoint);
 	}
 
 	Shader::Properties::Properties(Shader* shader, Vulkan::DescriptorSetAllocator::Allocation* descriptorSetAllocation) :
@@ -153,7 +156,7 @@ namespace SplitEngine::Rendering
 			if (writeDescriptorSet.dstBinding == _descriptorSetAllocation->ImageWriteDescriptorSets[index].Get().dstBinding) { return; }
 		}
 
-		for (int i = 0; i < Rendering::Vulkan::Device::MAX_FRAMES_IN_FLIGHT; ++i)
+		for (int i = 0; i < Vulkan::Device::MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			_updateImageWriteDescriptorSets.push_back(_descriptorSetAllocation->ImageWriteDescriptorSets[index][i]);
 		}

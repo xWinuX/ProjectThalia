@@ -15,5 +15,7 @@ namespace SplitEngine
 		std::vector<std::string> ShaderBufferSingleInstanceModPrefixes = {"singleInst", "si"};
 		std::vector<std::string> ShaderBufferDeviceLocalModPrefixes    = {"deviceLocal", "dl"};
 		std::vector<std::string> ShaderBufferCacheModPrefixes          = {"chache", "c"};
+
+		bool UseVulkanValidationLayers = false;
 	};
 }
