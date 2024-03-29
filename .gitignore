@@ -37,3 +37,7 @@ build
 *.exe
 *.out
 *.app
+
+# Testing
+res
+main.cpp
