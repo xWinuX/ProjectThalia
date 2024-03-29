@@ -22,8 +22,6 @@ namespace SplitEngine::Rendering::Vulkan
 	Instance::Instance(Window& window, ApplicationInfo& applicationInfo, RenderingSettings&& renderingSettings):
 		_renderingSettings(std::move(renderingSettings))
 	{
-		const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-
 		uint32_t extensionCount = 0;
 		SDL_Vulkan_GetInstanceExtensions(window.GetSDLWindow(), &extensionCount, nullptr);
 
@@ -36,6 +34,8 @@ namespace SplitEngine::Rendering::Vulkan
 		                                                                  VK_MAKE_VERSION(1, 0, 0),
 		                                                                  VK_API_VERSION_1_3);
 
+		std::vector<const char*> validationLayers;
+		if (renderingSettings.UseVulkanValidationLayers) { validationLayers.push_back("VK_LAYER_KHRONOS_validation"); }
 		_vkInstance = vk::createInstance(vk::InstanceCreateInfo({}, &vkApplicationInfo, validationLayers, extensionNames));
 
 		VkSurfaceKHR   surfaceHandle         = VK_NULL_HANDLE;
