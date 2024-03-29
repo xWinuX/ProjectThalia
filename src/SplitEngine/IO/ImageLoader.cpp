@@ -7,34 +7,22 @@
 
 namespace SplitEngine::IO
 {
-	Image ImageLoader::Load(const std::string& filePath, const ImageLoader::ChannelSetup channelSetup)
+	Image ImageLoader::Load(const std::string& filePath, const ChannelSetup channelSetup)
 	{
-		int width, height, channels;
+		int width, height;
 
-		const stbi_uc* pixels = stbi_load(filePath.c_str(), &width, &height, &channels, channelSetup);
+		const stbi_uc* pixels = stbi_load(filePath.c_str(), &width, &height, nullptr, static_cast<int>(channelSetup));
 
-		if (pixels == nullptr) { ErrorHandler::ThrowRuntimeError(std::format("failed to load image {0}!", filePath)); }
-
-		int numChannels = 0;
-		switch (channelSetup)
+		if (pixels == nullptr)
 		{
-			case ChannelSetup::RGB:
-				numChannels = 3;
-				break;
-			case ChannelSetup::RGBA:
-				numChannels = 4;
-				break;
-			case ChannelSetup::Mono:
-				numChannels = 1;
-				break;
-			case ChannelSetup::MonoAlpha:
-				numChannels = 2;
-				break;
+			ErrorHandler::ThrowRuntimeError(std::format("failed to load image {0}! \n {1}", filePath, stbi_failure_reason()));
 		}
+
+		int numChannels = static_cast<int>(channelSetup);
 
 		const size_t sizeInBytes = width * height * numChannels;
 
-		Image image = Image(std::vector<std::byte>(sizeInBytes, {}), static_cast<uint32_t>(width), static_cast<uint32_t>(height), static_cast<uint32_t>(channels));
+		Image image = Image(std::vector<std::byte>(sizeInBytes, {}), static_cast<uint32_t>(width), static_cast<uint32_t>(height), static_cast<uint32_t>(numChannels));
 
 		memcpy(image.Pixels.data(), pixels, sizeInBytes);
 
