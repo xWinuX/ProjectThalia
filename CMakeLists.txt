@@ -87,6 +87,7 @@ if (NOT HEADLESS)
             include/SplitEngine/Rendering/Vulkan/RenderPass.hpp
             include/SplitEngine/Rendering/Vulkan/Swapchain.hpp
             include/SplitEngine/Rendering/Vulkan/Utility.hpp
+            include/SplitEngine/Rendering/Vulkan/CommandType.hpp
             include/SplitEngine/Window.hpp
             src/SplitEngine/Audio/Manager.cpp
             src/SplitEngine/Audio/SoundEffect.cpp

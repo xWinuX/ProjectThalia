@@ -11,7 +11,7 @@ namespace SplitEngine::Rendering::Vulkan
 	{
 		CreateLogicalDevice(physicalDevice);
 
-		CreateGraphicsCommandPool(physicalDevice);
+		CreateCommandPools(physicalDevice);
 
 		CreateCommandBuffers();
 
@@ -49,6 +49,7 @@ namespace SplitEngine::Rendering::Vulkan
 		_memoryProperties = physicalDevice.GetVkPhysicalDevice().getMemoryProperties();
 		_graphicsQueue    = _vkDevice.getQueue(queueFamilyIndices.GraphicsFamily.value(), 0);
 		_presentQueue     = _vkDevice.getQueue(queueFamilyIndices.PresentFamily.value(), 0);
+		_computeQueue     = _vkDevice.getQueue(queueFamilyIndices.ComputeFamily.value(), 0);
 	}
 
 	void Device::CreateSyncObjects()
@@ -79,7 +80,7 @@ namespace SplitEngine::Rendering::Vulkan
 		                                                                                              Device::MAX_FRAMES_IN_FLIGHT);
 
 		std::vector<vk::CommandBuffer> commandBuffers = _vkDevice.allocateCommandBuffers(commandBufferAllocateInfo);
-		_commandBuffer                                = InFlightResource<vk::CommandBuffer>(GetCurrentFramePtr(), std::move(commandBuffers));
+		_graphicsCommandBuffer                        = InFlightResource<vk::CommandBuffer>(GetCurrentFramePtr(), std::move(commandBuffers));
 	}
 
 	void Device::CreateRenderPass() { _renderPass = RenderPass(this); }
@@ -94,20 +95,24 @@ namespace SplitEngine::Rendering::Vulkan
 
 	void Device::DestroySwapchain() { _swapchain->Destroy(); }
 
-	void Device::CreateGraphicsCommandPool(PhysicalDevice& physicalDevice)
+	void Device::CreateCommandPools(PhysicalDevice& physicalDevice)
 	{
-		const vk::CommandPoolCreateInfo commandPoolCreateInfo = vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-		                                                                                  physicalDevice.GetQueueFamilyIndices().GraphicsFamily.value());
+		const vk::CommandPoolCreateInfo graphicsCommandPoolCreateInfo = vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+		                                                                                          physicalDevice.GetQueueFamilyIndices().GraphicsFamily.value());
 
-		_graphicsCommandPool = _vkDevice.createCommandPool(commandPoolCreateInfo);
+		_graphicsCommandPool = _vkDevice.createCommandPool(graphicsCommandPoolCreateInfo);
+
+		const vk::CommandPoolCreateInfo computeCommandPoolCreateInfo = vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+		                                                                                         physicalDevice.GetQueueFamilyIndices().ComputeFamily.value());
+		_computeCommandPool = _vkDevice.createCommandPool(computeCommandPoolCreateInfo);
 	}
 
 
 	const vk::Device& Device::GetVkDevice() const { return _vkDevice; }
 
 	const vk::Queue& Device::GetGraphicsQueue() const { return _graphicsQueue; }
-
 	const vk::Queue& Device::GetPresentQueue() const { return _presentQueue; }
+	const vk::Queue& Device::GetComputeQueue() const { return _computeQueue; }
 
 	const RenderPass& Device::GetRenderPass() const { return _renderPass; }
 
@@ -122,7 +127,8 @@ namespace SplitEngine::Rendering::Vulkan
 	const vk::Semaphore& Device::GetRenderFinishedSemaphore() const { return _renderFinishedSemaphore.Get(); }
 
 	const vk::Fence&         Device::GetInFlightFence() const { return _inFlightFence.Get(); }
-	const vk::CommandBuffer& Device::GetCommandBuffer() const { return _commandBuffer.Get(); }
+	const vk::CommandBuffer& Device::GetGraphicsCommandBuffer() const { return _graphicsCommandBuffer.Get(); }
+	const vk::CommandBuffer& Device::GetComputeCommandBuffer() const { return _computeCommandBuffer.Get(); }
 
 	void Device::Destroy()
 	{

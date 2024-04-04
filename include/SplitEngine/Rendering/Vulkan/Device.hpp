@@ -34,13 +34,15 @@ namespace SplitEngine::Rendering::Vulkan
 			[[nodiscard]] const vk::Device&                         GetVkDevice() const;
 			[[nodiscard]] const vk::Queue&                          GetGraphicsQueue() const;
 			[[nodiscard]] const vk::Queue&                          GetPresentQueue() const;
+			[[nodiscard]] const vk::Queue&                          GetComputeQueue() const;
 			[[nodiscard]] const vk::PhysicalDeviceMemoryProperties& GetMemoryProperties() const;
 			[[nodiscard]] const vk::CommandPool&                    GetGraphicsCommandPool() const;
 
-			[[nodiscard]] const vk::Semaphore&                      GetImageAvailableSemaphore() const;
-			[[nodiscard]] const vk::Semaphore&                      GetRenderFinishedSemaphore() const;
-			[[nodiscard]] const vk::Fence&                          GetInFlightFence() const;
-			[[nodiscard]] const vk::CommandBuffer&                  GetCommandBuffer() const;
+			[[nodiscard]] const vk::Semaphore&     GetImageAvailableSemaphore() const;
+			[[nodiscard]] const vk::Semaphore&     GetRenderFinishedSemaphore() const;
+			[[nodiscard]] const vk::Fence&         GetInFlightFence() const;
+			[[nodiscard]] const vk::CommandBuffer& GetGraphicsCommandBuffer() const;
+			[[nodiscard]] const vk::CommandBuffer& GetComputeCommandBuffer() const;
 
 			uint32_t* GetCurrentFramePtr();
 
@@ -59,21 +61,29 @@ namespace SplitEngine::Rendering::Vulkan
 
 			RenderPass _renderPass;
 
+			std::vector<vk::CommandPool>   _commandPools;
+			std::vector<vk::Queue>         _queues;
+			std::vector<vk::CommandBuffer> _commandBuffers;
+
 			vk::CommandPool _graphicsCommandPool;
+			vk::CommandPool _computeCommandPool;
 
 			vk::Queue _graphicsQueue;
 			vk::Queue _presentQueue;
+			vk::Queue _computeQueue;
 
-			InFlightResource<vk::Semaphore>     _imageAvailableSemaphore{};
-			InFlightResource<vk::Semaphore>     _renderFinishedSemaphore{};
-			InFlightResource<vk::Fence>         _inFlightFence{};
-			InFlightResource<vk::CommandBuffer> _commandBuffer{};
+			InFlightResource<vk::Semaphore> _imageAvailableSemaphore{};
+			InFlightResource<vk::Semaphore> _renderFinishedSemaphore{};
+			InFlightResource<vk::Fence>     _inFlightFence{};
+
+			InFlightResource<vk::CommandBuffer> _graphicsCommandBuffer{};
+			InFlightResource<vk::CommandBuffer> _computeCommandBuffer{};
 
 			vk::PhysicalDeviceMemoryProperties _memoryProperties;
 
 			void CreateLogicalDevice(PhysicalDevice& physicalDevice);
 			void CreateRenderPass();
-			void CreateGraphicsCommandPool(PhysicalDevice& physicalDevice);
+			void CreateCommandPools(PhysicalDevice& physicalDevice);
 			void CreateSyncObjects();
 			void CreateCommandBuffers();
 	};

@@ -87,7 +87,7 @@ namespace SplitEngine::Rendering
 
 		device.GetVkDevice().resetFences(device.GetInFlightFence());
 
-		const vk::CommandBuffer& commandBuffer = device.GetCommandBuffer();
+		const vk::CommandBuffer& commandBuffer = device.GetGraphicsCommandBuffer();
 
 		commandBuffer.reset({});
 
@@ -123,7 +123,7 @@ namespace SplitEngine::Rendering
 	void Renderer::EndRender()
 	{
 		Vulkan::Device&          device        = _vulkanInstance.GetPhysicalDevice().GetDevice();
-		const vk::CommandBuffer& commandBuffer = device.GetCommandBuffer();
+		const vk::CommandBuffer& commandBuffer = device.GetGraphicsCommandBuffer();
 
 		if (_wasSkipped)
 		{
@@ -138,7 +138,7 @@ namespace SplitEngine::Rendering
 		commandBuffer.end();
 
 		vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
-		const vk::SubmitInfo   submitInfo   = vk::SubmitInfo(device.GetImageAvailableSemaphore(), waitStages, device.GetCommandBuffer(), device.GetRenderFinishedSemaphore());
+		const vk::SubmitInfo   submitInfo   = vk::SubmitInfo(device.GetImageAvailableSemaphore(), waitStages, device.GetGraphicsCommandBuffer(), device.GetRenderFinishedSemaphore());
 
 		device.GetGraphicsQueue().submit(submitInfo, device.GetInFlightFence());
 

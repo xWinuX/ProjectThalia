@@ -1,4 +1,5 @@
 #include "SplitEngine/Rendering/Vulkan/Pipeline.hpp"
+
 #include "spirv_cross/spirv_cross.hpp"
 #include "SplitEngine/Application.hpp"
 #include "SplitEngine/ErrorHandler.hpp"
@@ -28,6 +29,12 @@ namespace SplitEngine::Rendering::Vulkan
 		vk::PipelineVertexInputStateCreateInfo           vertexInputStateCreateInfo{};
 
 		const RenderingSettings& renderingSettings = GetDevice()->GetPhysicalDevice().GetInstance().GetRenderingSettings();
+
+		// Check if input is a compute shader
+		bool isComputeShader = std::ranges::any_of(shaderInfos, [](const ShaderInfo& shaderInfo) { return shaderInfo.shaderStage == ShaderType::Compute; });
+		if (isComputeShader && shaderInfos.size() > 1) { ErrorHandler::ThrowRuntimeError(std::format("Compute shaders can't have more than 1 file {0}", shaderInfos[0].path)); }
+
+		_bindPoint = isComputeShader ? vk::PipelineBindPoint::eCompute : vk::PipelineBindPoint::eGraphics;
 
 		for (int i = 0; i < shaderInfos.size(); i++)
 		{
@@ -225,93 +232,126 @@ namespace SplitEngine::Rendering::Vulkan
 		_descriptorSetLayouts.push_back(_perInstanceDescriptorSetManager.GetDescriptorSetLayout());
 
 
-		std::vector<vk::DynamicState> dynamicStates = { vk::DynamicState::eViewport, vk::DynamicState::eScissor, };
-
-		vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo = vk::PipelineDynamicStateCreateInfo({}, dynamicStates);
-
-		vk::PipelineInputAssemblyStateCreateInfo assemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo({}, vk::PrimitiveTopology::eTriangleList, vk::False);
-
-		const vk::Extent2D& extend   = device->GetSwapchain().GetExtend();
-		vk::Viewport        viewport = vk::Viewport(0, static_cast<float>(extend.height), static_cast<float>(extend.width), -static_cast<float>(extend.height), 0.0f, 1.0f);
-
-		vk::Rect2D scissor = vk::Rect2D({ 0, 0 }, extend);
-
-		vk::PipelineViewportStateCreateInfo viewportStateCreateInfo = vk::PipelineViewportStateCreateInfo({}, 1, &viewport, 1, &scissor);
-
-		vk::PipelineRasterizationStateCreateInfo rasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo({},
-			vk::False,
-			vk::False,
-			vk::PolygonMode::eFill,
-			vk::CullModeFlagBits::eNone,
-			vk::FrontFace::eClockwise,
-			vk::False,
-			0.0f,
-			0.0f,
-			0.0f,
-			1.0f);
-
-		vk::PipelineMultisampleStateCreateInfo multisampleStateCreateInfo = vk::PipelineMultisampleStateCreateInfo({},
-		                                                                                                           vk::SampleCountFlagBits::e1,
-		                                                                                                           vk::False,
-		                                                                                                           1.0f,
-		                                                                                                           nullptr,
-		                                                                                                           vk::False,
-		                                                                                                           vk::False);
-
-		vk::PipelineColorBlendAttachmentState colorBlendAttachmentState = vk::PipelineColorBlendAttachmentState(vk::True,
-		                                                                                                        vk::BlendFactor::eSrcAlpha,
-		                                                                                                        vk::BlendFactor::eOneMinusSrcAlpha,
-		                                                                                                        vk::BlendOp::eAdd,
-		                                                                                                        vk::BlendFactor::eOne,
-		                                                                                                        vk::BlendFactor::eZero,
-		                                                                                                        vk::BlendOp::eAdd,
-		                                                                                                        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-		                                                                                                        vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
-
-		vk::PipelineColorBlendStateCreateInfo colorBlendStateCreateInfo = vk::PipelineColorBlendStateCreateInfo({},
-		                                                                                                        vk::False,
-		                                                                                                        vk::LogicOp::eCopy,
-		                                                                                                        1,
-		                                                                                                        &colorBlendAttachmentState,
-		                                                                                                        { 0.0f, 0.0f, 0.0f, 0.0f });
-
-		vk::PipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo = vk::PipelineDepthStencilStateCreateInfo({},
-		                                                                                                              vk::True,
-		                                                                                                              vk::True,
-		                                                                                                              vk::CompareOp::eLess,
-		                                                                                                              vk::False,
-		                                                                                                              vk::False,
-		                                                                                                              {},
-		                                                                                                              {},
-		                                                                                                              0.0,
-		                                                                                                              1.0f);
-
 		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo({}, _descriptorSetLayouts, nullptr);
+		_layout                                               = device->GetVkDevice().createPipelineLayout(pipelineLayoutCreateInfo);
 
-		_layout = device->GetVkDevice().createPipelineLayout(pipelineLayoutCreateInfo);
+		if (!isComputeShader)
+		{
+			std::vector<vk::DynamicState> dynamicStates = { vk::DynamicState::eViewport, vk::DynamicState::eScissor, };
 
-		vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo = vk::GraphicsPipelineCreateInfo({},
-		                                                                                           2,
-		                                                                                           _shaderStages.data(),
-		                                                                                           &vertexInputStateCreateInfo,
-		                                                                                           &assemblyStateCreateInfo,
-		                                                                                           nullptr,
-		                                                                                           &viewportStateCreateInfo,
-		                                                                                           &rasterizationStateCreateInfo,
-		                                                                                           &multisampleStateCreateInfo,
-		                                                                                           &depthStencilStateCreateInfo,
-		                                                                                           &colorBlendStateCreateInfo,
-		                                                                                           &dynamicStateCreateInfo,
-		                                                                                           _layout,
-		                                                                                           device->GetRenderPass().GetVkRenderPass(),
-		                                                                                           0,
-		                                                                                           VK_NULL_HANDLE,
-		                                                                                           -1);
+			vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo = vk::PipelineDynamicStateCreateInfo({}, dynamicStates);
 
-		vk::ResultValue<vk::Pipeline> graphicsPipelineResult = device->GetVkDevice().createGraphicsPipeline(VK_NULL_HANDLE, graphicsPipelineCreateInfo);
-		if (graphicsPipelineResult.result != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("Failed to create graphics pipeline!"); }
+			vk::PipelineInputAssemblyStateCreateInfo assemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo({}, vk::PrimitiveTopology::eTriangleList, vk::False);
 
-		_vkPipeline = graphicsPipelineResult.value;
+			const vk::Extent2D& extend   = device->GetSwapchain().GetExtend();
+			vk::Viewport        viewport = vk::Viewport(0, static_cast<float>(extend.height), static_cast<float>(extend.width), -static_cast<float>(extend.height), 0.0f, 1.0f);
+
+			vk::Rect2D scissor = vk::Rect2D({ 0, 0 }, extend);
+
+			vk::PipelineViewportStateCreateInfo viewportStateCreateInfo = vk::PipelineViewportStateCreateInfo({}, 1, &viewport, 1, &scissor);
+
+			vk::PipelineRasterizationStateCreateInfo rasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo({},
+				vk::False,
+				vk::False,
+				vk::PolygonMode::eFill,
+				vk::CullModeFlagBits::eNone,
+				vk::FrontFace::eClockwise,
+				vk::False,
+				0.0f,
+				0.0f,
+				0.0f,
+				1.0f);
+
+			vk::PipelineMultisampleStateCreateInfo multisampleStateCreateInfo = vk::PipelineMultisampleStateCreateInfo({},
+			                                                                                                           vk::SampleCountFlagBits::e1,
+			                                                                                                           vk::False,
+			                                                                                                           1.0f,
+			                                                                                                           nullptr,
+			                                                                                                           vk::False,
+			                                                                                                           vk::False);
+
+			vk::PipelineColorBlendAttachmentState colorBlendAttachmentState = vk::PipelineColorBlendAttachmentState(vk::True,
+			                                                                                                        vk::BlendFactor::eSrcAlpha,
+			                                                                                                        vk::BlendFactor::eOneMinusSrcAlpha,
+			                                                                                                        vk::BlendOp::eAdd,
+			                                                                                                        vk::BlendFactor::eOne,
+			                                                                                                        vk::BlendFactor::eZero,
+			                                                                                                        vk::BlendOp::eAdd,
+			                                                                                                        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG
+			                                                                                                        | vk::ColorComponentFlagBits::eB |
+			                                                                                                        vk::ColorComponentFlagBits::eA);
+
+			vk::PipelineColorBlendStateCreateInfo colorBlendStateCreateInfo = vk::PipelineColorBlendStateCreateInfo({},
+			                                                                                                        vk::False,
+			                                                                                                        vk::LogicOp::eCopy,
+			                                                                                                        1,
+			                                                                                                        &colorBlendAttachmentState,
+			                                                                                                        { 0.0f, 0.0f, 0.0f, 0.0f });
+
+			vk::PipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo = vk::PipelineDepthStencilStateCreateInfo({},
+				vk::True,
+				vk::True,
+				vk::CompareOp::eLess,
+				vk::False,
+				vk::False,
+				{},
+				{},
+				0.0,
+				1.0f);
+
+			vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo = vk::GraphicsPipelineCreateInfo({},
+			                                                                                           2,
+			                                                                                           _shaderStages.data(),
+			                                                                                           &vertexInputStateCreateInfo,
+			                                                                                           &assemblyStateCreateInfo,
+			                                                                                           nullptr,
+			                                                                                           &viewportStateCreateInfo,
+			                                                                                           &rasterizationStateCreateInfo,
+			                                                                                           &multisampleStateCreateInfo,
+			                                                                                           &depthStencilStateCreateInfo,
+			                                                                                           &colorBlendStateCreateInfo,
+			                                                                                           &dynamicStateCreateInfo,
+			                                                                                           _layout,
+			                                                                                           device->GetRenderPass().GetVkRenderPass(),
+			                                                                                           0,
+			                                                                                           VK_NULL_HANDLE,
+			                                                                                           -1);
+
+			vk::ResultValue<vk::Pipeline> graphicsPipelineResult = device->GetVkDevice().createGraphicsPipeline(VK_NULL_HANDLE, graphicsPipelineCreateInfo);
+			if (graphicsPipelineResult.result != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("Failed to create graphics pipeline!"); }
+
+			_vkPipeline = graphicsPipelineResult.value;
+		}
+		else
+		{
+			vk::ComputePipelineCreateInfo computePipelineCreateInfo = vk::ComputePipelineCreateInfo({}, _shaderStages[0], _layout);
+
+			vk::ResultValue<vk::Pipeline> computePipelineResult = device->GetVkDevice().createComputePipeline(VK_NULL_HANDLE, computePipelineCreateInfo);
+			if (computePipelineResult.result != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("Failed to create graphics pipeline!"); }
+
+			_vkPipeline = computePipelineResult.value;
+		}
+	}
+
+	void Pipeline::Bind(const vk::CommandBuffer& commandBuffer) const { commandBuffer.bindPipeline(_bindPoint, _vkPipeline); }
+
+	void Pipeline::BindDescriptorSets(const vk::CommandBuffer& commandBuffer,
+	                                  const uint32_t           descriptorSetCount,
+	                                  const vk::DescriptorSet* descriptorSets,
+	                                  const uint32_t           firstSet,
+	                                  uint32_t                 dynamicOffsetCount,
+	                                  uint32_t*                dynamicOffsets) const
+	{
+		commandBuffer.bindDescriptorSets(_bindPoint, _layout, firstSet, descriptorSetCount, descriptorSets, dynamicOffsetCount, dynamicOffsets);
+	}
+
+	void Pipeline::BindDescriptorSets(const vk::CommandBuffer&            commandBuffer,
+	                                  DescriptorSetAllocator::Allocation* descriptorSetAllocation,
+	                                  const uint32_t                      firstSet,
+	                                  const uint32_t                      dynamicOffsetCount,
+	                                  uint32_t*                           dynamicOffsets) const
+	{
+		commandBuffer.bindDescriptorSets(_bindPoint, _layout, firstSet, 1, &descriptorSetAllocation->DescriptorSets.Get(), dynamicOffsetCount, dynamicOffsets);
 	}
 
 	vk::Format Pipeline::GetFormatFromType(const spirv_cross::SPIRType& type)

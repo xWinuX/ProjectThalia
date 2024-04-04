@@ -9,6 +9,11 @@
 
 namespace SplitEngine::Rendering::Vulkan
 {
+	bool PhysicalDevice::IsQueueFamilyIndicesCompleted()
+	{
+		return std::ranges::all_of(_queueFamilyIndices, [](const std::optional<uint32_t>& family) { return family.has_value(); });
+	}
+
 	PhysicalDevice::PhysicalDevice(Instance& instance, std::vector<const char*> _requiredExtensions, std::vector<const char*> _requiredValidationLayers) :
 		_instance(instance),
 		_extensions(_requiredExtensions),
@@ -31,31 +36,39 @@ namespace SplitEngine::Rendering::Vulkan
 			if (!requiredExtensions.empty()) { continue; }
 
 			// Check queues
-			_queueFamilyIndices = QueueFamilyIndices();
+			std::ranges::fill(_queueFamilyIndices, std::optional<uint32_t>()); // Reset for each new physical device
 
 			auto queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
 			int  i                     = 0;
 			for (const vk::QueueFamilyProperties& queueFamily: queueFamilyProperties)
 			{
-				const unsigned int presentSupport = physicalDevice.getSurfaceSupportKHR(i, instance.GetVkSurface());
-
-				if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics && !_queueFamilyIndices.GraphicsFamily.has_value())
+				// Graphics queue
+				if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics && !_queueFamilyIndices[CommandType::Graphics].has_value())
 				{
-					LOG("graphics index: {0}", i);
-					_queueFamilyIndices.GraphicsFamily = i;
+					LOG("Graphics Family Index: {0}", i);
+					_queueFamilyIndices[CommandType::Present] = i;
 				}
 
-				if (presentSupport && !_queueFamilyIndices.PresentFamily.has_value())
+				// Present queue
+				if (physicalDevice.getSurfaceSupportKHR(i, instance.GetVkSurface()) && !_queueFamilyIndices[CommandType::Present].has_value())
 				{
-					LOG("present index: {0}", i);
-					_queueFamilyIndices.PresentFamily = i;
+					LOG("Present Family Index: {0}", i);
+					_queueFamilyIndices[CommandType::Present] = i;
 				}
 
-				if (_queueFamilyIndices.isComplete()) { break; }
+				// Compute queue
+				if (queueFamily.queueFlags & vk::QueueFlagBits::eCompute && !_queueFamilyIndices[CommandType::Compute].has_value())
+				{
+					LOG("Compute Family Index: {0}", i);
+					_queueFamilyIndices[CommandType::Compute] = i;
+				}
+
+				if (IsQueueFamilyIndicesCompleted()) { break; }
 
 				i++;
 			}
-			if (!_queueFamilyIndices.isComplete()) { continue; }
+
+			if (!IsQueueFamilyIndicesCompleted()) { continue; }
 
 			// Check swap chain support
 			_swapchainSupportDetails = SwapchainSupportDetails();

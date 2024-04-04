@@ -9,6 +9,7 @@ namespace SplitEngine
 	{
 		std::string VertexShaderFileExtension   = "vert";
 		std::string FragmentShaderFileExtension = "frag";
+		std::string ComputeShaderFileExtension  = "comp";
 		std::string SpirvFileExtension          = "spv";
 		char        ShaderBufferModDelimiter    = '_';
 

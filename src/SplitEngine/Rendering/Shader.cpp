@@ -58,6 +58,7 @@ namespace SplitEngine::Rendering
 
 			if (shaderTypeString == renderingSettings.VertexShaderFileExtension) { shaderType = Vulkan::Pipeline::ShaderType::Vertex; }
 			if (shaderTypeString == renderingSettings.FragmentShaderFileExtension) { shaderType = Vulkan::Pipeline::ShaderType::Fragment; }
+			if (shaderTypeString == renderingSettings.ComputeShaderFileExtension) { shaderType = Vulkan::Pipeline::ShaderType::Compute; }
 
 			shaderInfos.push_back({ file.string(), shaderType });
 		}
@@ -81,36 +82,21 @@ namespace SplitEngine::Rendering
 
 	void Shader::Bind(const vk::CommandBuffer& commandBuffer) const
 	{
-		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, _pipeline.GetVkPipeline());
-		commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-		                                 _pipeline.GetLayout(),
-		                                 1,
-		                                 1,
-		                                 &_shaderProperties._descriptorSetAllocation->DescriptorSets.Get(),
-		                                 0,
-		                                 nullptr);
+		_pipeline.Bind(commandBuffer);
+		_pipeline.BindDescriptorSets(commandBuffer, _shaderProperties._descriptorSetAllocation, 1);
 	}
 
 	Shader::Properties& Shader::GetProperties() { return _shaderProperties; }
 
 	Shader::Properties& Shader::GetGlobalProperties() { return _globalProperties; }
 
-	void Shader::BindGlobal(const vk::CommandBuffer& commandBuffer) const
-	{
-		commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-		                                 _pipeline.GetLayout(),
-		                                 0,
-		                                 1,
-		                                 &_globalProperties._descriptorSetAllocation->DescriptorSets.Get(),
-		                                 0,
-		                                 nullptr);
-	}
+	void Shader::BindGlobal(const vk::CommandBuffer& commandBuffer) const { _pipeline.BindDescriptorSets(commandBuffer, _globalProperties._descriptorSetAllocation, 0); }
 
 	void Shader::UpdateGlobal() { _globalProperties.Update(); }
 
 	void Shader::Properties::SetTexture(uint32_t bindingPoint, const Texture2D& texture)
 	{
-		const uint32_t index = _descriptorSetAllocation->SparseImageLookup[bindingPoint];
+		const uint32_t index                           = _descriptorSetAllocation->SparseImageLookup[bindingPoint];
 		_descriptorSetAllocation->ImageInfos[index][0] = vk::DescriptorImageInfo(*texture.GetSampler(), texture.GetImage().GetView(), texture.GetImage().GetLayout());
 		SetWriteDescriptorSetDirty(bindingPoint);
 	}
@@ -136,8 +122,8 @@ namespace SplitEngine::Rendering
 			const uint32_t index = _descriptorSetAllocation->SparseImageLookup[bindingPoint];
 
 			_descriptorSetAllocation->ImageInfos[index][i + offset] = vk::DescriptorImageInfo(*textures[i]->GetSampler(),
-																							  textures[i]->GetImage().GetView(),
-																							  textures[i]->GetImage().GetLayout());
+			                                                                                  textures[i]->GetImage().GetView(),
+			                                                                                  textures[i]->GetImage().GetLayout());
 		}
 
 		SetWriteDescriptorSetDirty(bindingPoint);
@@ -156,10 +142,7 @@ namespace SplitEngine::Rendering
 			if (writeDescriptorSet.dstBinding == _descriptorSetAllocation->ImageWriteDescriptorSets[index].Get().dstBinding) { return; }
 		}
 
-		for (int i = 0; i < Vulkan::Device::MAX_FRAMES_IN_FLIGHT; ++i)
-		{
-			_updateImageWriteDescriptorSets.push_back(_descriptorSetAllocation->ImageWriteDescriptorSets[index][i]);
-		}
+		for (int i = 0; i < Vulkan::Device::MAX_FRAMES_IN_FLIGHT; ++i) { _updateImageWriteDescriptorSets.push_back(_descriptorSetAllocation->ImageWriteDescriptorSets[index][i]); }
 	}
 
 	void Shader::Properties::Update()
