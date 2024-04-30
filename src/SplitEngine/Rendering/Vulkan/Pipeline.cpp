@@ -1,4 +1,5 @@
 #include "SplitEngine/Rendering/Vulkan/Pipeline.hpp"
+
 #include "spirv_cross/spirv_cross.hpp"
 #include "SplitEngine/Application.hpp"
 #include "SplitEngine/ErrorHandler.hpp"
@@ -28,6 +29,12 @@ namespace SplitEngine::Rendering::Vulkan
 		vk::PipelineVertexInputStateCreateInfo           vertexInputStateCreateInfo{};
 
 		const RenderingSettings& renderingSettings = GetDevice()->GetPhysicalDevice().GetInstance().GetRenderingSettings();
+
+		// Check if input is a compute shader
+		bool isComputeShader = std::ranges::any_of(shaderInfos, [](const ShaderInfo& shaderInfo) { return shaderInfo.shaderStage == ShaderType::Compute; });
+		if (isComputeShader && shaderInfos.size() > 1) { ErrorHandler::ThrowRuntimeError(std::format("Compute shaders can't have more than 1 file {0}", shaderInfos[0].path)); }
+
+		_bindPoint = isComputeShader ? vk::PipelineBindPoint::eCompute : vk::PipelineBindPoint::eGraphics;
 
 		for (int i = 0; i < shaderInfos.size(); i++)
 		{
@@ -67,9 +74,9 @@ namespace SplitEngine::Rendering::Vulkan
 					DescriptorSetAllocator::CreateInfo& descriptorSetInfo = _descriptorSetInfos[set];
 
 					// If we already processed the binding we just add the shader stage to it and move on to the next resource
-					if (descriptorSetInfo.bindings.contains(binding))
+					if (descriptorSetInfo.Bindings.contains(binding))
 					{
-						for (vk::DescriptorSetLayoutBinding& descriptorLayoutBinding: descriptorSetInfo.descriptorLayoutBindings)
+						for (vk::DescriptorSetLayoutBinding& descriptorLayoutBinding: descriptorSetInfo.DescriptorLayoutBindings)
 						{
 							if (descriptorLayoutBinding.binding == binding)
 							{
@@ -80,54 +87,66 @@ namespace SplitEngine::Rendering::Vulkan
 						continue;
 					}
 
-					DescriptorSetAllocator::BufferCreateInfo descriptorSetBufferCreateInfo{};
+					DescriptorSetAllocator::DescriptorCreateInfo descriptorCreateInfo{};
 
 					const spirv_cross::SPIRType& resourceBaseType = spirvCompiler.get_type(resource.base_type_id);
 					const spirv_cross::SPIRType& resourceType     = spirvCompiler.get_type(resource.type_id);
 
+					// Parse name to find modifiers
+					descriptorCreateInfo.Name          = resource.name;
+					std::vector<std::string> splitName = SplitEngine::Utility::String::Split(descriptorCreateInfo.Name, renderingSettings.ShaderBufferModDelimiter, 0);
+
+					for (std::string& split: splitName)
+					{
+						if (!descriptorCreateInfo.SingleInstance)
+						{
+							descriptorCreateInfo.SingleInstance = std::ranges::find(renderingSettings.ShaderPropertySingleInstanceModPrefixes, split) != renderingSettings.
+							                                      ShaderPropertySingleInstanceModPrefixes.end();
+						}
+
+						if (!descriptorCreateInfo.DeviceLocal)
+						{
+							descriptorCreateInfo.DeviceLocal = std::ranges::find(renderingSettings.ShaderBufferDeviceLocalModPrefixes, split) != renderingSettings.
+							                                   ShaderBufferDeviceLocalModPrefixes.end();
+						}
+
+						if (!descriptorCreateInfo.Cached)
+						{
+							descriptorCreateInfo.Cached = std::ranges::find(renderingSettings.ShaderBufferCacheModPrefixes, split) != renderingSettings.ShaderBufferCacheModPrefixes
+							                              .end();
+						}
+
+						if (!descriptorCreateInfo.Shared)
+						{
+							descriptorCreateInfo.Shared = std::ranges::find(renderingSettings.ShaderPropertySharedModPrefixes, split) != renderingSettings.
+							                              ShaderPropertySharedModPrefixes.end();
+						}
+
+						if (!descriptorCreateInfo.NoAllocation)
+						{
+							descriptorCreateInfo.NoAllocation = std::ranges::find(renderingSettings.ShaderBufferNoAllocModPrefixes, split) != renderingSettings.
+							                                    ShaderBufferNoAllocModPrefixes.end();
+						}
+					}
+
+					// Create binding
 					uint32_t descriptorCount = 1;
 					if (!resourceType.array.empty()) { descriptorCount = resourceType.array[0]; }
 
-					vk::DescriptorSetLayoutBinding layoutBinding = vk::DescriptorSetLayoutBinding(binding,
-					                                                                              type,
-					                                                                              descriptorCount,
-					                                                                              static_cast<vk::ShaderStageFlagBits>(shaderInfos[i].shaderStage));
+					// Bind everywhere if set is global or if property is shared
+					vk::ShaderStageFlagBits shaderStageFlagBits = descriptorCreateInfo.Shared || set == 0
+						                                              ? vk::ShaderStageFlagBits::eAll
+						                                              : static_cast<vk::ShaderStageFlagBits>(shaderInfos[i].shaderStage);
+					vk::DescriptorSetLayoutBinding layoutBinding = vk::DescriptorSetLayoutBinding(binding, type, descriptorCount, shaderStageFlagBits);
 
 					switch (type)
 					{
 						case vk::DescriptorType::eStorageBuffer:
 						case vk::DescriptorType::eUniformBuffer:
 						{
-							const std::string& bufferName = resource.name;
-
-							std::vector<std::string> splitName = SplitEngine::Utility::String::Split(bufferName, renderingSettings.ShaderBufferModDelimiter, 0);
-
-							for (std::string& split: splitName)
-							{
-								if (!descriptorSetBufferCreateInfo.SingleInstance)
-								{
-									descriptorSetBufferCreateInfo.SingleInstance =
-											std::ranges::find(renderingSettings.ShaderBufferSingleInstanceModPrefixes, split) != renderingSettings.
-											ShaderBufferSingleInstanceModPrefixes.end();
-								}
-
-								if (!descriptorSetBufferCreateInfo.DeviceLocal)
-								{
-									descriptorSetBufferCreateInfo.DeviceLocal =
-											std::ranges::find(renderingSettings.ShaderBufferDeviceLocalModPrefixes, split) != renderingSettings.ShaderBufferDeviceLocalModPrefixes.
-											end();
-								}
-
-								if (!descriptorSetBufferCreateInfo.Cached)
-								{
-									descriptorSetBufferCreateInfo.Cached =
-											std::ranges::find(renderingSettings.ShaderBufferCacheModPrefixes, split) != renderingSettings.ShaderBufferCacheModPrefixes.end();
-								}
-							}
-
 							vk::DeviceSize uniformSize = spirvCompiler.get_declared_struct_size(resourceBaseType);
 
-							descriptorSetInfo.writeDescriptorSets.emplace_back();
+							descriptorSetInfo.WriteDescriptorSets.emplace_back();
 
 							size_t offset = 0;
 							for (int j = 0; j < Device::MAX_FRAMES_IN_FLIGHT; ++j)
@@ -139,26 +158,26 @@ namespace SplitEngine::Rendering::Vulkan
 								vk::DeviceSize padding = minAlignment - (uniformSize % minAlignment);
 								padding                = padding == minAlignment ? 0 : padding;
 
-								descriptorSetInfo.writeDescriptorSets.back().emplace_back(VK_NULL_HANDLE, binding, 0, descriptorCount, type, nullptr, nullptr, nullptr);
-								descriptorSetInfo.writeDescriptorSets.back().back().pBufferInfo = new vk::DescriptorBufferInfo(VK_NULL_HANDLE, offset, uniformSize + padding);
+								descriptorSetInfo.WriteDescriptorSets.back().emplace_back(VK_NULL_HANDLE, binding, 0, descriptorCount, type, nullptr, nullptr, nullptr);
+								descriptorSetInfo.WriteDescriptorSets.back().back().pBufferInfo = new vk::DescriptorBufferInfo(VK_NULL_HANDLE, offset, uniformSize + padding);
 
-								if (!descriptorSetBufferCreateInfo.SingleInstance) { offset += uniformSize + padding; }
+								if (!descriptorCreateInfo.SingleInstance) { offset += uniformSize + padding; }
 							}
 							break;
 						}
 						case vk::DescriptorType::eCombinedImageSampler:
-							descriptorSetInfo.writeDescriptorSets.emplace_back();
+							descriptorSetInfo.WriteDescriptorSets.emplace_back();
 							for (int j = 0; j < Device::MAX_FRAMES_IN_FLIGHT; ++j)
 							{
-								descriptorSetInfo.writeDescriptorSets.back().emplace_back(VK_NULL_HANDLE, binding, 0, descriptorCount, type, nullptr, nullptr, nullptr);
+								descriptorSetInfo.WriteDescriptorSets.back().emplace_back(VK_NULL_HANDLE, binding, 0, descriptorCount, type, nullptr, nullptr, nullptr);
 							}
 							break;
 					}
 
-					descriptorSetInfo.bindings.insert(binding);
-					descriptorSetInfo.descriptorPoolSizes.emplace_back(type, descriptorCount * Device::MAX_FRAMES_IN_FLIGHT);
-					descriptorSetInfo.descriptorLayoutBindings.push_back(layoutBinding);
-					descriptorSetInfo.bufferCreateInfos.push_back(descriptorSetBufferCreateInfo);
+					descriptorSetInfo.Bindings.insert(binding);
+					descriptorSetInfo.DescriptorPoolSizes.emplace_back(type, descriptorCount * Device::MAX_FRAMES_IN_FLIGHT);
+					descriptorSetInfo.DescriptorLayoutBindings.push_back(layoutBinding);
+					descriptorSetInfo.DescriptorCreateInfos.push_back(descriptorCreateInfo);
 				}
 			}
 
@@ -225,93 +244,135 @@ namespace SplitEngine::Rendering::Vulkan
 		_descriptorSetLayouts.push_back(_perInstanceDescriptorSetManager.GetDescriptorSetLayout());
 
 
-		std::vector<vk::DynamicState> dynamicStates = { vk::DynamicState::eViewport, vk::DynamicState::eScissor, };
-
-		vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo = vk::PipelineDynamicStateCreateInfo({}, dynamicStates);
-
-		vk::PipelineInputAssemblyStateCreateInfo assemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo({}, vk::PrimitiveTopology::eTriangleList, vk::False);
-
-		const vk::Extent2D& extend   = device->GetSwapchain().GetExtend();
-		vk::Viewport        viewport = vk::Viewport(0, static_cast<float>(extend.height), static_cast<float>(extend.width), -static_cast<float>(extend.height), 0.0f, 1.0f);
-
-		vk::Rect2D scissor = vk::Rect2D({ 0, 0 }, extend);
-
-		vk::PipelineViewportStateCreateInfo viewportStateCreateInfo = vk::PipelineViewportStateCreateInfo({}, 1, &viewport, 1, &scissor);
-
-		vk::PipelineRasterizationStateCreateInfo rasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo({},
-			vk::False,
-			vk::False,
-			vk::PolygonMode::eFill,
-			vk::CullModeFlagBits::eNone,
-			vk::FrontFace::eClockwise,
-			vk::False,
-			0.0f,
-			0.0f,
-			0.0f,
-			1.0f);
-
-		vk::PipelineMultisampleStateCreateInfo multisampleStateCreateInfo = vk::PipelineMultisampleStateCreateInfo({},
-		                                                                                                           vk::SampleCountFlagBits::e1,
-		                                                                                                           vk::False,
-		                                                                                                           1.0f,
-		                                                                                                           nullptr,
-		                                                                                                           vk::False,
-		                                                                                                           vk::False);
-
-		vk::PipelineColorBlendAttachmentState colorBlendAttachmentState = vk::PipelineColorBlendAttachmentState(vk::True,
-		                                                                                                        vk::BlendFactor::eSrcAlpha,
-		                                                                                                        vk::BlendFactor::eOneMinusSrcAlpha,
-		                                                                                                        vk::BlendOp::eAdd,
-		                                                                                                        vk::BlendFactor::eOne,
-		                                                                                                        vk::BlendFactor::eZero,
-		                                                                                                        vk::BlendOp::eAdd,
-		                                                                                                        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-		                                                                                                        vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
-
-		vk::PipelineColorBlendStateCreateInfo colorBlendStateCreateInfo = vk::PipelineColorBlendStateCreateInfo({},
-		                                                                                                        vk::False,
-		                                                                                                        vk::LogicOp::eCopy,
-		                                                                                                        1,
-		                                                                                                        &colorBlendAttachmentState,
-		                                                                                                        { 0.0f, 0.0f, 0.0f, 0.0f });
-
-		vk::PipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo = vk::PipelineDepthStencilStateCreateInfo({},
-		                                                                                                              vk::True,
-		                                                                                                              vk::True,
-		                                                                                                              vk::CompareOp::eLess,
-		                                                                                                              vk::False,
-		                                                                                                              vk::False,
-		                                                                                                              {},
-		                                                                                                              {},
-		                                                                                                              0.0,
-		                                                                                                              1.0f);
-
 		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo({}, _descriptorSetLayouts, nullptr);
+		_layout                                               = device->GetVkDevice().createPipelineLayout(pipelineLayoutCreateInfo);
 
-		_layout = device->GetVkDevice().createPipelineLayout(pipelineLayoutCreateInfo);
+		LOG("is compute shader {0}", isComputeShader);
 
-		vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo = vk::GraphicsPipelineCreateInfo({},
-		                                                                                           2,
-		                                                                                           _shaderStages.data(),
-		                                                                                           &vertexInputStateCreateInfo,
-		                                                                                           &assemblyStateCreateInfo,
-		                                                                                           nullptr,
-		                                                                                           &viewportStateCreateInfo,
-		                                                                                           &rasterizationStateCreateInfo,
-		                                                                                           &multisampleStateCreateInfo,
-		                                                                                           &depthStencilStateCreateInfo,
-		                                                                                           &colorBlendStateCreateInfo,
-		                                                                                           &dynamicStateCreateInfo,
-		                                                                                           _layout,
-		                                                                                           device->GetRenderPass().GetVkRenderPass(),
-		                                                                                           0,
-		                                                                                           VK_NULL_HANDLE,
-		                                                                                           -1);
+		if (!isComputeShader)
+		{
+			std::vector<vk::DynamicState> dynamicStates = { vk::DynamicState::eViewport, vk::DynamicState::eScissor, };
 
-		vk::ResultValue<vk::Pipeline> graphicsPipelineResult = device->GetVkDevice().createGraphicsPipeline(VK_NULL_HANDLE, graphicsPipelineCreateInfo);
-		if (graphicsPipelineResult.result != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("Failed to create graphics pipeline!"); }
+			vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo = vk::PipelineDynamicStateCreateInfo({}, dynamicStates);
 
-		_vkPipeline = graphicsPipelineResult.value;
+			vk::PipelineInputAssemblyStateCreateInfo assemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo({}, vk::PrimitiveTopology::eTriangleList, vk::False);
+
+			const vk::Extent2D& extend   = device->GetSwapchain().GetExtend();
+			vk::Viewport        viewport = vk::Viewport(0, static_cast<float>(extend.height), static_cast<float>(extend.width), -static_cast<float>(extend.height), 0.0f, 1.0f);
+
+			vk::Rect2D scissor = vk::Rect2D({ 0, 0 }, extend);
+
+			vk::PipelineViewportStateCreateInfo viewportStateCreateInfo = vk::PipelineViewportStateCreateInfo({}, 1, &viewport, 1, &scissor);
+
+			vk::PipelineRasterizationStateCreateInfo rasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo({},
+				vk::False,
+				vk::False,
+				vk::PolygonMode::eFill,
+				vk::CullModeFlagBits::eNone,
+				vk::FrontFace::eClockwise,
+				vk::False,
+				0.0f,
+				0.0f,
+				0.0f,
+				1.0f);
+
+			vk::PipelineMultisampleStateCreateInfo multisampleStateCreateInfo = vk::PipelineMultisampleStateCreateInfo({},
+			                                                                                                           vk::SampleCountFlagBits::e1,
+			                                                                                                           vk::False,
+			                                                                                                           1.0f,
+			                                                                                                           nullptr,
+			                                                                                                           vk::False,
+			                                                                                                           vk::False);
+
+			vk::PipelineColorBlendAttachmentState colorBlendAttachmentState = vk::PipelineColorBlendAttachmentState(vk::True,
+			                                                                                                        vk::BlendFactor::eSrcAlpha,
+			                                                                                                        vk::BlendFactor::eOneMinusSrcAlpha,
+			                                                                                                        vk::BlendOp::eAdd,
+			                                                                                                        vk::BlendFactor::eOne,
+			                                                                                                        vk::BlendFactor::eZero,
+			                                                                                                        vk::BlendOp::eAdd,
+			                                                                                                        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG
+			                                                                                                        | vk::ColorComponentFlagBits::eB |
+			                                                                                                        vk::ColorComponentFlagBits::eA);
+
+			vk::PipelineColorBlendStateCreateInfo colorBlendStateCreateInfo = vk::PipelineColorBlendStateCreateInfo({},
+			                                                                                                        vk::False,
+			                                                                                                        vk::LogicOp::eCopy,
+			                                                                                                        1,
+			                                                                                                        &colorBlendAttachmentState,
+			                                                                                                        { 0.0f, 0.0f, 0.0f, 0.0f });
+
+			vk::PipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo = vk::PipelineDepthStencilStateCreateInfo({},
+				vk::True,
+				vk::True,
+				vk::CompareOp::eLess,
+				vk::False,
+				vk::False,
+				{},
+				{},
+				0.0,
+				1.0f);
+
+			vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo = vk::GraphicsPipelineCreateInfo({},
+			                                                                                           2,
+			                                                                                           _shaderStages.data(),
+			                                                                                           &vertexInputStateCreateInfo,
+			                                                                                           &assemblyStateCreateInfo,
+			                                                                                           nullptr,
+			                                                                                           &viewportStateCreateInfo,
+			                                                                                           &rasterizationStateCreateInfo,
+			                                                                                           &multisampleStateCreateInfo,
+			                                                                                           &depthStencilStateCreateInfo,
+			                                                                                           &colorBlendStateCreateInfo,
+			                                                                                           &dynamicStateCreateInfo,
+			                                                                                           _layout,
+			                                                                                           device->GetRenderPass().GetVkRenderPass(),
+			                                                                                           0,
+			                                                                                           VK_NULL_HANDLE,
+			                                                                                           -1);
+
+			vk::ResultValue<vk::Pipeline> graphicsPipelineResult = device->GetVkDevice().createGraphicsPipeline(VK_NULL_HANDLE, graphicsPipelineCreateInfo);
+			if (graphicsPipelineResult.result != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("Failed to create graphics pipeline!"); }
+
+			_vkPipeline = graphicsPipelineResult.value;
+		}
+		else
+		{
+			vk::ComputePipelineCreateInfo computePipelineCreateInfo = vk::ComputePipelineCreateInfo({}, _shaderStages[0], _layout);
+
+			vk::ResultValue<vk::Pipeline> computePipelineResult = device->GetVkDevice().createComputePipeline(VK_NULL_HANDLE, computePipelineCreateInfo);
+			if (computePipelineResult.result != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("Failed to create graphics pipeline!"); }
+
+			_vkPipeline = computePipelineResult.value;
+		}
+	}
+
+	void Pipeline::Bind(const vk::CommandBuffer& commandBuffer) const { commandBuffer.bindPipeline(_bindPoint, _vkPipeline); }
+
+	void Pipeline::BindDescriptorSets(const vk::CommandBuffer& commandBuffer,
+	                                  const uint32_t           descriptorSetCount,
+	                                  const vk::DescriptorSet* descriptorSets,
+	                                  const uint32_t           firstSet,
+	                                  uint32_t                 dynamicOffsetCount,
+	                                  uint32_t*                dynamicOffsets) const
+	{
+		commandBuffer.bindDescriptorSets(_bindPoint, _layout, firstSet, descriptorSetCount, descriptorSets, dynamicOffsetCount, dynamicOffsets);
+	}
+
+	void Pipeline::BindDescriptorSets(const vk::CommandBuffer&            commandBuffer,
+	                                  DescriptorSetAllocator::Allocation* descriptorSetAllocation,
+	                                  const uint32_t                      firstSet,
+	                                  const uint32_t                      dynamicOffsetCount,
+	                                  uint32_t*                           dynamicOffsets,
+	                                  uint32_t                            frameInFlight) const
+	{
+		commandBuffer.bindDescriptorSets(_bindPoint,
+		                                 _layout,
+		                                 firstSet,
+		                                 1,
+		                                 frameInFlight == -1 ? &descriptorSetAllocation->DescriptorSets.Get() : &descriptorSetAllocation->DescriptorSets[frameInFlight],
+		                                 dynamicOffsetCount,
+		                                 dynamicOffsets);
 	}
 
 	vk::Format Pipeline::GetFormatFromType(const spirv_cross::SPIRType& type)

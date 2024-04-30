@@ -61,8 +61,11 @@ namespace SplitEngine::Rendering::Vulkan
 
 	void Allocator::DestroyBuffer(const Allocator::BufferAllocation& bufferAllocation)
 	{
-		vmaDestroyBuffer(_vmaAllocator, bufferAllocation.Buffer, bufferAllocation.VmaAllocation);
-		_buffersAllocated--;
+		if (bufferAllocation.Buffer != VK_NULL_HANDLE)
+		{
+			vmaDestroyBuffer(_vmaAllocator, bufferAllocation.Buffer, bufferAllocation.VmaAllocation);
+			_buffersAllocated--;
+		}
 	}
 
 	void Allocator::DestroyImage(const Allocator::ImageAllocation& imageAllocation)

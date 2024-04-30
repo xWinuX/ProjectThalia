@@ -4,9 +4,14 @@
 namespace SplitEngine
 {
 #ifndef SE_HEADLESS
-	namespace Rendering::Vulkan
+	namespace Rendering
 	{
-		class Instance;
+		class Renderer;
+
+		namespace Vulkan
+		{
+			class Instance;
+		}
 	}
 
 	namespace Audio
@@ -31,8 +36,8 @@ namespace SplitEngine::ECS
 		AssetDatabase* AssetDatabase;
 
 #ifndef SE_HEADLESS
-		Rendering::Vulkan::Instance* RenderingContext;
-		Audio::Manager*              AudioManager;
+		Rendering::Renderer* Renderer;
+		Audio::Manager*      AudioManager;
 #endif
 	};
 }

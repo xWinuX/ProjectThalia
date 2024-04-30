@@ -7,7 +7,7 @@ namespace SplitEngine::Rendering::Vulkan
 {
 	class Device;
 
-	class RenderPass final : DeviceObject
+	class RenderPass final : public DeviceObject
 	{
 		public:
 			RenderPass() = default;

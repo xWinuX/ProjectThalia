@@ -11,32 +11,38 @@ namespace SplitEngine::Rendering::Vulkan
 	{
 		CreateLogicalDevice(physicalDevice);
 
-		CreateGraphicsCommandPool(physicalDevice);
-
-		CreateCommandBuffers();
-
 		CreateRenderPass();
 
 		CreateSyncObjects();
 	}
 
-
 	void Device::CreateLogicalDevice(PhysicalDevice& physicalDevice)
 	{
 		// Get queue info
-		const PhysicalDevice::QueueFamilyIndices queueFamilyIndices  = physicalDevice.GetQueueFamilyIndices();
-		std::set<uint32_t>                       uniqueQueueFamilies = { queueFamilyIndices.GraphicsFamily.value(), queueFamilyIndices.PresentFamily.value() };
+		const PhysicalDevice::QueueFamilyInfos queueFamilyIndices = physicalDevice.GetQueueFamilyInfos();
+
+		// Get unique queue families
+		std::vector<PhysicalDevice::QueueFamilyInfo> sortedQueueFamilies = std::vector(queueFamilyIndices.begin(), queueFamilyIndices.end());
+		std::ranges::sort(sortedQueueFamilies,
+		                  [](const PhysicalDevice::QueueFamilyInfo& queueFamilyInfo1, const PhysicalDevice::QueueFamilyInfo& queueFamilyInfo2)
+		                  {
+			                  return queueFamilyInfo1.Index > queueFamilyInfo2.Index;
+		                  });
+
 		// Needs to be a set to filter out same queue features
+		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
 
-		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos = std::vector<vk::DeviceQueueCreateInfo>(uniqueQueueFamilies.size());
+		std::vector<std::vector<float>> prioritiesList = std::vector<std::vector<float>>();
 
-		float queuePriority = 1.0f;
-
-		int i = 0;
-		for (const auto& uniqueQueueFamily: uniqueQueueFamilies)
+		uint32_t previousIndex = -1;
+		for (const auto& queueFamily: sortedQueueFamilies)
 		{
-			queueCreateInfos[i] = vk::DeviceQueueCreateInfo({}, uniqueQueueFamily, 1, &queuePriority);
-			i++;
+			if (previousIndex == queueFamily.Index) { continue; }
+			prioritiesList.emplace_back(queueFamily.QueueCount, 1.0f);
+			for (int i = prioritiesList.back().size() - 1; i >= 0; --i) { prioritiesList.back()[i] = static_cast<float>(i) * (1.0f / static_cast<float>(queueFamily.QueueCount)); }
+
+			queueCreateInfos.push_back(vk::DeviceQueueCreateInfo({}, queueFamily.Index, queueFamily.QueueCount, prioritiesList.back().data()));
+			previousIndex = queueFamily.Index;
 		}
 
 		// Create logical device
@@ -47,8 +53,23 @@ namespace SplitEngine::Rendering::Vulkan
 		if (vulkanDeviceCreateResult != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("Failed to create logical device!"); }
 
 		_memoryProperties = physicalDevice.GetVkPhysicalDevice().getMemoryProperties();
-		_graphicsQueue    = _vkDevice.getQueue(queueFamilyIndices.GraphicsFamily.value(), 0);
-		_presentQueue     = _vkDevice.getQueue(queueFamilyIndices.PresentFamily.value(), 0);
+
+		previousIndex = -1;
+		for (auto& queueFamily: sortedQueueFamilies)
+		{
+			if (previousIndex == queueFamily.Index)
+			{
+				_queueFamilyLookup[static_cast<size_t>(queueFamily.WantedCommandType)] = _queueFamilies.size() - 1;
+				_queueFamilies.back().AddSupportedQueueType(queueFamily.WantedCommandType);
+				continue;
+			}
+
+			_queueFamilies.emplace_back(this, queueFamily.Index, queueFamily.QueueCount);
+			_queueFamilies.back().AddSupportedQueueType(queueFamily.WantedCommandType);
+			_queueFamilyLookup[static_cast<size_t>(queueFamily.WantedCommandType)] = _queueFamilies.size() - 1;
+
+			previousIndex = queueFamily.Index;
+		}
 	}
 
 	void Device::CreateSyncObjects()
@@ -72,16 +93,6 @@ namespace SplitEngine::Rendering::Vulkan
 		_inFlightFence           = InFlightResource<vk::Fence>(GetCurrentFramePtr(), std::move(inFlightFences));
 	}
 
-	void Device::CreateCommandBuffers()
-	{
-		const vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vk::CommandBufferAllocateInfo(_graphicsCommandPool,
-		                                                                                              vk::CommandBufferLevel::ePrimary,
-		                                                                                              Device::MAX_FRAMES_IN_FLIGHT);
-
-		std::vector<vk::CommandBuffer> commandBuffers = _vkDevice.allocateCommandBuffers(commandBufferAllocateInfo);
-		_commandBuffer                                = InFlightResource<vk::CommandBuffer>(GetCurrentFramePtr(), std::move(commandBuffers));
-	}
-
 	void Device::CreateRenderPass() { _renderPass = RenderPass(this); }
 
 	void Device::CreateSwapchain(vk::SurfaceKHR surfaceKhr, glm::ivec2 size)
@@ -94,26 +105,17 @@ namespace SplitEngine::Rendering::Vulkan
 
 	void Device::DestroySwapchain() { _swapchain->Destroy(); }
 
-	void Device::CreateGraphicsCommandPool(PhysicalDevice& physicalDevice)
-	{
-		const vk::CommandPoolCreateInfo commandPoolCreateInfo = vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-		                                                                                  physicalDevice.GetQueueFamilyIndices().GraphicsFamily.value());
-
-		_graphicsCommandPool = _vkDevice.createCommandPool(commandPoolCreateInfo);
-	}
-
-
 	const vk::Device& Device::GetVkDevice() const { return _vkDevice; }
 
-	const vk::Queue& Device::GetGraphicsQueue() const { return _graphicsQueue; }
+	const QueueFamily& Device::GetQueueFamily(const QueueType queueFamilyType) const { return _queueFamilies[_queueFamilyLookup[static_cast<size_t>(queueFamilyType)]]; }
 
-	const vk::Queue& Device::GetPresentQueue() const { return _presentQueue; }
+	QueueFamily& Device::GetQueueFamily(const QueueType queueFamilyType) { return _queueFamilies[_queueFamilyLookup[static_cast<size_t>(queueFamilyType)]]; }
+
 
 	const RenderPass& Device::GetRenderPass() const { return _renderPass; }
 
 	const Swapchain& Device::GetSwapchain() const { return *_swapchain.get(); }
 
-	const vk::CommandPool& Device::GetGraphicsCommandPool() const { return _graphicsCommandPool; }
 
 	const vk::PhysicalDeviceMemoryProperties& Device::GetMemoryProperties() const { return _memoryProperties; }
 
@@ -121,8 +123,7 @@ namespace SplitEngine::Rendering::Vulkan
 
 	const vk::Semaphore& Device::GetRenderFinishedSemaphore() const { return _renderFinishedSemaphore.Get(); }
 
-	const vk::Fence&         Device::GetInFlightFence() const { return _inFlightFence.Get(); }
-	const vk::CommandBuffer& Device::GetCommandBuffer() const { return _commandBuffer.Get(); }
+	const vk::Fence& Device::GetInFlightFence() const { return _inFlightFence.Get(); }
 
 	void Device::Destroy()
 	{
@@ -133,9 +134,9 @@ namespace SplitEngine::Rendering::Vulkan
 			_vkDevice.destroy(_inFlightFence[i]);
 		}
 
-		_renderPass.Destroy();
+		for (QueueFamily& queueFamily: _queueFamilies) { queueFamily.Destroy(); }
 
-		_vkDevice.destroy(_graphicsCommandPool);
+		_renderPass.Destroy();
 
 		_vkDevice.destroy();
 	}
@@ -156,34 +157,7 @@ namespace SplitEngine::Rendering::Vulkan
 		return memoryType;
 	}
 
-	vk::CommandBuffer Device::BeginOneshotCommands() const
-	{
-		const vk::CommandBufferAllocateInfo commandBufferAllocateInfo = vk::CommandBufferAllocateInfo(_graphicsCommandPool, vk::CommandBufferLevel::ePrimary, 1);
-
-		const vk::CommandBuffer commandBuffer = _vkDevice.allocateCommandBuffers(commandBufferAllocateInfo)[0];
-
-		constexpr vk::CommandBufferBeginInfo beginInfo = vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-
-		commandBuffer.begin(beginInfo);
-
-		return commandBuffer;
-	}
-
-	void Device::EndOneshotCommands(const vk::CommandBuffer commandBuffer) const
-	{
-		commandBuffer.end();
-
-		vk::SubmitInfo submitInfo;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers    = &commandBuffer;
-
-		_graphicsQueue.submit(1, &submitInfo, VK_NULL_HANDLE);
-		_graphicsQueue.waitIdle();
-
-		_vkDevice.freeCommandBuffers(_graphicsCommandPool, 1, &commandBuffer);
-	}
-
-	uint32_t* Device::GetCurrentFramePtr() { return &_currentFrame; }
+	uint32_t* Device::GetCurrentFramePtr(const bool staticPtr) { return staticPtr ? &_currentStaticFrame : &_currentFrame; }
 
 	void Device::AdvanceFrame() { _currentFrame = (_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT; }
 

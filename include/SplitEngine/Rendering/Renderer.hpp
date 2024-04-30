@@ -4,34 +4,44 @@
 
 #include "SplitEngine/ApplicationInfo.hpp"
 #include "SplitEngine/Window.hpp"
+#include "Vulkan/CommandBuffer.hpp"
 #include "Vulkan/Instance.hpp"
 
-namespace SplitEngine::Rendering
+namespace SplitEngine
 {
-	class Renderer
+	class Application;
+
+	namespace Rendering
 	{
-		public:
-			explicit Renderer(ApplicationInfo& applicationInfo, RenderingSettings&& renderingSettings);
-			~Renderer();
+		class Renderer
+		{
+			friend Application;
 
-			void BeginRender();
-			void EndRender();
+			public:
+				explicit Renderer(ApplicationInfo& applicationInfo, RenderingSettings&& renderingSettings);
+				~Renderer();
 
-			void HandleEvents(SDL_Event event);
+				[[nodiscard]] Vulkan::CommandBuffer& GetCommandBuffer();
+				[[nodiscard]] Vulkan::Instance&      GetVulkanInstance();
+				[[nodiscard]] Window&                GetWindow();
 
+			private:
+				Window           _window;
+				Vulkan::Instance _vulkanInstance;
 
-			[[nodiscard]] bool WasSkipped();
-			[[nodiscard]] Vulkan::Instance& GetVulkanInstance();
-			[[nodiscard]] Window& GetWindow();
+				bool     _wasSkipped             = false;
+				uint32_t _latestImageIndexResult = 0;
 
-		private:
-			Window           _window;
-			Vulkan::Instance _vulkanInstance;
+				Vulkan::CommandBuffer _commandBuffer;
 
-			bool     _wasSkipped             = false;
-			uint32_t _latestImageIndexResult = 0;
+				bool _frameBufferResized = false;
+				void StartImGuiFrame() const;
+				void BeginRender();
+				void EndRender();
 
-			bool _frameBufferResized = false;
-			void StartImGuiFrame() const;
-	};
+				void HandleEvents(SDL_Event event);
+
+				[[nodiscard]] bool WasSkipped();
+		};
+	}
 }

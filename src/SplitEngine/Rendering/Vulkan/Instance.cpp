@@ -73,6 +73,8 @@ namespace SplitEngine::Rendering::Vulkan
 		Pipeline::_globalDescriptorManager.DeallocateDescriptorSet(Pipeline::_globalDescriptorSetAllocation);
 		Pipeline::_globalDescriptorManager.Destroy();
 
+		for (auto& [name, descriptor]: DescriptorSetAllocator::_sharedDescriptors) { descriptor.Buffer.Destroy(); }
+
 		ImGui_ImplVulkan_Shutdown();
 
 		_physicalDevice->GetDevice().GetVkDevice().destroy(_imGuiDescriptorPool);
@@ -127,7 +129,7 @@ namespace SplitEngine::Rendering::Vulkan
 		initInfo.Instance                  = _vkInstance;
 		initInfo.PhysicalDevice            = _physicalDevice->GetVkPhysicalDevice();
 		initInfo.Device                    = device.GetVkDevice();
-		initInfo.Queue                     = device.GetGraphicsQueue();
+		initInfo.Queue                     = device.GetQueueFamily(QueueType::Graphics).GetVkQueue();
 		initInfo.DescriptorPool            = _imGuiDescriptorPool;
 		initInfo.MinImageCount             = 3;
 		initInfo.ImageCount                = 3;
@@ -135,11 +137,11 @@ namespace SplitEngine::Rendering::Vulkan
 
 		ImGui_ImplVulkan_Init(&initInfo, device.GetRenderPass().GetVkRenderPass());
 
-		const vk::CommandBuffer commandBuffer = device.BeginOneshotCommands();
+		const vk::CommandBuffer commandBuffer = device.GetQueueFamily(QueueType::Graphics).BeginOneshotCommands();
 
 		ImGui_ImplVulkan_CreateFontsTexture();
 
-		device.EndOneshotCommands(commandBuffer);
+		device.GetQueueFamily(QueueType::Graphics).EndOneshotCommands();
 
 		ImGui_ImplVulkan_DestroyFontsTexture();
 	}

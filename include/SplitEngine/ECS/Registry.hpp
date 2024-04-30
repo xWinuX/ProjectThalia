@@ -21,6 +21,11 @@ namespace SplitEngine::Rendering::Vulkan
 namespace SplitEngine
 {
 	class AssetDatabase;
+
+	namespace Rendering
+	{
+		class Renderer;
+	}
 }
 
 namespace SplitEngine::ECS
@@ -189,7 +194,7 @@ namespace SplitEngine::ECS
 #ifndef SE_HEADLESS
 
 		public:
-			void RegisterRenderingContext(Rendering::Vulkan::Instance* context) { _context.RenderingContext = context; }
+			void RegisterRenderer(Rendering::Renderer* renderer);
 
 			void RegisterAudioManager(Audio::Manager* audioManager) { _context.AudioManager = audioManager; }
 #endif

@@ -8,7 +8,7 @@ namespace SplitEngine::Rendering::Vulkan
 {
 	class Device;
 
-	class Image : DeviceObject
+	class Image : public DeviceObject
 	{
 		public:
 			struct CreateInfo

@@ -51,7 +51,7 @@ namespace SplitEngine
 
 
 		LOG("Initializing ECS...");
-		_ecsRegistry.RegisterRenderingContext(&_renderer.GetVulkanInstance());
+		_ecsRegistry.RegisterRenderer(&_renderer);
 		_ecsRegistry.RegisterAudioManager(&_audioManager);
 
 #endif

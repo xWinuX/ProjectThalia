@@ -9,6 +9,67 @@
 
 namespace SplitEngine::Rendering::Vulkan
 {
+	bool PhysicalDevice::IsQueueFamilyIndicesCompleted()
+	{
+		return std::ranges::all_of(_queueFamilyInfos, [](const QueueFamilyInfo& family) { return family.Index != std::numeric_limits<uint32_t>::max() && family.QueueCount != 0; });
+	}
+
+	void PhysicalDevice::SearchQueues(const Instance& instance, const vk::PhysicalDevice& physicalDevice)
+	{
+		const std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
+
+		// in the first iteration try to fit every command type into a seperate queue, in the second Iteration fill out the remaining queues
+		for (int tryIteration = 0; tryIteration < 2; ++tryIteration)
+		{
+			for (int i = 0; i < queueFamilyProperties.size(); ++i)
+			{
+				const vk::QueueFamilyProperties& queueFamily = queueFamilyProperties[i];
+
+				// Graphics queue
+				if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics && _queueFamilyInfos[static_cast<size_t>(QueueType::Graphics)].Index == std::numeric_limits<uint32_t>::max())
+				{
+					LOG("Graphics Family Index: {0}", i);
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Graphics)].WantedCommandType = QueueType::Graphics;
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Graphics)].Index             = i;
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Graphics)].QueueCount        = queueFamily.queueCount;
+					if (tryIteration == 0) { continue; }
+				}
+
+				// Compute queue
+				if (queueFamily.queueFlags & vk::QueueFlagBits::eCompute && _queueFamilyInfos[static_cast<size_t>(QueueType::Compute)].Index == std::numeric_limits<uint32_t>::max())
+				{
+					LOG("Compute Family Index: {0}", i);
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Compute)].WantedCommandType = QueueType::Compute;
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Compute)].Index             = i;
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Compute)].QueueCount        = queueFamily.queueCount;
+					if (tryIteration == 0) { continue; }
+				}
+
+				// Present queue
+				if (physicalDevice.getSurfaceSupportKHR(i, instance.GetVkSurface()) && _queueFamilyInfos[static_cast<size_t>(QueueType::Present)].Index == std::numeric_limits<uint32_t>::max())
+				{
+					LOG("Present Family Index: {0}", i);
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Present)].WantedCommandType = QueueType::Present;
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Present)].Index             = i;
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Present)].QueueCount        = queueFamily.queueCount;
+					if (tryIteration == 0) { continue; }
+				}
+
+				// Transfer
+				if (queueFamily.queueFlags & vk::QueueFlagBits::eTransfer && _queueFamilyInfos[static_cast<size_t>(QueueType::Transfer)].Index == std::numeric_limits<uint32_t>::max())
+				{
+					LOG("Transfer Family Index: {0}", i);
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Transfer)].WantedCommandType = QueueType::Transfer;
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Transfer)].Index             = i;
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Transfer)].QueueCount        = queueFamily.queueCount;
+					if (tryIteration == 0) { continue; }
+				}
+
+				if (IsQueueFamilyIndicesCompleted()) { return; }
+			}
+		}
+	}
+
 	PhysicalDevice::PhysicalDevice(Instance& instance, std::vector<const char*> _requiredExtensions, std::vector<const char*> _requiredValidationLayers) :
 		_instance(instance),
 		_extensions(_requiredExtensions),
@@ -31,31 +92,11 @@ namespace SplitEngine::Rendering::Vulkan
 			if (!requiredExtensions.empty()) { continue; }
 
 			// Check queues
-			_queueFamilyIndices = QueueFamilyIndices();
+			std::ranges::fill(_queueFamilyInfos, QueueFamilyInfo()); // Reset for each new physical device
 
-			auto queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
-			int  i                     = 0;
-			for (const vk::QueueFamilyProperties& queueFamily: queueFamilyProperties)
-			{
-				const unsigned int presentSupport = physicalDevice.getSurfaceSupportKHR(i, instance.GetVkSurface());
+			SearchQueues(instance, physicalDevice);
 
-				if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics && !_queueFamilyIndices.GraphicsFamily.has_value())
-				{
-					LOG("graphics index: {0}", i);
-					_queueFamilyIndices.GraphicsFamily = i;
-				}
-
-				if (presentSupport && !_queueFamilyIndices.PresentFamily.has_value())
-				{
-					LOG("present index: {0}", i);
-					_queueFamilyIndices.PresentFamily = i;
-				}
-
-				if (_queueFamilyIndices.isComplete()) { break; }
-
-				i++;
-			}
-			if (!_queueFamilyIndices.isComplete()) { continue; }
+			if (!IsQueueFamilyIndicesCompleted()) { continue; }
 
 			// Check swap chain support
 			_swapchainSupportDetails = SwapchainSupportDetails();
@@ -109,7 +150,7 @@ namespace SplitEngine::Rendering::Vulkan
 
 	const vk::PhysicalDevice& PhysicalDevice::GetVkPhysicalDevice() const { return _vkPhysicalDevice; }
 
-	const PhysicalDevice::QueueFamilyIndices& PhysicalDevice::GetQueueFamilyIndices() const { return _queueFamilyIndices; }
+	const PhysicalDevice::QueueFamilyInfos& PhysicalDevice::GetQueueFamilyInfos() const { return _queueFamilyInfos; }
 
 	const PhysicalDevice::SwapchainSupportDetails& PhysicalDevice::GetSwapchainSupportDetails() const { return _swapchainSupportDetails; }
 

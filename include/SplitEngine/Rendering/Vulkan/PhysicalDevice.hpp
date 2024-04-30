@@ -1,9 +1,8 @@
 #pragma once
 
-#include "vulkan/vulkan.hpp"
+#include <vulkan/vulkan.hpp>
 
-#include <optional>
-
+#include "QueueFamily.hpp"
 
 namespace SplitEngine::Rendering::Vulkan
 {
@@ -13,15 +12,6 @@ namespace SplitEngine::Rendering::Vulkan
 	class PhysicalDevice
 	{
 		public:
-			struct QueueFamilyIndices
-			{
-				public:
-					std::optional<uint32_t> GraphicsFamily;
-					std::optional<uint32_t> PresentFamily;
-
-					[[nodiscard]] bool isComplete() const { return GraphicsFamily.has_value() && PresentFamily.has_value(); }
-			};
-
 			struct SwapchainSupportDetails
 			{
 				public:
@@ -30,13 +20,24 @@ namespace SplitEngine::Rendering::Vulkan
 					std::vector<vk::PresentModeKHR>   PresentModes;
 			};
 
+			struct QueueFamilyInfo
+			{
+				QueueType WantedCommandType = QueueType::MAX_VALUE;
+				uint32_t          Index             = std::numeric_limits<uint32_t>::max();
+				uint32_t          QueueCount        = 0;
+			};
+
+			typedef std::array<QueueFamilyInfo, static_cast<size_t>(QueueType::MAX_VALUE)> QueueFamilyInfos;
+
 		public:
+			bool     IsQueueFamilyIndicesCompleted();
+			void     SearchQueues(const Instance& instance, const vk::PhysicalDevice& physicalDevice);
 			explicit PhysicalDevice(Instance& instance, std::vector<const char*> _requiredExtensions, std::vector<const char*> _requiredValidationLayers);
 
 			[[nodiscard]] Instance&                           GetInstance() const;
 			[[nodiscard]] Device&                             GetDevice() const;
 			[[nodiscard]] const vk::PhysicalDevice&           GetVkPhysicalDevice() const;
-			[[nodiscard]] const QueueFamilyIndices&           GetQueueFamilyIndices() const;
+			[[nodiscard]] const QueueFamilyInfos&             GetQueueFamilyInfos() const;
 			[[nodiscard]] const SwapchainSupportDetails&      GetSwapchainSupportDetails() const;
 			[[nodiscard]] const std::vector<const char*>&     GetExtensions() const;
 			[[nodiscard]] const std::vector<const char*>&     GetValidationLayers() const;
@@ -49,10 +50,12 @@ namespace SplitEngine::Rendering::Vulkan
 			void UpdateSwapchainSupportDetails(const vk::SurfaceKHR& surface);
 
 		private:
-			Instance&                    _instance;
+			Instance& _instance;
+
+			QueueFamilyInfos _queueFamilyInfos{};
+
 			vk::PhysicalDevice           _vkPhysicalDevice;
 			std::unique_ptr<Device>      _device;
-			QueueFamilyIndices           _queueFamilyIndices;
 			SwapchainSupportDetails      _swapchainSupportDetails;
 			vk::SurfaceFormatKHR         _imageFormat; // TODO: Does this really belong here?
 			vk::Format                   _depthImageFormat{};

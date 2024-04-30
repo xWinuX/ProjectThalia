@@ -122,6 +122,10 @@ namespace SplitEngine::ECS
 	void Registry::DestroyEntity(uint64_t entityID) { _archetypeLookup[_sparseEntityLookup[entityID].archetypeIndex]->DestroyEntity(entityID); }
 
 	void Registry::RegisterAssetDatabase(SplitEngine::AssetDatabase* assetDatabase) { _context.AssetDatabase = assetDatabase; }
+	void Registry::RegisterRenderer(Rendering::Renderer* renderer)
+	{
+		_context.Renderer = renderer;
+	}
 
 	bool Registry::IsEntityValid(uint64_t entityID)
 	{

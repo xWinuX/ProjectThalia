@@ -18,15 +18,20 @@ namespace SplitEngine::Rendering
 	{
 		_window.OnResize.Add([this](int width, int height) { _frameBufferResized = true; });
 
+		_commandBuffer = _vulkanInstance.GetPhysicalDevice().GetDevice().GetQueueFamily(Vulkan::QueueType::Graphics).AllocateCommandBuffer(Vulkan::QueueType::Graphics);
+
 		StartImGuiFrame();
 	}
 
 	Renderer::~Renderer()
 	{
 		LOG("Shutting down Renderer...");
+
 		_vulkanInstance.Destroy();
 		_window.Close();
 	}
+
+	Vulkan::CommandBuffer& Renderer::GetCommandBuffer() { return _commandBuffer; }
 
 	void Renderer::StartImGuiFrame() const
 	{
@@ -87,7 +92,7 @@ namespace SplitEngine::Rendering
 
 		device.GetVkDevice().resetFences(device.GetInFlightFence());
 
-		const vk::CommandBuffer& commandBuffer = device.GetCommandBuffer();
+		const vk::CommandBuffer& commandBuffer = _commandBuffer.GetVkCommandBuffer();
 
 		commandBuffer.reset({});
 
@@ -123,7 +128,7 @@ namespace SplitEngine::Rendering
 	void Renderer::EndRender()
 	{
 		Vulkan::Device&          device        = _vulkanInstance.GetPhysicalDevice().GetDevice();
-		const vk::CommandBuffer& commandBuffer = device.GetCommandBuffer();
+		const vk::CommandBuffer& commandBuffer = _commandBuffer.GetVkCommandBuffer();
 
 		if (_wasSkipped)
 		{
@@ -138,9 +143,9 @@ namespace SplitEngine::Rendering
 		commandBuffer.end();
 
 		vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
-		const vk::SubmitInfo   submitInfo   = vk::SubmitInfo(device.GetImageAvailableSemaphore(), waitStages, device.GetCommandBuffer(), device.GetRenderFinishedSemaphore());
+		const vk::SubmitInfo   submitInfo   = vk::SubmitInfo(device.GetImageAvailableSemaphore(), waitStages, commandBuffer, device.GetRenderFinishedSemaphore());
 
-		device.GetGraphicsQueue().submit(submitInfo, device.GetInFlightFence());
+		device.GetQueueFamily(Vulkan::QueueType::Graphics).GetVkQueue().submit(submitInfo, device.GetInFlightFence());
 
 		const vk::PresentInfoKHR presentInfo = vk::PresentInfoKHR(device.GetRenderFinishedSemaphore(), device.GetSwapchain().GetVkSwapchain(), _latestImageIndexResult, nullptr);
 
@@ -148,7 +153,7 @@ namespace SplitEngine::Rendering
 		vk::Result presentResult           = vk::Result::eIncomplete;
 
 
-		try { presentResult = device.GetPresentQueue().presentKHR(presentInfo); }
+		try { presentResult = device.GetQueueFamily(Vulkan::QueueType::Present).GetVkQueue().presentKHR(presentInfo); }
 		catch (vk::OutOfDateKHRError& outOfDateKhrError) { needToRecreateSwapChain = true; } catch (vk::SystemError& systemError)
 		{
 			ErrorHandler::ThrowRuntimeError(std::format("failed to present swap chain image! {0}", systemError.what()));
