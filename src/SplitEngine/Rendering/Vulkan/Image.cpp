@@ -28,7 +28,10 @@ namespace SplitEngine::Rendering::Vulkan
 		_imageAllocation = GetDevice()->GetPhysicalDevice().GetInstance().GetAllocator().CreateImage(imageCreateInfo, allocationCreateInfo);
 
 		vk::CommandBuffer commandBuffer;
-		if (createInfo.TransitionLayout != vk::ImageLayout::eDepthStencilAttachmentOptimal) { commandBuffer = GetDevice()->BeginOneshotCommands(); }
+		if (createInfo.TransitionLayout != vk::ImageLayout::eDepthStencilAttachmentOptimal)
+		{
+			commandBuffer = GetDevice()->GetQueueFamily(QueueType::Graphics).BeginOneshotCommands();
+		}
 
 		// Copy pixel data to image
 		Buffer transferBuffer;
@@ -50,7 +53,7 @@ namespace SplitEngine::Rendering::Vulkan
 		{
 			TransitionLayout(commandBuffer, createInfo.TransitionLayout);
 
-			GetDevice()->EndOneshotCommands(commandBuffer);
+			GetDevice()->GetQueueFamily(QueueType::Graphics).EndOneshotCommands();
 			transferBuffer.Destroy();
 		}
 
@@ -63,11 +66,11 @@ namespace SplitEngine::Rendering::Vulkan
 
 	void Image::TransitionLayout(const vk::ImageLayout newLayout)
 	{
-		const vk::CommandBuffer commandBuffer = GetDevice()->BeginOneshotCommands();
+		const vk::CommandBuffer commandBuffer = GetDevice()->GetQueueFamily(QueueType::Graphics).BeginOneshotCommands();
 
 		TransitionLayout(commandBuffer, newLayout);
 
-		GetDevice()->EndOneshotCommands(commandBuffer);
+		GetDevice()->GetQueueFamily(QueueType::Graphics).EndOneshotCommands();
 	}
 
 	void Image::TransitionLayout(const vk::CommandBuffer& commandBuffer, vk::ImageLayout newLayout)

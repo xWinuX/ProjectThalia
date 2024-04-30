@@ -11,7 +11,63 @@ namespace SplitEngine::Rendering::Vulkan
 {
 	bool PhysicalDevice::IsQueueFamilyIndicesCompleted()
 	{
-		return std::ranges::all_of(_queueFamilyIndices, [](const std::optional<uint32_t>& family) { return family.has_value(); });
+		return std::ranges::all_of(_queueFamilyInfos, [](const QueueFamilyInfo& family) { return family.Index != std::numeric_limits<uint32_t>::max() && family.QueueCount != 0; });
+	}
+
+	void PhysicalDevice::SearchQueues(const Instance& instance, const vk::PhysicalDevice& physicalDevice)
+	{
+		const std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
+
+		// in the first iteration try to fit every command type into a seperate queue, in the second Iteration fill out the remaining queues
+		for (int tryIteration = 0; tryIteration < 2; ++tryIteration)
+		{
+			for (int i = 0; i < queueFamilyProperties.size(); ++i)
+			{
+				const vk::QueueFamilyProperties& queueFamily = queueFamilyProperties[i];
+
+				// Graphics queue
+				if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics && _queueFamilyInfos[static_cast<size_t>(QueueType::Graphics)].Index == std::numeric_limits<uint32_t>::max())
+				{
+					LOG("Graphics Family Index: {0}", i);
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Graphics)].WantedCommandType = QueueType::Graphics;
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Graphics)].Index             = i;
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Graphics)].QueueCount        = queueFamily.queueCount;
+					if (tryIteration == 0) { continue; }
+				}
+
+				// Compute queue
+				if (queueFamily.queueFlags & vk::QueueFlagBits::eCompute && _queueFamilyInfos[static_cast<size_t>(QueueType::Compute)].Index == std::numeric_limits<uint32_t>::max())
+				{
+					LOG("Compute Family Index: {0}", i);
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Compute)].WantedCommandType = QueueType::Compute;
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Compute)].Index             = i;
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Compute)].QueueCount        = queueFamily.queueCount;
+					if (tryIteration == 0) { continue; }
+				}
+
+				// Present queue
+				if (physicalDevice.getSurfaceSupportKHR(i, instance.GetVkSurface()) && _queueFamilyInfos[static_cast<size_t>(QueueType::Present)].Index == std::numeric_limits<uint32_t>::max())
+				{
+					LOG("Present Family Index: {0}", i);
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Present)].WantedCommandType = QueueType::Present;
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Present)].Index             = i;
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Present)].QueueCount        = queueFamily.queueCount;
+					if (tryIteration == 0) { continue; }
+				}
+
+				// Transfer
+				if (queueFamily.queueFlags & vk::QueueFlagBits::eTransfer && _queueFamilyInfos[static_cast<size_t>(QueueType::Transfer)].Index == std::numeric_limits<uint32_t>::max())
+				{
+					LOG("Transfer Family Index: {0}", i);
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Transfer)].WantedCommandType = QueueType::Transfer;
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Transfer)].Index             = i;
+					_queueFamilyInfos[static_cast<size_t>(QueueType::Transfer)].QueueCount        = queueFamily.queueCount;
+					if (tryIteration == 0) { continue; }
+				}
+
+				if (IsQueueFamilyIndicesCompleted()) { return; }
+			}
+		}
 	}
 
 	PhysicalDevice::PhysicalDevice(Instance& instance, std::vector<const char*> _requiredExtensions, std::vector<const char*> _requiredValidationLayers) :
@@ -36,37 +92,9 @@ namespace SplitEngine::Rendering::Vulkan
 			if (!requiredExtensions.empty()) { continue; }
 
 			// Check queues
-			std::ranges::fill(_queueFamilyIndices, std::optional<uint32_t>()); // Reset for each new physical device
+			std::ranges::fill(_queueFamilyInfos, QueueFamilyInfo()); // Reset for each new physical device
 
-			auto queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
-			int  i                     = 0;
-			for (const vk::QueueFamilyProperties& queueFamily: queueFamilyProperties)
-			{
-				// Graphics queue
-				if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics && !_queueFamilyIndices[CommandType::Graphics].has_value())
-				{
-					LOG("Graphics Family Index: {0}", i);
-					_queueFamilyIndices[CommandType::Present] = i;
-				}
-
-				// Present queue
-				if (physicalDevice.getSurfaceSupportKHR(i, instance.GetVkSurface()) && !_queueFamilyIndices[CommandType::Present].has_value())
-				{
-					LOG("Present Family Index: {0}", i);
-					_queueFamilyIndices[CommandType::Present] = i;
-				}
-
-				// Compute queue
-				if (queueFamily.queueFlags & vk::QueueFlagBits::eCompute && !_queueFamilyIndices[CommandType::Compute].has_value())
-				{
-					LOG("Compute Family Index: {0}", i);
-					_queueFamilyIndices[CommandType::Compute] = i;
-				}
-
-				if (IsQueueFamilyIndicesCompleted()) { break; }
-
-				i++;
-			}
+			SearchQueues(instance, physicalDevice);
 
 			if (!IsQueueFamilyIndicesCompleted()) { continue; }
 
@@ -122,7 +150,7 @@ namespace SplitEngine::Rendering::Vulkan
 
 	const vk::PhysicalDevice& PhysicalDevice::GetVkPhysicalDevice() const { return _vkPhysicalDevice; }
 
-	const PhysicalDevice::QueueFamilyIndices& PhysicalDevice::GetQueueFamilyIndices() const { return _queueFamilyIndices; }
+	const PhysicalDevice::QueueFamilyInfos& PhysicalDevice::GetQueueFamilyInfos() const { return _queueFamilyInfos; }
 
 	const PhysicalDevice::SwapchainSupportDetails& PhysicalDevice::GetSwapchainSupportDetails() const { return _swapchainSupportDetails; }
 

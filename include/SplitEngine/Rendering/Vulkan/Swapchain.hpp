@@ -9,7 +9,7 @@ namespace SplitEngine::Rendering::Vulkan
 {
 	class Device;
 
-	class Swapchain final : DeviceObject
+	class Swapchain final :  public DeviceObject
 	{
 		public:
 			Swapchain() = default;

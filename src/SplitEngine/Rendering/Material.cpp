@@ -13,7 +13,10 @@ namespace SplitEngine::Rendering
 
 	Shader::Properties& Material::GetProperties() { return _instanceProperties; }
 
-	void Material::Bind(vk::CommandBuffer& commandBuffer) { _shader->GetPipeline().BindDescriptorSets(commandBuffer, &_instanceDescriptorSetAllocation, 2); }
+	void Material::Bind(vk::CommandBuffer& commandBuffer, uint32_t frameInFlight)
+	{
+		_shader->GetPipeline().BindDescriptorSets(commandBuffer, &_instanceDescriptorSetAllocation, 2, 0, nullptr, frameInFlight);
+	}
 
 	Material::~Material() { _shader->GetPipeline().DeallocatePerInstanceDescriptorSet(_instanceDescriptorSetAllocation); }
 }

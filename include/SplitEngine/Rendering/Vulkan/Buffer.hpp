@@ -10,7 +10,7 @@ namespace SplitEngine::Rendering::Vulkan
 {
 	class Device;
 
-	class Buffer final : DeviceObject
+	class Buffer final : public DeviceObject
 	{
 		private:
 			struct SubBuffer
@@ -114,12 +114,12 @@ namespace SplitEngine::Rendering::Vulkan
 			T* Map() { return static_cast<T*>(Map()); }
 
 			template<typename T>
-			T* GetMappedData() { return static_cast<T*>(GetMappedData()); }
+			T* GetMappedData() const { return static_cast<T*>(GetMappedData()); }
 
 			static const char* EMPTY_DATA[];
 
 		private:
-			Allocator::BufferAllocation _bufferAllocation;
+			Allocator::BufferAllocation _bufferAllocation {};
 			vk::DeviceSize              _bufferSize = 0;
 
 			std::vector<SubBuffer>                _subBuffers;

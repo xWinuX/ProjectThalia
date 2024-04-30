@@ -74,9 +74,9 @@ namespace SplitEngine::Rendering::Vulkan
 					DescriptorSetAllocator::CreateInfo& descriptorSetInfo = _descriptorSetInfos[set];
 
 					// If we already processed the binding we just add the shader stage to it and move on to the next resource
-					if (descriptorSetInfo.bindings.contains(binding))
+					if (descriptorSetInfo.Bindings.contains(binding))
 					{
-						for (vk::DescriptorSetLayoutBinding& descriptorLayoutBinding: descriptorSetInfo.descriptorLayoutBindings)
+						for (vk::DescriptorSetLayoutBinding& descriptorLayoutBinding: descriptorSetInfo.DescriptorLayoutBindings)
 						{
 							if (descriptorLayoutBinding.binding == binding)
 							{
@@ -87,54 +87,66 @@ namespace SplitEngine::Rendering::Vulkan
 						continue;
 					}
 
-					DescriptorSetAllocator::BufferCreateInfo descriptorSetBufferCreateInfo{};
+					DescriptorSetAllocator::DescriptorCreateInfo descriptorCreateInfo{};
 
 					const spirv_cross::SPIRType& resourceBaseType = spirvCompiler.get_type(resource.base_type_id);
 					const spirv_cross::SPIRType& resourceType     = spirvCompiler.get_type(resource.type_id);
 
+					// Parse name to find modifiers
+					descriptorCreateInfo.Name          = resource.name;
+					std::vector<std::string> splitName = SplitEngine::Utility::String::Split(descriptorCreateInfo.Name, renderingSettings.ShaderBufferModDelimiter, 0);
+
+					for (std::string& split: splitName)
+					{
+						if (!descriptorCreateInfo.SingleInstance)
+						{
+							descriptorCreateInfo.SingleInstance = std::ranges::find(renderingSettings.ShaderPropertySingleInstanceModPrefixes, split) != renderingSettings.
+							                                      ShaderPropertySingleInstanceModPrefixes.end();
+						}
+
+						if (!descriptorCreateInfo.DeviceLocal)
+						{
+							descriptorCreateInfo.DeviceLocal = std::ranges::find(renderingSettings.ShaderBufferDeviceLocalModPrefixes, split) != renderingSettings.
+							                                   ShaderBufferDeviceLocalModPrefixes.end();
+						}
+
+						if (!descriptorCreateInfo.Cached)
+						{
+							descriptorCreateInfo.Cached = std::ranges::find(renderingSettings.ShaderBufferCacheModPrefixes, split) != renderingSettings.ShaderBufferCacheModPrefixes
+							                              .end();
+						}
+
+						if (!descriptorCreateInfo.Shared)
+						{
+							descriptorCreateInfo.Shared = std::ranges::find(renderingSettings.ShaderPropertySharedModPrefixes, split) != renderingSettings.
+							                              ShaderPropertySharedModPrefixes.end();
+						}
+
+						if (!descriptorCreateInfo.NoAllocation)
+						{
+							descriptorCreateInfo.NoAllocation = std::ranges::find(renderingSettings.ShaderBufferNoAllocModPrefixes, split) != renderingSettings.
+							                                    ShaderBufferNoAllocModPrefixes.end();
+						}
+					}
+
+					// Create binding
 					uint32_t descriptorCount = 1;
 					if (!resourceType.array.empty()) { descriptorCount = resourceType.array[0]; }
 
-					vk::DescriptorSetLayoutBinding layoutBinding = vk::DescriptorSetLayoutBinding(binding,
-					                                                                              type,
-					                                                                              descriptorCount,
-					                                                                              static_cast<vk::ShaderStageFlagBits>(shaderInfos[i].shaderStage));
+					// Bind everywhere if set is global or if property is shared
+					vk::ShaderStageFlagBits shaderStageFlagBits = descriptorCreateInfo.Shared || set == 0
+						                                              ? vk::ShaderStageFlagBits::eAll
+						                                              : static_cast<vk::ShaderStageFlagBits>(shaderInfos[i].shaderStage);
+					vk::DescriptorSetLayoutBinding layoutBinding = vk::DescriptorSetLayoutBinding(binding, type, descriptorCount, shaderStageFlagBits);
 
 					switch (type)
 					{
 						case vk::DescriptorType::eStorageBuffer:
 						case vk::DescriptorType::eUniformBuffer:
 						{
-							const std::string& bufferName = resource.name;
-
-							std::vector<std::string> splitName = SplitEngine::Utility::String::Split(bufferName, renderingSettings.ShaderBufferModDelimiter, 0);
-
-							for (std::string& split: splitName)
-							{
-								if (!descriptorSetBufferCreateInfo.SingleInstance)
-								{
-									descriptorSetBufferCreateInfo.SingleInstance =
-											std::ranges::find(renderingSettings.ShaderBufferSingleInstanceModPrefixes, split) != renderingSettings.
-											ShaderBufferSingleInstanceModPrefixes.end();
-								}
-
-								if (!descriptorSetBufferCreateInfo.DeviceLocal)
-								{
-									descriptorSetBufferCreateInfo.DeviceLocal =
-											std::ranges::find(renderingSettings.ShaderBufferDeviceLocalModPrefixes, split) != renderingSettings.ShaderBufferDeviceLocalModPrefixes.
-											end();
-								}
-
-								if (!descriptorSetBufferCreateInfo.Cached)
-								{
-									descriptorSetBufferCreateInfo.Cached =
-											std::ranges::find(renderingSettings.ShaderBufferCacheModPrefixes, split) != renderingSettings.ShaderBufferCacheModPrefixes.end();
-								}
-							}
-
 							vk::DeviceSize uniformSize = spirvCompiler.get_declared_struct_size(resourceBaseType);
 
-							descriptorSetInfo.writeDescriptorSets.emplace_back();
+							descriptorSetInfo.WriteDescriptorSets.emplace_back();
 
 							size_t offset = 0;
 							for (int j = 0; j < Device::MAX_FRAMES_IN_FLIGHT; ++j)
@@ -146,26 +158,26 @@ namespace SplitEngine::Rendering::Vulkan
 								vk::DeviceSize padding = minAlignment - (uniformSize % minAlignment);
 								padding                = padding == minAlignment ? 0 : padding;
 
-								descriptorSetInfo.writeDescriptorSets.back().emplace_back(VK_NULL_HANDLE, binding, 0, descriptorCount, type, nullptr, nullptr, nullptr);
-								descriptorSetInfo.writeDescriptorSets.back().back().pBufferInfo = new vk::DescriptorBufferInfo(VK_NULL_HANDLE, offset, uniformSize + padding);
+								descriptorSetInfo.WriteDescriptorSets.back().emplace_back(VK_NULL_HANDLE, binding, 0, descriptorCount, type, nullptr, nullptr, nullptr);
+								descriptorSetInfo.WriteDescriptorSets.back().back().pBufferInfo = new vk::DescriptorBufferInfo(VK_NULL_HANDLE, offset, uniformSize + padding);
 
-								if (!descriptorSetBufferCreateInfo.SingleInstance) { offset += uniformSize + padding; }
+								if (!descriptorCreateInfo.SingleInstance) { offset += uniformSize + padding; }
 							}
 							break;
 						}
 						case vk::DescriptorType::eCombinedImageSampler:
-							descriptorSetInfo.writeDescriptorSets.emplace_back();
+							descriptorSetInfo.WriteDescriptorSets.emplace_back();
 							for (int j = 0; j < Device::MAX_FRAMES_IN_FLIGHT; ++j)
 							{
-								descriptorSetInfo.writeDescriptorSets.back().emplace_back(VK_NULL_HANDLE, binding, 0, descriptorCount, type, nullptr, nullptr, nullptr);
+								descriptorSetInfo.WriteDescriptorSets.back().emplace_back(VK_NULL_HANDLE, binding, 0, descriptorCount, type, nullptr, nullptr, nullptr);
 							}
 							break;
 					}
 
-					descriptorSetInfo.bindings.insert(binding);
-					descriptorSetInfo.descriptorPoolSizes.emplace_back(type, descriptorCount * Device::MAX_FRAMES_IN_FLIGHT);
-					descriptorSetInfo.descriptorLayoutBindings.push_back(layoutBinding);
-					descriptorSetInfo.bufferCreateInfos.push_back(descriptorSetBufferCreateInfo);
+					descriptorSetInfo.Bindings.insert(binding);
+					descriptorSetInfo.DescriptorPoolSizes.emplace_back(type, descriptorCount * Device::MAX_FRAMES_IN_FLIGHT);
+					descriptorSetInfo.DescriptorLayoutBindings.push_back(layoutBinding);
+					descriptorSetInfo.DescriptorCreateInfos.push_back(descriptorCreateInfo);
 				}
 			}
 
@@ -234,6 +246,8 @@ namespace SplitEngine::Rendering::Vulkan
 
 		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo({}, _descriptorSetLayouts, nullptr);
 		_layout                                               = device->GetVkDevice().createPipelineLayout(pipelineLayoutCreateInfo);
+
+		LOG("is compute shader {0}", isComputeShader);
 
 		if (!isComputeShader)
 		{
@@ -349,9 +363,16 @@ namespace SplitEngine::Rendering::Vulkan
 	                                  DescriptorSetAllocator::Allocation* descriptorSetAllocation,
 	                                  const uint32_t                      firstSet,
 	                                  const uint32_t                      dynamicOffsetCount,
-	                                  uint32_t*                           dynamicOffsets) const
+	                                  uint32_t*                           dynamicOffsets,
+	                                  uint32_t                            frameInFlight) const
 	{
-		commandBuffer.bindDescriptorSets(_bindPoint, _layout, firstSet, 1, &descriptorSetAllocation->DescriptorSets.Get(), dynamicOffsetCount, dynamicOffsets);
+		commandBuffer.bindDescriptorSets(_bindPoint,
+		                                 _layout,
+		                                 firstSet,
+		                                 1,
+		                                 frameInFlight == -1 ? &descriptorSetAllocation->DescriptorSets.Get() : &descriptorSetAllocation->DescriptorSets[frameInFlight],
+		                                 dynamicOffsetCount,
+		                                 dynamicOffsets);
 	}
 
 	vk::Format Pipeline::GetFormatFromType(const spirv_cross::SPIRType& type)

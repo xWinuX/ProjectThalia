@@ -12,7 +12,6 @@ namespace SplitEngine::Rendering::Vulkan
 
 			virtual void Destroy() = 0;
 
-		protected:
 			[[nodiscard]] Device* GetDevice() const;
 
 		private:

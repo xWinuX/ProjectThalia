@@ -1,8 +1,9 @@
 #pragma once
+#include <cstdint>
 
 namespace SplitEngine::Rendering::Vulkan
 {
-	enum CommandType
+	enum class QueueType : uint8_t
 	{
 		Graphics = 0,
 		Present  = 1,

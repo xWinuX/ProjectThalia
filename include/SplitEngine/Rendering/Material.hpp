@@ -26,7 +26,7 @@ namespace SplitEngine::Rendering
 
 			void Update();
 
-			void Bind(vk::CommandBuffer& commandBuffer);
+			void Bind(vk::CommandBuffer& commandBuffer, uint32_t frameInFlight = -1);
 
 			[[nodiscard]] AssetHandle<Shader> GetShader() const;
 

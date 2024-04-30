@@ -87,7 +87,7 @@ if (NOT HEADLESS)
             include/SplitEngine/Rendering/Vulkan/RenderPass.hpp
             include/SplitEngine/Rendering/Vulkan/Swapchain.hpp
             include/SplitEngine/Rendering/Vulkan/Utility.hpp
-            include/SplitEngine/Rendering/Vulkan/CommandType.hpp
+            include/SplitEngine/Rendering/Vulkan/QueueFamily.hpp
             include/SplitEngine/Window.hpp
             src/SplitEngine/Audio/Manager.cpp
             src/SplitEngine/Audio/SoundEffect.cpp
@@ -111,7 +111,12 @@ if (NOT HEADLESS)
             src/SplitEngine/Rendering/Vulkan/Pipeline.cpp
             src/SplitEngine/Rendering/Vulkan/RenderPass.cpp
             src/SplitEngine/Rendering/Vulkan/Swapchain.cpp
+            src/SplitEngine/Rendering/Vulkan/QueueFamily.cpp
             src/SplitEngine/Window.cpp
+            include/SplitEngine/Rendering/Vulkan/Descriptor.hpp
+            src/SplitEngine/Rendering/Vulkan/CommandBuffer.cpp
+            include/SplitEngine/Rendering/Vulkan/CommandBuffer.hpp
+            include/SplitEngine/Rendering/Vulkan/QueueType.hpp
     )
 
     # SOLOUD

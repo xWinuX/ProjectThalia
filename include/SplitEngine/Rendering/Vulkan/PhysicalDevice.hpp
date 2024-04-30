@@ -1,11 +1,8 @@
 #pragma once
 
-#include "vulkan/vulkan.hpp"
+#include <vulkan/vulkan.hpp>
 
-#include <optional>
-
-#include "CommandType.hpp"
-
+#include "QueueFamily.hpp"
 
 namespace SplitEngine::Rendering::Vulkan
 {
@@ -23,22 +20,30 @@ namespace SplitEngine::Rendering::Vulkan
 					std::vector<vk::PresentModeKHR>   PresentModes;
 			};
 
-			typedef std::array<std::optional<uint32_t>, CommandType::MAX_VALUE> QueueFamilyIndices;
+			struct QueueFamilyInfo
+			{
+				QueueType WantedCommandType = QueueType::MAX_VALUE;
+				uint32_t          Index             = std::numeric_limits<uint32_t>::max();
+				uint32_t          QueueCount        = 0;
+			};
+
+			typedef std::array<QueueFamilyInfo, static_cast<size_t>(QueueType::MAX_VALUE)> QueueFamilyInfos;
 
 		public:
 			bool     IsQueueFamilyIndicesCompleted();
+			void     SearchQueues(const Instance& instance, const vk::PhysicalDevice& physicalDevice);
 			explicit PhysicalDevice(Instance& instance, std::vector<const char*> _requiredExtensions, std::vector<const char*> _requiredValidationLayers);
 
-			[[nodiscard]] Instance&                                                          GetInstance() const;
-			[[nodiscard]] Device&                                                            GetDevice() const;
-			[[nodiscard]] const vk::PhysicalDevice&                                          GetVkPhysicalDevice() const;
-			[[nodiscard]] const QueueFamilyIndices& GetQueueFamilyIndices() const;
-			[[nodiscard]] const SwapchainSupportDetails&                                     GetSwapchainSupportDetails() const;
-			[[nodiscard]] const std::vector<const char*>&                                    GetExtensions() const;
-			[[nodiscard]] const std::vector<const char*>&                                    GetValidationLayers() const;
-			[[nodiscard]] const vk::SurfaceFormatKHR&                                        GetImageFormat() const;
-			[[nodiscard]] vk::Format                                                         GetDepthImageFormat() const;
-			[[nodiscard]] const vk::PhysicalDeviceProperties&                                GetProperties() const;
+			[[nodiscard]] Instance&                           GetInstance() const;
+			[[nodiscard]] Device&                             GetDevice() const;
+			[[nodiscard]] const vk::PhysicalDevice&           GetVkPhysicalDevice() const;
+			[[nodiscard]] const QueueFamilyInfos&             GetQueueFamilyInfos() const;
+			[[nodiscard]] const SwapchainSupportDetails&      GetSwapchainSupportDetails() const;
+			[[nodiscard]] const std::vector<const char*>&     GetExtensions() const;
+			[[nodiscard]] const std::vector<const char*>&     GetValidationLayers() const;
+			[[nodiscard]] const vk::SurfaceFormatKHR&         GetImageFormat() const;
+			[[nodiscard]] vk::Format                          GetDepthImageFormat() const;
+			[[nodiscard]] const vk::PhysicalDeviceProperties& GetProperties() const;
 
 			void Destroy();
 
@@ -47,7 +52,7 @@ namespace SplitEngine::Rendering::Vulkan
 		private:
 			Instance& _instance;
 
-			QueueFamilyIndices _queueFamilyIndices;
+			QueueFamilyInfos _queueFamilyInfos{};
 
 			vk::PhysicalDevice           _vkPhysicalDevice;
 			std::unique_ptr<Device>      _device;

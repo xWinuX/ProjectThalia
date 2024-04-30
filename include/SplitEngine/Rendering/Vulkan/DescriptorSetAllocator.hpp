@@ -10,86 +10,108 @@
 #include <unordered_set>
 #include <vector>
 
-namespace SplitEngine::Rendering::Vulkan
+#include "Descriptor.hpp"
+
+namespace SplitEngine::Rendering
 {
-	class Device;
+	class Shader;
 
-	class Buffer;
-
-	class DescriptorSetAllocator final : DeviceObject
+	namespace Vulkan
 	{
-		public:
-			struct BufferCreateInfo
-			{
-				public:
-					bool SingleInstance = false;
-					bool DeviceLocal    = false;
-					bool Cached         = false;
-			};
+		class Device;
 
-			struct CreateInfo
-			{
-				public:
-					std::unordered_set<uint32_t>                     bindings                 = std::unordered_set<uint32_t>();
-					std::vector<vk::DescriptorSetLayoutBinding>      descriptorLayoutBindings = std::vector<vk::DescriptorSetLayoutBinding>(0);
-					std::vector<vk::DescriptorPoolSize>              descriptorPoolSizes      = std::vector<vk::DescriptorPoolSize>(0);
-					std::vector<std::vector<vk::WriteDescriptorSet>> writeDescriptorSets      = std::vector<std::vector<vk::WriteDescriptorSet>>(0);
-					std::vector<BufferCreateInfo>                    bufferCreateInfos        = std::vector<BufferCreateInfo>(0);
-			};
+		class Instance;
 
-			struct DescriptorPoolInstance
-			{
-				public:
-					vk::DescriptorPool             DescriptorPool;
-					std::vector<vk::DescriptorSet> DescriptorSets;
-					AvailableStack<uint32_t>       Available;
-			};
+		class Buffer;
 
-			struct DescriptorPoolAllocation
-			{
-				uint32_t DescriptorPoolIndex;
-				uint32_t DescriptorSetIndex;
-			};
+		class DescriptorSetAllocator final : public DeviceObject
+		{
+			friend Shader;
+			friend Instance;
 
-			struct Allocation
-			{
-				friend DescriptorSetAllocator;
+			public:
+				struct DescriptorCreateInfo
+				{
+					public:
+						std::string Name;
+						bool        SingleInstance = false;
+						bool        DeviceLocal    = false;
+						bool        Cached         = false;
+						bool        Shared         = false;
+						bool        NoAllocation   = false;
+				};
 
-				public:
-					InFlightResource<vk::DescriptorSet>                   DescriptorSets{};
-					std::vector<Buffer>                                   ShaderBuffers            = std::vector<Buffer>(0);
-					std::vector<InFlightResource<std::byte*>>             ShaderBufferPtrs         = std::vector<InFlightResource<std::byte*>>(0);
-					std::vector<std::vector<vk::DescriptorImageInfo>>     ImageInfos               = std::vector<std::vector<vk::DescriptorImageInfo>>(0);
-					std::vector<InFlightResource<vk::WriteDescriptorSet>> ImageWriteDescriptorSets = std::vector<InFlightResource<vk::WriteDescriptorSet>>(0);
-					std::vector<uint32_t>                                 SparseShaderBufferLookup = std::vector<uint32_t>(12);
-					std::vector<uint32_t>                                 SparseImageLookup        = std::vector<uint32_t>(12);
+				struct CreateInfo
+				{
+					public:
+						std::unordered_set<uint32_t>                     Bindings                 = std::unordered_set<uint32_t>();
+						std::vector<vk::DescriptorSetLayoutBinding>      DescriptorLayoutBindings = std::vector<vk::DescriptorSetLayoutBinding>(0);
+						std::vector<vk::DescriptorPoolSize>              DescriptorPoolSizes      = std::vector<vk::DescriptorPoolSize>(0);
+						std::vector<std::vector<vk::WriteDescriptorSet>> WriteDescriptorSets      = std::vector<std::vector<vk::WriteDescriptorSet>>(0);
+						std::vector<DescriptorCreateInfo>                DescriptorCreateInfos    = std::vector<DescriptorCreateInfo>(0);
+				};
 
-				private:
-					std::vector<DescriptorPoolAllocation> _descriptorPoolAllocations;
-			};
+				struct DescriptorPoolInstance
+				{
+					public:
+						vk::DescriptorPool             DescriptorPool;
+						std::vector<vk::DescriptorSet> DescriptorSets;
+						AvailableStack<uint32_t>       Available;
+				};
 
-		public:
-			DescriptorSetAllocator() = default;
-			DescriptorSetAllocator(Device* device, CreateInfo& descriptorSetInfo, uint32_t maxSetsPerPool);
+				struct DescriptorPoolAllocation
+				{
+					uint32_t DescriptorPoolIndex;
+					uint32_t DescriptorSetIndex;
+				};
 
-			void Destroy() override;
+				struct Allocation
+				{
+					friend DescriptorSetAllocator;
 
-			Allocation AllocateDescriptorSet();
+					public:
+						struct DescriptorEntry
+						{
+							uint32_t    BindingPoint = -1;
+							Descriptor* Descriptor   = nullptr;
+						};
 
-			void DeallocateDescriptorSet(Allocation& descriptorSetAllocation);
+						InFlightResource<vk::DescriptorSet>                   DescriptorSets{};
+						std::vector<DescriptorEntry>                          DescriptorEntries;
+						std::vector<InFlightResource<vk::WriteDescriptorSet>> WriteDescriptorSets;
+						std::vector<uint32_t>                                 SparseDescriptorLookup = std::vector<uint32_t>(12, -1);
 
-			[[nodiscard]] const vk::DescriptorSetLayout& GetDescriptorSetLayout() const;
+					private:
+						std::vector<Descriptor>               _uniqueDescriptors;
+						std::vector<DescriptorPoolAllocation> _descriptorPoolAllocations;
+				};
 
-		private:
-			std::vector<uint32_t>                            _bindings;
-			vk::DescriptorSetLayout                          _descriptorSetLayout;
-			std::vector<vk::DescriptorSetLayout>             _descriptorSetLayouts;
-			std::vector<DescriptorPoolInstance>              _descriptorPoolInstances;
-			std::vector<vk::DescriptorPoolSize>              _descriptorPoolSizes;
-			std::vector<std::vector<vk::WriteDescriptorSet>> _writeDescriptorSets;
-			std::vector<BufferCreateInfo>                    _bufferCreateInfo;
-			uint32_t                                         _maxSetsPerPool = 10;
+			public:
+				DescriptorSetAllocator() = default;
+				DescriptorSetAllocator(Device* device, CreateInfo& descriptorSetInfo, uint32_t maxSetsPerPool);
 
-			void AllocateNewDescriptorPool();
-	};
+				void Destroy() override;
+
+				Allocation AllocateDescriptorSet();
+
+				void DeallocateDescriptorSet(Allocation& descriptorSetAllocation);
+
+				[[nodiscard]] const vk::DescriptorSetLayout& GetDescriptorSetLayout() const;
+
+			private:
+				std::vector<uint32_t>                            _bindings;
+				vk::DescriptorSetLayout                          _descriptorSetLayout;
+				std::vector<vk::DescriptorSetLayout>             _descriptorSetLayouts;
+				std::vector<DescriptorPoolInstance>              _descriptorPoolInstances;
+				std::vector<vk::DescriptorPoolSize>              _descriptorPoolSizes;
+				std::vector<std::vector<vk::WriteDescriptorSet>> _writeDescriptorSets;
+				std::vector<DescriptorCreateInfo>                _descriptorCreateInfo;
+				uint32_t                                         _maxSetsPerPool = 10;
+
+				static uint32_t                                    _descriptorIdCounter;
+				static std::unordered_map<std::string, Descriptor> _sharedDescriptors;
+
+				void AllocateNewDescriptorPool();
+		};
+	}
 }

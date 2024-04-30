@@ -50,10 +50,14 @@ namespace SplitEngine::Rendering::Vulkan
 		                                                                            1,
 		                                                                            vk::ImageUsageFlagBits::eColorAttachment);
 
-		const PhysicalDevice::QueueFamilyIndices& queueFamilyIndices = physicalDevice.GetQueueFamilyIndices();
-		if (queueFamilyIndices.GraphicsFamily != queueFamilyIndices.PresentFamily)
+		const PhysicalDevice::QueueFamilyInfos& queueFamilyIndices = physicalDevice.GetQueueFamilyInfos();
+		std::vector<uint32_t> queueFamilies = {
+			queueFamilyIndices[static_cast<size_t>(QueueType::Graphics)].Index,
+			queueFamilyIndices[static_cast<size_t>(QueueType::Present)].Index
+		};
+
+		if (queueFamilyIndices[static_cast<size_t>(QueueType::Graphics)].Index != queueFamilyIndices[static_cast<size_t>(QueueType::Present)].Index)
 		{
-			std::vector<uint32_t> queueFamilies = { queueFamilyIndices.GraphicsFamily.value(), queueFamilyIndices.PresentFamily.value() };
 			swapChainCreateInfo.setImageSharingMode(vk::SharingMode::eConcurrent);
 			swapChainCreateInfo.setQueueFamilyIndices(queueFamilies);
 		}

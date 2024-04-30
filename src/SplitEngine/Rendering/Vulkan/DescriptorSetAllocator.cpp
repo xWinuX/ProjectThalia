@@ -13,17 +13,21 @@
 
 namespace SplitEngine::Rendering::Vulkan
 {
+	std::unordered_map<std::string, Descriptor> DescriptorSetAllocator::_sharedDescriptors = std::unordered_map<std::string, Descriptor>();
+
+	uint32_t DescriptorSetAllocator::_descriptorIdCounter = 0;
+
 	DescriptorSetAllocator::DescriptorSetAllocator(Device* device, CreateInfo& descriptorSetInfo, uint32_t maxSetsPerPool) :
 		DeviceObject(device),
-		_descriptorPoolSizes(std::move(descriptorSetInfo.descriptorPoolSizes)),
-		_writeDescriptorSets(std::move(descriptorSetInfo.writeDescriptorSets)),
-		_bufferCreateInfo(std::move(descriptorSetInfo.bufferCreateInfos)),
+		_descriptorPoolSizes(std::move(descriptorSetInfo.DescriptorPoolSizes)),
+		_writeDescriptorSets(std::move(descriptorSetInfo.WriteDescriptorSets)),
+		_descriptorCreateInfo(std::move(descriptorSetInfo.DescriptorCreateInfos)),
 		_maxSetsPerPool(maxSetsPerPool * Device::MAX_FRAMES_IN_FLIGHT)
 	{
-		const vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo({}, descriptorSetInfo.descriptorLayoutBindings);
+		const vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo({}, descriptorSetInfo.DescriptorLayoutBindings);
 		_descriptorSetLayout                                                  = GetDevice()->GetVkDevice().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
 
-		for (const auto& binding: descriptorSetInfo.bindings) { _bindings.push_back(binding); }
+		for (const auto& binding: descriptorSetInfo.Bindings) { _bindings.push_back(binding); }
 
 		_descriptorSetLayouts = std::vector<vk::DescriptorSetLayout>(Device::MAX_FRAMES_IN_FLIGHT, _descriptorSetLayout);
 
@@ -72,106 +76,157 @@ namespace SplitEngine::Rendering::Vulkan
 
 		Allocation descriptorSetAllocation;
 
-		// Create descriptor resources
-		std::vector<std::vector<vk::DescriptorBufferInfo*>> bufferInfos = std::vector<std::vector<vk::DescriptorBufferInfo*>>();
-
-		for (int i = 0; i < _writeDescriptorSets.size(); ++i)
-		{
-			uint32_t binding = _bindings[i];
-			LOG("----- BINDING {0}", binding);
-			std::vector<vk::WriteDescriptorSet>& writeDescriptorSets = _writeDescriptorSets[i];
-			vk::WriteDescriptorSet&              lastWriteDescriptor = writeDescriptorSets.back();
-			BufferCreateInfo&                    bufferCreateInfo    = _bufferCreateInfo[i];
-			switch (lastWriteDescriptor.descriptorType)
-			{
-				case vk::DescriptorType::eUniformBuffer:
-				case vk::DescriptorType::eStorageBuffer:
-				{
-					LOG("is buffer");
-					vk::Flags<vk::BufferUsageFlagBits> usage = lastWriteDescriptor.descriptorType == vk::DescriptorType::eUniformBuffer
-						                                           ? vk::BufferUsageFlagBits::eUniformBuffer
-						                                           : vk::BufferUsageFlagBits::eStorageBuffer;
-
-					uint32_t                                             numSubBuffers = bufferCreateInfo.SingleInstance ? 1 : Device::MAX_FRAMES_IN_FLIGHT;
-					vk::Flags<Allocator::MemoryAllocationCreateFlagBits> flags{};
-					vk::Flags<Allocator::MemoryPropertyFlagBits>         requiredFlags{};
-
-					if (bufferCreateInfo.Cached) { flags |= Allocator::RandomAccess; }
-					else { flags |= Allocator::WriteSequentially; }
-
-					if (bufferCreateInfo.DeviceLocal) { requiredFlags |= Allocator::LocalDevice; }
-					else { flags |= Allocator::PersistentMap; }
-
-					if (bufferCreateInfo.Cached) { requiredFlags |= Allocator::HostCached; }
-
-					Allocator::MemoryAllocationCreateInfo allocationCreateInfo = { Allocator::Auto, flags, requiredFlags };
-
-					descriptorSetAllocation.ShaderBuffers.push_back(std::move(Buffer(GetDevice(),
-					                                                                 usage,
-					                                                                 vk::SharingMode::eExclusive,
-					                                                                 allocationCreateInfo,
-					                                                                 numSubBuffers,
-					                                                                 lastWriteDescriptor.pBufferInfo->range)));
-
-
-					descriptorSetAllocation.SparseShaderBufferLookup[binding] = descriptorSetAllocation.ShaderBuffers.size() - 1;
-
-					std::vector<std::byte*> bufferPtrs;
-					size_t                  offset = 0;
-					for (int j = 0; j < Device::MAX_FRAMES_IN_FLIGHT; ++j)
-					{
-						vk::WriteDescriptorSet& writeDescriptorSet = writeDescriptorSets[j];
-
-						vk::DescriptorBufferInfo* bufferInfo = new vk::DescriptorBufferInfo(*writeDescriptorSet.pBufferInfo);
-						Buffer&                   buffer     = descriptorSetAllocation.ShaderBuffers.back();
-
-						bufferInfo->buffer = buffer.GetVkBuffer();
-						delete writeDescriptorSet.pBufferInfo;
-						writeDescriptorSet.dstSet      = descriptorSets[j];
-						writeDescriptorSet.pBufferInfo = bufferInfo;
-
-						bufferPtrs.push_back(buffer.GetMappedData<std::byte>() + offset);
-
-						if (!bufferCreateInfo.SingleInstance) { offset += buffer.GetSizeInBytes(0); }
-					}
-
-					descriptorSetAllocation.ShaderBufferPtrs.emplace_back(GetDevice()->GetCurrentFramePtr(), std::move(bufferPtrs));
-
-					break;
-				}
-				case vk::DescriptorType::eCombinedImageSampler:
-				{
-					LOG("is image sampler");
-					descriptorSetAllocation.ImageInfos.emplace_back();
-					for (int j = 0; j < lastWriteDescriptor.descriptorCount; ++j)
-					{
-						descriptorSetAllocation.ImageInfos.back().emplace_back(*GetDevice()->GetPhysicalDevice().GetInstance().GetDefaultSampler(),
-						                                                       GetDevice()->GetPhysicalDevice().GetInstance().GetDefaultImage().GetView(),
-						                                                       GetDevice()->GetPhysicalDevice().GetInstance().GetDefaultImage().GetLayout());
-					}
-
-					std::vector<vk::WriteDescriptorSet> imageWriteDescriptorSets = std::vector<vk::WriteDescriptorSet>(Device::MAX_FRAMES_IN_FLIGHT);
-					for (int j = 0; j < Device::MAX_FRAMES_IN_FLIGHT; ++j)
-					{
-						vk::WriteDescriptorSet& writeDescriptorSet = writeDescriptorSets[j];
-						writeDescriptorSet.dstSet                  = descriptorSets[j];
-						writeDescriptorSet.pImageInfo              = descriptorSetAllocation.ImageInfos.back().data();
-						imageWriteDescriptorSets[j]                = writeDescriptorSet;
-					}
-
-					descriptorSetAllocation.SparseImageLookup[binding] = descriptorSetAllocation.ImageInfos.size() - 1;
-					descriptorSetAllocation.ImageWriteDescriptorSets.emplace_back(GetDevice()->GetCurrentFramePtr(), std::move(imageWriteDescriptorSets));
-
-					break;
-				}
-			}
-
-			GetDevice()->GetVkDevice().updateDescriptorSets(writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
-		}
-
+		int numUniqueDescriptors = 0;
+		for (DescriptorCreateInfo createInfo: _descriptorCreateInfo) { if (!createInfo.Shared) { numUniqueDescriptors++; } }
 
 		// Create allocation object
 		descriptorSetAllocation.DescriptorSets = InFlightResource<vk::DescriptorSet>(GetDevice()->GetCurrentFramePtr(), std::move(descriptorSets));
+
+		descriptorSetAllocation._uniqueDescriptors.reserve(numUniqueDescriptors);
+
+		// Create descriptor resources
+		for (int i = 0; i < _writeDescriptorSets.size(); ++i)
+		{
+			Descriptor                           descriptor{};
+			uint32_t                             bindingPoint         = _bindings[i];
+			std::vector<vk::WriteDescriptorSet>& writeDescriptorSets  = _writeDescriptorSets[i];
+			vk::WriteDescriptorSet&              lastWriteDescriptor  = writeDescriptorSets.back();
+			DescriptorCreateInfo&                descriptorCreateInfo = _descriptorCreateInfo[i];
+
+			descriptor.SingleInstance = descriptorCreateInfo.SingleInstance;
+
+			// Skip if descriptor is shared and already exists
+			if (_sharedDescriptors.contains(descriptorCreateInfo.Name))
+			{
+				descriptorSetAllocation.DescriptorEntries.emplace_back(bindingPoint, &_sharedDescriptors[descriptorCreateInfo.Name]);
+				descriptorSetAllocation.WriteDescriptorSets.push_back(_sharedDescriptors[descriptorCreateInfo.Name].WriteDescriptorSets);
+
+				for (int fifIndex = 0; fifIndex < Device::MAX_FRAMES_IN_FLIGHT; ++fifIndex)
+				{
+					vk::WriteDescriptorSet& writeDescriptor = descriptorSetAllocation.WriteDescriptorSets.back().GetDataVector()[fifIndex];
+					writeDescriptor.dstSet                  = descriptorSetAllocation.DescriptorSets[fifIndex];
+					writeDescriptor.dstBinding              = bindingPoint;
+				}
+			}
+			else
+			{
+				// Create descriptor
+				descriptor.WriteDescriptorSets = GetDevice()->CreateInFlightResource<vk::WriteDescriptorSet>();
+				LOG("-----{0}------", descriptorCreateInfo.Name);
+				switch (lastWriteDescriptor.descriptorType)
+				{
+					case vk::DescriptorType::eUniformBuffer:
+					case vk::DescriptorType::eStorageBuffer:
+					{
+						descriptor.Type = Descriptor::Type::Buffer;
+
+						vk::Flags<vk::BufferUsageFlagBits> usage = lastWriteDescriptor.descriptorType == vk::DescriptorType::eUniformBuffer
+							                                           ? vk::BufferUsageFlagBits::eUniformBuffer
+							                                           : vk::BufferUsageFlagBits::eStorageBuffer;
+
+						uint32_t                                             numSubBuffers = descriptorCreateInfo.SingleInstance ? 1 : Device::MAX_FRAMES_IN_FLIGHT;
+						vk::Flags<Allocator::MemoryAllocationCreateFlagBits> flags{};
+						vk::Flags<Allocator::MemoryPropertyFlagBits>         requiredFlags{};
+
+						if (descriptorCreateInfo.Cached) { flags |= Allocator::RandomAccess; }
+						else { flags |= Allocator::WriteSequentially; }
+
+						if (descriptorCreateInfo.DeviceLocal) { requiredFlags |= Allocator::LocalDevice; }
+						else { flags |= Allocator::PersistentMap; }
+
+						if (descriptorCreateInfo.Cached) { requiredFlags |= Allocator::HostCached; }
+
+						Allocator::MemoryAllocationCreateInfo allocationCreateInfo = { Allocator::Auto, flags, requiredFlags };
+
+						if (!descriptorCreateInfo.NoAllocation)
+						{
+							descriptor.Buffer = std::move(Buffer(GetDevice(),
+							                                     usage,
+							                                     vk::SharingMode::eExclusive,
+							                                     allocationCreateInfo,
+							                                     numSubBuffers,
+							                                     lastWriteDescriptor.pBufferInfo->range));
+						}
+
+						descriptor.BufferInfos = GetDevice()->CreateInFlightResource<vk::DescriptorBufferInfo>(descriptorCreateInfo.SingleInstance);
+						descriptor.BufferPtrs  = GetDevice()->CreateInFlightResource<std::byte*>(descriptorCreateInfo.SingleInstance, nullptr);
+
+						size_t offset   = 0;
+						int    fifIndex = 0;
+						for (int j = 0; j < Device::MAX_FRAMES_IN_FLIGHT; ++j)
+						{
+							descriptor.BufferInfos[fifIndex] = vk::DescriptorBufferInfo(*writeDescriptorSets[j].pBufferInfo);
+
+							if (!descriptorCreateInfo.NoAllocation)
+							{
+								descriptor.BufferInfos[fifIndex].buffer = descriptor.Buffer.GetVkBuffer();
+								descriptor.BufferPtrs[fifIndex]         = descriptor.Buffer.GetMappedData<std::byte>() + offset;
+							}
+							else { descriptor.BufferPtrs[fifIndex] = nullptr; }
+
+							descriptor.WriteDescriptorSets[j] = writeDescriptorSets[j];
+
+							descriptor.WriteDescriptorSets[j].dstSet      = descriptorSetAllocation.DescriptorSets[j];
+							descriptor.WriteDescriptorSets[j].pBufferInfo = &descriptor.BufferInfos[fifIndex];
+
+							if (!descriptorCreateInfo.SingleInstance)
+							{
+								offset += lastWriteDescriptor.pBufferInfo->range;
+								fifIndex++;
+							}
+						}
+						break;
+					}
+					case vk::DescriptorType::eCombinedImageSampler:
+					{
+						descriptor.Type = Descriptor::Type::ImageSampler;
+
+						descriptor.ImageInfos = GetDevice()->CreateInFlightResource<std::vector<vk::DescriptorImageInfo>>(descriptorCreateInfo.SingleInstance,
+							std::vector<vk::DescriptorImageInfo>());
+
+						int fifIndex = 0;
+						for (int j = 0; j < Device::MAX_FRAMES_IN_FLIGHT; ++j)
+						{
+							if (!descriptorCreateInfo.SingleInstance || (descriptorCreateInfo.SingleInstance && j == 0))
+							{
+								for (int imageIndex = 0; imageIndex < lastWriteDescriptor.descriptorCount; ++imageIndex)
+								{
+									descriptor.ImageInfos[fifIndex].emplace_back(*GetDevice()->GetPhysicalDevice().GetInstance().GetDefaultSampler(),
+									                                             GetDevice()->GetPhysicalDevice().GetInstance().GetDefaultImage().GetView(),
+									                                             GetDevice()->GetPhysicalDevice().GetInstance().GetDefaultImage().GetLayout());
+								}
+							}
+
+							descriptor.WriteDescriptorSets[j]            = writeDescriptorSets[j];
+							descriptor.WriteDescriptorSets[j].dstSet     = descriptorSetAllocation.DescriptorSets[j];
+							descriptor.WriteDescriptorSets[j].pImageInfo = descriptor.ImageInfos[fifIndex].data();
+
+							if (!descriptorCreateInfo.SingleInstance) { fifIndex++; }
+						}
+
+						break;
+					}
+				}
+
+				if (descriptorCreateInfo.Shared)
+				{
+					descriptor.SharedID                           = _descriptorIdCounter++;
+					_sharedDescriptors[descriptorCreateInfo.Name] = std::move(descriptor);
+					descriptorSetAllocation.DescriptorEntries.emplace_back(bindingPoint, &_sharedDescriptors[descriptorCreateInfo.Name]);
+					descriptorSetAllocation.WriteDescriptorSets.push_back(_sharedDescriptors[descriptorCreateInfo.Name].WriteDescriptorSets);
+				}
+				else
+				{
+					descriptorSetAllocation._uniqueDescriptors.push_back(std::move(descriptor));
+					descriptorSetAllocation.DescriptorEntries.emplace_back(bindingPoint, &descriptorSetAllocation._uniqueDescriptors.back());
+					descriptorSetAllocation.WriteDescriptorSets.push_back(descriptorSetAllocation._uniqueDescriptors.back().WriteDescriptorSets);
+				}
+			}
+
+			GetDevice()->GetVkDevice().updateDescriptorSets(Device::MAX_FRAMES_IN_FLIGHT, descriptorSetAllocation.WriteDescriptorSets.back().GetDataPtr(), 0, nullptr);
+
+			descriptorSetAllocation.SparseDescriptorLookup[bindingPoint] = descriptorSetAllocation.DescriptorEntries.size() - 1;
+		}
 
 		descriptorSetAllocation._descriptorPoolAllocations = std::move(poolAllocations);
 
@@ -217,9 +272,6 @@ namespace SplitEngine::Rendering::Vulkan
 			{
 				DescriptorPoolInstance& descriptorPoolInstance = _descriptorPoolInstances[poolAllocation.DescriptorPoolIndex];
 
-				LOG("dealloc pool index {0}", poolAllocation.DescriptorPoolIndex);
-				LOG("dealloc set index {0}", poolAllocation.DescriptorSetIndex);
-
 				GetDevice()->GetVkDevice().freeDescriptorSets(descriptorPoolInstance.DescriptorPool, 1, &descriptorPoolInstance.DescriptorSets[poolAllocation.DescriptorSetIndex]);
 
 				for (int i = 0; i < Device::MAX_FRAMES_IN_FLIGHT; ++i)
@@ -229,9 +281,14 @@ namespace SplitEngine::Rendering::Vulkan
 				}
 			}
 
-			LOG("Deallocate buffer");
-			for (auto& buffer: descriptorSetAllocation.ShaderBuffers) { buffer.Destroy(); }
-			LOG("after Deallocate buffer");
+			for (auto& descriptor: descriptorSetAllocation._uniqueDescriptors)
+			{
+				if (descriptor.Type == Descriptor::Type::Buffer)
+				{
+					LOG("Deallocate buffer");
+					descriptor.Buffer.Destroy();
+				}
+			}
 		}
 	}
 

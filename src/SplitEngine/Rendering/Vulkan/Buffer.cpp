@@ -1,4 +1,7 @@
 #include "SplitEngine/Rendering/Vulkan/Buffer.hpp"
+
+#include <iostream>
+
 #include "SplitEngine/ErrorHandler.hpp"
 #include "SplitEngine/Rendering/Vulkan/Device.hpp"
 #include "SplitEngine/Rendering/Vulkan/Instance.hpp"
@@ -139,15 +142,15 @@ namespace SplitEngine::Rendering::Vulkan
 
 	void Buffer::Copy(const Buffer& destinationBuffer) const
 	{
-		const vk::CommandBuffer commandBuffer = GetDevice()->BeginOneshotCommands();
+		const vk::CommandBuffer commandBuffer = GetDevice()->GetQueueFamily(QueueType::Transfer).BeginOneshotCommands();
 
 		const vk::BufferCopy copyRegion = vk::BufferCopy(0, 0, _bufferSize);
 		commandBuffer.copyBuffer(GetVkBuffer(), destinationBuffer.GetVkBuffer(), 1, &copyRegion);
 
-		GetDevice()->EndOneshotCommands(commandBuffer);
+		GetDevice()->GetQueueFamily(QueueType::Transfer).EndOneshotCommands();
 	}
 
-	void Buffer::Destroy() { GetDevice()->GetPhysicalDevice().GetInstance().GetAllocator().DestroyBuffer(_bufferAllocation); }
+	void Buffer::Destroy() { if (_bufferAllocation.Buffer != VK_NULL_HANDLE) { GetDevice()->GetPhysicalDevice().GetInstance().GetAllocator().DestroyBuffer(_bufferAllocation); } }
 
 	size_t Buffer::GetDataElementNum(const size_t index) const { return _subBuffers[index].NumElements; }
 

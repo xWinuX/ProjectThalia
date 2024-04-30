@@ -10,7 +10,7 @@ namespace SplitEngine::Rendering::Vulkan
 {
 	class Device;
 
-	class Pipeline final : DeviceObject
+	class Pipeline final : public DeviceObject
 	{
 		public:
 			friend class Instance;
@@ -47,7 +47,8 @@ namespace SplitEngine::Rendering::Vulkan
 			                        DescriptorSetAllocator::Allocation* descriptorSetAllocation,
 			                        uint32_t                            firstSet,
 			                        uint32_t                            dynamicOffsetCount = 0,
-			                        uint32_t*                           dynamicOffsets     = nullptr) const;
+			                        uint32_t*                           dynamicOffsets     = nullptr,
+			                        uint32_t                            frameInFlight      = -1) const;
 			void Destroy() override;
 
 			[[nodiscard]] const vk::Pipeline&       GetVkPipeline() const;
@@ -75,7 +76,6 @@ namespace SplitEngine::Rendering::Vulkan
 			std::vector<vk::DescriptorSetLayout> _descriptorSetLayouts;
 
 			DescriptorSetAllocator::Allocation _perPipelineDescriptorSetAllocation;
-
 
 			std::vector<vk::ShaderModule> _shaderModules;
 
