@@ -69,7 +69,7 @@ namespace SplitEngine::Rendering
 							Properties* Property     = nullptr;
 						};
 
-						std::vector<PropertyEntry> Propertieses{};
+						std::vector<PropertyEntry> PropertyEntries{};
 						AvailableStack<uint32_t>   AvailableStack{};
 					};
 
@@ -111,13 +111,15 @@ namespace SplitEngine::Rendering
 			[[nodiscard]] Vulkan::Pipeline& GetPipeline();
 
 		private:
+			std::string      _shaderPath{};
 			Vulkan::Device*  _device = nullptr;
 			Vulkan::Pipeline _pipeline{};
-			std::string      _shaderPath{};
 
 			static Properties _globalProperties;
 			static bool       _globalPropertiesDefined;
 
-			Properties _shaderProperties{};
+			Properties _shaderProperties;
+
+			std::vector<Vulkan::Pipeline::ShaderInfo> CreateShaderInfos();
 	};
 }

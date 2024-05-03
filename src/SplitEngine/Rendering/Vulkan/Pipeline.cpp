@@ -247,8 +247,6 @@ namespace SplitEngine::Rendering::Vulkan
 		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo({}, _descriptorSetLayouts, nullptr);
 		_layout                                               = device->GetVkDevice().createPipelineLayout(pipelineLayoutCreateInfo);
 
-		LOG("is compute shader {0}", isComputeShader);
-
 		if (!isComputeShader)
 		{
 			std::vector<vk::DynamicState> dynamicStates = { vk::DynamicState::eViewport, vk::DynamicState::eScissor, };
@@ -428,7 +426,6 @@ namespace SplitEngine::Rendering::Vulkan
 
 	void Pipeline::Destroy()
 	{
-		LOG("deallocate shader descriptor Sets");
 		_perPipelineDescriptorSetManager.DeallocateDescriptorSet(_perPipelineDescriptorSetAllocation);
 
 		_perInstanceDescriptorSetManager.Destroy();
@@ -447,7 +444,6 @@ namespace SplitEngine::Rendering::Vulkan
 
 	void Pipeline::DeallocatePerInstanceDescriptorSet(DescriptorSetAllocator::Allocation& descriptorSetAllocation)
 	{
-		LOG("deallocate instance descriptor Sets");
 		_perInstanceDescriptorSetManager.DeallocateDescriptorSet(descriptorSetAllocation);
 	}
 }

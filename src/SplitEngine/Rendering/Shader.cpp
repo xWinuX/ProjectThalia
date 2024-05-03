@@ -32,12 +32,10 @@ namespace SplitEngine::Rendering
 
 	bool Shader::_globalPropertiesDefined = false;
 
-	Shader::Shader(const CreateInfo& createInfo) :
-		_shaderPath(createInfo.ShaderPath)
+	std::vector<Vulkan::Pipeline::ShaderInfo> Shader::CreateShaderInfos()
 	{
-		_device = &Vulkan::Instance::Get().GetPhysicalDevice().GetDevice();
-
-		RenderingSettings renderingSettings = _device->GetPhysicalDevice().GetInstance().GetRenderingSettings();
+		std::vector<Vulkan::Pipeline::ShaderInfo> shaderInfos{};
+		RenderingSettings                         renderingSettings = _device->GetPhysicalDevice().GetInstance().GetRenderingSettings();
 
 		std::vector<std::filesystem::path> files;
 		for (const std::filesystem::directory_entry& entry: std::filesystem::directory_iterator(_shaderPath))
@@ -46,7 +44,6 @@ namespace SplitEngine::Rendering
 			if (std::filesystem::is_regular_file(entry.path()) && hasSpvExtension) { files.push_back(entry.path()); }
 		}
 
-		std::vector<Vulkan::Pipeline::ShaderInfo> shaderInfos;
 		shaderInfos.reserve(files.size());
 
 		// Get shader infos
@@ -81,10 +78,15 @@ namespace SplitEngine::Rendering
 			shaderInfos.push_back({ file.string(), shaderType });
 		}
 
-		_pipeline = Vulkan::Pipeline(_device, "main", shaderInfos);
+		return shaderInfos;
+	}
 
-		_shaderProperties = Properties(this, &_pipeline.GetPerPipelineDescriptorSetAllocation());
-
+	Shader::Shader(const CreateInfo& createInfo) :
+		_shaderPath(createInfo.ShaderPath),
+		_device(&Vulkan::Instance::Get().GetPhysicalDevice().GetDevice()),
+		_pipeline(_device, "main", CreateShaderInfos()),
+		_shaderProperties(Properties(this, &_pipeline.GetPerPipelineDescriptorSetAllocation()))
+	{
 		if (!_globalPropertiesDefined)
 		{
 			_globalProperties        = Properties(this, &Vulkan::Pipeline::GetGlobalDescriptorSetAllocation());
@@ -94,11 +96,7 @@ namespace SplitEngine::Rendering
 
 	Vulkan::Pipeline& Shader::GetPipeline() { return _pipeline; }
 
-	Shader::~Shader()
-	{
-		LOG("destruct shader {0}", _shaderPath);
-		_pipeline.Destroy();
-	}
+	Shader::~Shader() { _pipeline.Destroy(); }
 
 	void Shader::Update() { _shaderProperties.Update(); }
 
@@ -121,13 +119,9 @@ namespace SplitEngine::Rendering
 
 	void Shader::Properties::SetSharedWriteDescriptorsDirty(Vulkan::Descriptor* descriptor, uint32_t frameInFlight)
 	{
-		for (auto& propertyEntry: _sharedProperties[descriptor->SharedID].Propertieses)
+		for (auto& propertyEntry: _sharedProperties[descriptor->SharedID].PropertyEntries)
 		{
-			if (propertyEntry.Property != nullptr)
-			{
-				LOG("Update shared descriptor at binding point {0}", propertyEntry.BindingPoint);
-				propertyEntry.Property->SetWriteDescriptorSetDirty(propertyEntry.BindingPoint, frameInFlight);
-			}
+			if (propertyEntry.Property != nullptr) { propertyEntry.Property->SetWriteDescriptorSetDirty(propertyEntry.BindingPoint, frameInFlight); }
 		}
 	}
 
@@ -235,25 +229,30 @@ namespace SplitEngine::Rendering
 
 			if (!sharedPropertyEntry.AvailableStack.IsEmpty())
 			{
-				sharedPropertyEntry.Propertieses[sharedPropertyEntry.AvailableStack.Pop()] = { descriptorEntry.BindingPoint, this };
+				sharedPropertyEntry.PropertyEntries[sharedPropertyEntry.AvailableStack.Pop()] = { descriptorEntry.BindingPoint, this };
 			}
-			else { sharedPropertyEntry.Propertieses.emplace_back(descriptorEntry.BindingPoint, this); }
+			else { sharedPropertyEntry.PropertyEntries.emplace_back(descriptorEntry.BindingPoint, this); }
 
-			_sharedPtrRemoveIndex.push_back(sharedPropertyEntry.Propertieses.size() - 1);
+			_sharedPtrRemoveIndex.push_back(sharedPropertyEntry.PropertyEntries.size() - 1);
 		}
 	}
 
+
 	Shader::Properties::~Properties()
 	{
-		uint32_t i = 0;
-		for (auto& descriptorEntry: _descriptorSetAllocation->DescriptorEntries)
+		if (_descriptorSetAllocation != nullptr)
 		{
-			uint32_t sharedId = descriptorEntry.Descriptor->SharedID;
-			if (sharedId == -1) { continue; }
+			uint32_t i = 0;
+			for (auto& descriptorEntry: _descriptorSetAllocation->DescriptorEntries)
+			{
+				uint32_t sharedId = descriptorEntry.Descriptor->SharedID;
+				if (sharedId == -1) { continue; }
 
-			uint32_t removeIndex                                  = _sharedPtrRemoveIndex[i];
-			_sharedProperties[sharedId].Propertieses[removeIndex] = { -1u, nullptr };
-			_sharedProperties[sharedId].AvailableStack.Push(removeIndex);
+				uint32_t removeIndex                                     = _sharedPtrRemoveIndex[i];
+				_sharedProperties[sharedId].PropertyEntries[removeIndex] = { -1u, nullptr };
+				_sharedProperties[sharedId].AvailableStack.Push(removeIndex);
+			}
+			_sharedPtrRemoveIndex.clear();
 		}
 	}
 
@@ -284,7 +283,6 @@ namespace SplitEngine::Rendering
 	{
 		if (!_updateWriteDescriptorSets.empty())
 		{
-			LOG("Update Shader {0}", _shader->_shaderPath);
 			Vulkan::Instance::Get().GetPhysicalDevice().GetDevice().GetVkDevice().updateDescriptorSets(_updateWriteDescriptorSets, nullptr);
 		}
 
