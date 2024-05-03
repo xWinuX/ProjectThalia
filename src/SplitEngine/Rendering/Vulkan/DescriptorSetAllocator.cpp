@@ -112,7 +112,6 @@ namespace SplitEngine::Rendering::Vulkan
 			{
 				// Create descriptor
 				descriptor.WriteDescriptorSets = GetDevice()->CreateInFlightResource<vk::WriteDescriptorSet>();
-				LOG("-----{0}------", descriptorCreateInfo.Name);
 				switch (lastWriteDescriptor.descriptorType)
 				{
 					case vk::DescriptorType::eUniformBuffer:
@@ -223,8 +222,10 @@ namespace SplitEngine::Rendering::Vulkan
 				}
 			}
 
-			GetDevice()->GetVkDevice().updateDescriptorSets(Device::MAX_FRAMES_IN_FLIGHT, descriptorSetAllocation.WriteDescriptorSets.back().GetDataPtr(), 0, nullptr);
-
+			if (!descriptorCreateInfo.NoAllocation)
+			{
+				GetDevice()->GetVkDevice().updateDescriptorSets(Device::MAX_FRAMES_IN_FLIGHT, descriptorSetAllocation.WriteDescriptorSets.back().GetDataPtr(), 0, nullptr);
+			}
 			descriptorSetAllocation.SparseDescriptorLookup[bindingPoint] = descriptorSetAllocation.DescriptorEntries.size() - 1;
 		}
 
@@ -283,11 +284,7 @@ namespace SplitEngine::Rendering::Vulkan
 
 			for (auto& descriptor: descriptorSetAllocation._uniqueDescriptors)
 			{
-				if (descriptor.Type == Descriptor::Type::Buffer)
-				{
-					LOG("Deallocate buffer");
-					descriptor.Buffer.Destroy();
-				}
+				if (descriptor.Type == Descriptor::Type::Buffer) { descriptor.Buffer.Destroy(); }
 			}
 		}
 	}
