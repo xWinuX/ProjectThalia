@@ -6,6 +6,8 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include "SplitEngine/Rendering/ShaderType.hpp"
+
 namespace SplitEngine::Rendering::Vulkan
 {
 	class Device;
@@ -15,19 +17,18 @@ namespace SplitEngine::Rendering::Vulkan
 		public:
 			friend class Instance;
 
-			enum class ShaderType
-			{
-				Vertex   = VK_SHADER_STAGE_VERTEX_BIT,
-				Fragment = VK_SHADER_STAGE_FRAGMENT_BIT,
-				Compute  = VK_SHADER_STAGE_COMPUTE_BIT
-			};
-
-
 			struct ShaderInfo
 			{
 				public:
 					std::string path;
 					ShaderType  shaderStage;
+			};
+
+			struct PushConstantInfo
+			{
+				uint32_t Index  = -1;
+				size_t   Offset = 0;
+				size_t   Range  = 0;
 			};
 
 			Pipeline() = default;
@@ -49,8 +50,10 @@ namespace SplitEngine::Rendering::Vulkan
 			                        uint32_t                            dynamicOffsetCount = 0,
 			                        uint32_t*                           dynamicOffsets     = nullptr,
 			                        uint32_t                            frameInFlight      = -1) const;
+
 			void Destroy() override;
 
+			[[nodiscard]] const PushConstantInfo&   GetPushConstantInfo(uint32_t index) const;
 			[[nodiscard]] const vk::Pipeline&       GetVkPipeline() const;
 			[[nodiscard]] const vk::PipelineLayout& GetLayout() const;
 
@@ -78,6 +81,8 @@ namespace SplitEngine::Rendering::Vulkan
 			DescriptorSetAllocator::Allocation _perPipelineDescriptorSetAllocation;
 
 			std::vector<vk::ShaderModule> _shaderModules;
+
+			std::vector<PushConstantInfo> _pushConstantInfos;
 
 			[[nodiscard]] static vk::Format GetFormatFromType(const spirv_cross::SPIRType& type);
 	};

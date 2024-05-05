@@ -67,13 +67,13 @@ namespace SplitEngine::Rendering
 				ErrorHandler::ThrowRuntimeError(std::format("Failed to parse shader files! {0}", _shaderPath));
 			}
 
-			std::string                  shaderTypeString = file.string().substr(secondLastDotPosition + 1, lastDotPosition - secondLastDotPosition - 1);
-			Vulkan::Pipeline::ShaderType shaderType       = Vulkan::Pipeline::ShaderType::Vertex;
+			std::string shaderTypeString = file.string().substr(secondLastDotPosition + 1, lastDotPosition - secondLastDotPosition - 1);
+			ShaderType  shaderType       = ShaderType::Vertex;
 
 
-			if (shaderTypeString == renderingSettings.VertexShaderFileExtension) { shaderType = Vulkan::Pipeline::ShaderType::Vertex; }
-			if (shaderTypeString == renderingSettings.FragmentShaderFileExtension) { shaderType = Vulkan::Pipeline::ShaderType::Fragment; }
-			if (shaderTypeString == renderingSettings.ComputeShaderFileExtension) { shaderType = Vulkan::Pipeline::ShaderType::Compute; }
+			if (shaderTypeString == renderingSettings.VertexShaderFileExtension) { shaderType = ShaderType::Vertex; }
+			if (shaderTypeString == renderingSettings.FragmentShaderFileExtension) { shaderType = ShaderType::Fragment; }
+			if (shaderTypeString == renderingSettings.ComputeShaderFileExtension) { shaderType = ShaderType::Compute; }
 
 			shaderInfos.push_back({ file.string(), shaderType });
 		}
@@ -97,6 +97,12 @@ namespace SplitEngine::Rendering
 	Vulkan::Pipeline& Shader::GetPipeline() { return _pipeline; }
 
 	Shader::~Shader() { _pipeline.Destroy(); }
+
+	void Shader::PushConstant(const vk::CommandBuffer& commandBuffer, ShaderType shaderType, uint32_t index, void* data) const
+	{
+		const Vulkan::Pipeline::PushConstantInfo& pushConstantInfo = _pipeline.GetPushConstantInfo(index);
+		commandBuffer.pushConstants(_pipeline.GetLayout(), static_cast<vk::ShaderStageFlagBits>(shaderType), pushConstantInfo.Offset, pushConstantInfo.Range, data);
+	}
 
 	void Shader::Update() { _shaderProperties.Update(); }
 

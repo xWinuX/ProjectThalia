@@ -28,6 +28,9 @@ namespace SplitEngine::Rendering::Vulkan
 		std::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions = std::vector<vk::VertexInputAttributeDescription>(0);
 		vk::PipelineVertexInputStateCreateInfo           vertexInputStateCreateInfo{};
 
+		// Push constants
+		std::vector<vk::PushConstantRange> pushConstantRanges = std::vector<vk::PushConstantRange>(0);
+
 		const RenderingSettings& renderingSettings = GetDevice()->GetPhysicalDevice().GetInstance().GetRenderingSettings();
 
 		// Check if input is a compute shader
@@ -181,6 +184,19 @@ namespace SplitEngine::Rendering::Vulkan
 				}
 			}
 
+
+			// Create push constant ranges
+			for (const spirv_cross::Resource& pushConstantBuffer: shaderResources.push_constant_buffers)
+			{
+				auto ranges = spirvCompiler.get_active_buffer_ranges(pushConstantBuffer.id);
+				for (spirv_cross::BufferRange range: ranges)
+				{
+					if (range.index >= _pushConstantInfos.size()) { _pushConstantInfos.resize(range.index + 1); }
+					_pushConstantInfos[range.index] = { range.index, range.offset, range.range };
+					pushConstantRanges.emplace_back(static_cast<vk::ShaderStageFlagBits>(shaderInfos[i].shaderStage), static_cast<uint32_t>(range.offset), static_cast<uint32_t>(range.range));
+				}
+			}
+
 			// Create shader module
 			vk::ShaderModuleCreateInfo createInfo = vk::ShaderModuleCreateInfo({}, shaderCode.size() * sizeof(uint32_t), shaderCode.data());
 
@@ -194,7 +210,6 @@ namespace SplitEngine::Rendering::Vulkan
 			                                                                                            name.c_str());
 
 			_shaderStages[i] = shaderStageCreateInfo;
-
 
 			// Vertex shader specific init
 			if (shaderInfos[i].shaderStage == ShaderType::Vertex)
@@ -215,7 +230,6 @@ namespace SplitEngine::Rendering::Vulkan
 
 					offset += (type.width * type.vecsize) / 8;
 				}
-
 
 				// Setup pipeline vertex input state
 				vk::VertexInputBindingDescription vertexInputBindingDescription = vk::VertexInputBindingDescription(0, offset, vk::VertexInputRate::eVertex);
@@ -243,8 +257,7 @@ namespace SplitEngine::Rendering::Vulkan
 		_descriptorSetLayouts.push_back(_perPipelineDescriptorSetManager.GetDescriptorSetLayout());
 		_descriptorSetLayouts.push_back(_perInstanceDescriptorSetManager.GetDescriptorSetLayout());
 
-
-		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo({}, _descriptorSetLayouts, nullptr);
+		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo({}, _descriptorSetLayouts, pushConstantRanges);
 		_layout                                               = device->GetVkDevice().createPipelineLayout(pipelineLayoutCreateInfo);
 
 		if (!isComputeShader)
@@ -435,6 +448,8 @@ namespace SplitEngine::Rendering::Vulkan
 		Utility::DeleteDeviceHandle(GetDevice(), _layout);
 		Utility::DeleteDeviceHandle(GetDevice(), _vkPipeline);
 	}
+
+	const Pipeline::PushConstantInfo& Pipeline::GetPushConstantInfo(const uint32_t index) const { return _pushConstantInfos[index]; }
 
 	DescriptorSetAllocator::Allocation& Pipeline::GetGlobalDescriptorSetAllocation() { return _globalDescriptorSetAllocation; }
 
