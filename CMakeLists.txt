@@ -59,6 +59,8 @@ set(SOURCE_FILES
         src/SplitEngine/Tools/ImageSlicer.cpp
         src/SplitEngine/Utility/String.cpp
         include/SplitEngine/ApplicationInfo.hpp
+        include/SplitEngine/Rendering/ShaderType.hpp
+
 )
 
 if (NOT HEADLESS)

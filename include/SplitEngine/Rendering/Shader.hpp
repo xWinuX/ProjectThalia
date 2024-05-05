@@ -37,7 +37,10 @@ namespace SplitEngine::Rendering
 					[[nodiscard]] T* GetBufferData(const uint32_t bindingPoint) { return reinterpret_cast<T*>(GetDescriptor(bindingPoint)->BufferPtrs.Get()); }
 
 					template<typename T>
-					[[nodiscard]] T* GetBufferData(const uint32_t bindingPoint, uint32_t frameInFlight) { return reinterpret_cast<T*>(GetDescriptor(bindingPoint)->BufferPtrs[frameInFlight]); }
+					[[nodiscard]] T* GetBufferData(const uint32_t bindingPoint, uint32_t frameInFlight)
+					{
+						return reinterpret_cast<T*>(GetDescriptor(bindingPoint)->BufferPtrs[frameInFlight]);
+					}
 
 					template<typename T>
 					[[nodiscard]] T** GetStorableBufferData(uint32_t bindingPoint) { return reinterpret_cast<T**>(GetDescriptor(bindingPoint)->BufferPtrs.GetDataPtr()); }
@@ -73,7 +76,7 @@ namespace SplitEngine::Rendering
 						AvailableStack<uint32_t>   AvailableStack{};
 					};
 
-					uint32_t                                          _id;
+					uint32_t                                          _id{};
 					Shader*                                           _shader                  = nullptr;
 					Vulkan::DescriptorSetAllocator::Allocation*       _descriptorSetAllocation = nullptr;
 					std::vector<Vulkan::InFlightResource<std::byte*>> _shaderBuffers{};
@@ -83,10 +86,11 @@ namespace SplitEngine::Rendering
 					static uint32_t                         _idCounter;
 					static std::vector<SharedPropertyEntry> _sharedProperties;
 
+					static void SetSharedWriteDescriptorsDirty(Vulkan::Descriptor* descriptor, uint32_t frameInFlight = -1);
+
 					[[nodiscard]] Vulkan::Descriptor* GetDescriptor(uint32_t bindingPoint) const;
 
 					void SetWriteDescriptorSetDirty(uint32_t bindingPoint, uint32_t frameInFlight = -1);
-					void SetSharedWriteDescriptorsDirty(Vulkan::Descriptor* descriptor, uint32_t frameInFlight = -1);
 
 					void Update();
 			};
@@ -96,6 +100,8 @@ namespace SplitEngine::Rendering
 			explicit Shader(const CreateInfo& createInfo);
 
 			~Shader();
+
+			void PushConstant(const vk::CommandBuffer& commandBuffer, ShaderType shaderType, uint32_t index, void* data) const;
 
 			void BindGlobal(const vk::CommandBuffer& commandBuffer, uint32_t frameInFlight = -1) const;
 
