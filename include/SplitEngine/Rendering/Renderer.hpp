@@ -15,7 +15,8 @@ namespace SplitEngine
 	{
 		class Renderer
 		{
-			friend Application;
+			friend class SDLEventSystem;
+			friend class RenderingSystem;
 
 			public:
 				explicit Renderer(ApplicationInfo& applicationInfo, RenderingSettings&& renderingSettings);
@@ -24,6 +25,7 @@ namespace SplitEngine
 				[[nodiscard]] Vulkan::CommandBuffer& GetCommandBuffer();
 				[[nodiscard]] Vulkan::Instance&      GetVulkanInstance();
 				[[nodiscard]] Window&                GetWindow();
+				[[nodiscard]] bool                   WasSkipped() const;
 
 			private:
 				Window           _window;
@@ -35,13 +37,11 @@ namespace SplitEngine
 				Vulkan::CommandBuffer _commandBuffer;
 
 				bool _frameBufferResized = false;
-				void StartImGuiFrame() const;
+
 				void BeginRender();
 				void EndRender();
 
 				void HandleEvents(SDL_Event event);
-
-				[[nodiscard]] bool WasSkipped();
 		};
 	}
 }

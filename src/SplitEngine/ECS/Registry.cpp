@@ -1,28 +1,29 @@
 #include "SplitEngine/ECS/Registry.hpp"
 
-#ifndef SE_HEADLESS
-#include "SplitEngine/Debug/Performance.hpp"
-#include "SplitEngine/Rendering/Vulkan/Instance.hpp"
-#endif
+#include <SDL_timer.h>
 
 namespace SplitEngine::ECS
 {
 	Registry::Registry()
 	{
-		_context.Registry = this;
-		_archetypeRoot    = new Archetype(_sparseEntityLookup, _sparseComponentLookup, _archetypeLookup, _entityGraveyard, {});
+		_contextProvider.Registry = this;
+		_archetypeRoot            = new Archetype(_sparseEntityLookup, _sparseComponentLookup, _archetypeLookup, _entityGraveyard, {});
 	}
 
 	Registry::~Registry()
 	{
 		LOG("Shutting down ECS...");
 
-		for (const std::vector<SystemEntry>& systems: _systems) { for (const SystemEntry& systemEntry: systems) { delete systemEntry.System; } }
+		for (SystemEntry& system: _systems)
+		{
+			system.System->Destroy(_contextProvider);
+			delete system.System;
+		}
 
 		for (const Archetype* archetype: _archetypeLookup) { delete archetype; }
 	}
 
-	void Registry::PrepareForExecution(float deltaTime)
+	void Registry::PrepareForExecution()
 	{
 		for (const auto& archetype: _archetypeLookup) { archetype->MoveQueuedEntities(); }
 
@@ -34,80 +35,109 @@ namespace SplitEngine::ECS
 
 		AddQueuedSystems();
 
-		_context.DeltaTime = deltaTime;
+		// Reset cached state on system
+		for (SystemEntry& system: _systems) { if (IsSystemValid(system.ID)) { system.System->_cachedArchetypes = false; } }
 	}
 
 	void Registry::RemoveQueuedSystems()
 	{
 		for (const auto& systemsToRemoveID: _systemsToRemove)
 		{
-			SystemLookupEntry& systemLookupEntry = _sparseSystemLookup[systemsToRemoveID];
+			SystemEntry& systemEntry = _systems[systemsToRemoveID];
+			systemEntry.ID           = -1;
+			systemEntry.System->Destroy(_contextProvider);
+			delete systemEntry.System;
 
-			const uint64_t            stage   = static_cast<uint64_t>(systemLookupEntry.Stage);
-			std::vector<SystemEntry>& systems = systemLookupEntry.Added ? _systems[stage] : _systemsToAdd[stage];
+			if (!systemEntry.Added)
+			{
+				for (SystemLocation& location: systemEntry.Locations)
+				{
+					std::vector<SystemExecutionEntry>& systemExecutionEntries = _systemExecutionFlow[location.Stage];
+					for (uint64_t i = location.StageIndex; i < systemExecutionEntries.size(); ++i) { --GetSystemLocationOfExecutionEntry(systemExecutionEntries[i]).StageIndex; }
 
-			const auto& it = systems.begin() + systemLookupEntry.Index;
-			delete it->System;
-			systems.erase(it);
-
-			for (uint64_t i = systemLookupEntry.Index; i < systems.size(); ++i) { --_sparseSystemLookup[systems[i].ID].Index; }
-
-			systemLookupEntry.Index = -1;
-			systemLookupEntry.Added = false;
+					std::vector<SystemExecutionEntry>::iterator it = systemExecutionEntries.begin();
+					std::advance(it, location.StageIndex);
+					systemExecutionEntries.erase(it);
+				}
+			}
 
 			_systemGraveyard.Push(systemsToRemoveID);
 		}
 
+		// Deactivate empty stages
+		for (uint8_t activeStage: _activeStages) { if (_systemExecutionFlow[activeStage].empty()) { _tmpStagesToDeactivate.push_back(activeStage); } }
+
+		for (uint8_t stageToDeactivate: _tmpStagesToDeactivate) { _activeStages.erase(std::ranges::remove(_activeStages, stageToDeactivate).begin()); }
+
+		_tmpStagesToDeactivate.clear();
 		_systemsToRemove.clear();
 	}
 
+	Registry::SystemLocation& Registry::GetSystemLocationOfExecutionEntry(const SystemExecutionEntry& executionEntry)
+	{
+		return _systems[executionEntry.SystemID].Locations[executionEntry.SystemLocationIndex];
+	}
+
+	std::vector<float>&   Registry::GetAccumulatedStageTimeMs() { return _accumulatedStageTimeMs; }
+	std::vector<uint8_t>& Registry::GetActiveStages() { return _activeStages; }
+
 	void Registry::AddQueuedSystems()
 	{
-		for (int stage = 0; stage < static_cast<uint32_t>(Stage::MAX_VALUE); ++stage)
+		if (_systems.empty()) { return; }
+
+		for (SystemEntry& system: _systems)
 		{
-			for (const auto& insertSystemEntry: _systemsToAdd[stage])
+			if (system.Added) { continue; }
+			system.Added = true;
+
+			for (uint64_t locationIndex = 0; locationIndex < system.Locations.size(); ++locationIndex)
 			{
-				std::vector<SystemEntry>& systems                 = _systems[stage];
-				SystemLookupEntry&        insertSystemLookupEntry = _sparseSystemLookup[insertSystemEntry.ID];
-				insertSystemLookupEntry.Added                     = true;
+				SystemLocation& location = system.Locations[locationIndex];
+				_tmpActiveStages.insert(location.Stage);
+
+				std::vector<SystemExecutionEntry>& executionEntriesOfCurrentStage = _systemExecutionFlow[location.Stage];
+				SystemExecutionEntry               executionEntry                 = { system.ID, locationIndex };
 
 				// Just insert if vector is empty
-				if (systems.empty())
+				if (executionEntriesOfCurrentStage.empty())
 				{
-					systems.push_back(insertSystemEntry);
-					insertSystemLookupEntry.Index = 0;
+					executionEntriesOfCurrentStage.push_back(executionEntry);
+					location.StageIndex = 0;
 					continue;
 				}
 
 				// Insert at back if order is biggest
-				if (insertSystemEntry.Order > systems.back().Order)
+				SystemLocation& backLocation = GetSystemLocationOfExecutionEntry(executionEntriesOfCurrentStage.back());
+				if (location.Order > backLocation.Order)
 				{
-					systems.insert(systems.end(), insertSystemEntry);
-					insertSystemLookupEntry.Index = systems.size() - 1;
+					executionEntriesOfCurrentStage.insert(executionEntriesOfCurrentStage.end(), executionEntry);
+					location.StageIndex = executionEntriesOfCurrentStage.size() - 1;
 					continue;
 				}
 
 				// Search for correct placement
 				bool found = false;
-				for (int systemIndex = 0; systemIndex < systems.size(); ++systemIndex)
+				for (int stageIndex = 0; stageIndex < executionEntriesOfCurrentStage.size(); ++stageIndex)
 				{
-					SystemEntry& systemEntry = systems[systemIndex];
+					SystemExecutionEntry& systemExecutionEntry = executionEntriesOfCurrentStage[stageIndex];
 
-					if (found) { ++_sparseSystemLookup[systemEntry.ID].Index; }
+					SystemLocation& currentSystemLocation = GetSystemLocationOfExecutionEntry(systemExecutionEntry);
+					if (found) { ++currentSystemLocation.StageIndex; }
 					else
 					{
-						if (insertSystemEntry.Order <= systemEntry.Order)
+						if (location.Order <= currentSystemLocation.Order)
 						{
-							systems.insert(systems.begin() + systemIndex, insertSystemEntry);
-							insertSystemLookupEntry.Index = systemIndex;
-							found                         = true;
+							executionEntriesOfCurrentStage.insert(executionEntriesOfCurrentStage.begin() + stageIndex, executionEntry);
+							location.StageIndex = stageIndex;
+							found               = true;
 						}
 					}
 				}
 			}
-
-			_systemsToAdd[stage].clear();
 		}
+
+		if (!_tmpActiveStages.empty()) { _activeStages = std::vector(_tmpActiveStages.begin(), _tmpActiveStages.end()); }
+		_tmpActiveStages.clear();
 	}
 
 	std::vector<Archetype*> Registry::GetArchetypesWithSignature(const DynamicBitSet& signature)
@@ -121,29 +151,41 @@ namespace SplitEngine::ECS
 
 	void Registry::DestroyEntity(uint64_t entityID) { _archetypeLookup[_sparseEntityLookup[entityID].archetypeIndex]->DestroyEntity(entityID); }
 
-	void Registry::RegisterAssetDatabase(SplitEngine::AssetDatabase* assetDatabase) { _context.AssetDatabase = assetDatabase; }
-	void Registry::RegisterRenderer(Rendering::Renderer* renderer)
-	{
-		_context.Renderer = renderer;
-	}
-
 	bool Registry::IsEntityValid(uint64_t entityID)
 	{
 		Entity& entity = _sparseEntityLookup[entityID];
 		return entity.GetArchetypeIndex() != -1;
 	}
 
-	bool Registry::IsSystemValid(uint64_t systemID)
+	bool Registry::IsSystemValid(uint64_t systemID) const
 	{
-		SystemLookupEntry& systemLookupEntry = _sparseSystemLookup[systemID];
-		return systemLookupEntry.Index != -1;
+		if (systemID >= _systems.size()) { return false; }
+		return _systems[systemID].ID != -1;
 	}
 
-	void Registry::RegisterApplication(Application* application) { _context.Application = application; }
+	void Registry::SetEnableStatistics(const bool enabled) { _collectStatistics = enabled; }
 
-	void Registry::ExecuteSystems(Stage stageToExecute)
+	void Registry::ExecuteSystems()
 	{
-		for (const auto& systemEntry: _systems[static_cast<uint8_t>(stageToExecute)]) { systemEntry.System->RunExecute(_context); }
+		PrepareForExecution();
+
+		// Run all active stages
+		uint64_t stageStartTime = 0;
+		uint64_t stageEndTime   = 0;
+		for (const uint8_t stage: _activeStages)
+		{
+			std::vector<SystemExecutionEntry>& systemExecutionEntries = _systemExecutionFlow[stage];
+
+			if (_collectStatistics) { stageStartTime = SDL_GetPerformanceCounter(); }
+
+			for (SystemExecutionEntry& systemExecutionEntry: systemExecutionEntries) { _systems[systemExecutionEntry.SystemID].System->RunExecute(_contextProvider, stage); }
+
+			if (_collectStatistics)
+			{
+				stageEndTime = SDL_GetPerformanceCounter();
+				_accumulatedStageTimeMs[stage] += static_cast<float>((stageEndTime - stageStartTime)) * 1000.0f / static_cast<float>(SDL_GetPerformanceFrequency());
+			}
+		}
 	}
 
 	void Registry::RemoveSystem(uint64_t systemID) { _systemsToRemove.push_back(systemID); }

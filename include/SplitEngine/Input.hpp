@@ -16,7 +16,7 @@ namespace SplitEngine
 
 	class Input
 	{
-		friend Application;
+		friend class SDLEventSystem;
 
 		public:
 			struct PressedAxis

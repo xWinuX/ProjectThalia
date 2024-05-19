@@ -36,28 +36,28 @@ namespace SplitEngine::ECS
 			template<typename T>
 			T& GetComponent(uint64_t entityComponentIndex) { return GetComponents<T>()[entityComponentIndex]; }
 
-			template<typename... T>
-			uint64_t AddEntity(uint64_t entityID, T&&... components)
+			template<typename... TArgs>
+			uint64_t AddEntity(uint64_t entityID, TArgs&&... components)
 			{
 				_entitiesToAdd.push_back(entityID);
 
-				AddComponents(std::forward<T>(components)...);
+				AddComponents(std::forward<TArgs>(components)...);
 
 				return (Entities.size() + _entitiesToAdd.size()) - 1;
 			}
 
 			void DestroyEntity(uint64_t entityID);
 
-			template<typename... T>
+			template<typename... TArgs>
 			Archetype* FindArchetype()
 			{
-				if (sizeof...(T) == 0) { return this; }
+				if (sizeof...(TArgs) == 0) { return this; }
 
 				uint64_t index = -1;
 				( [&]
 				{
-					if (index != -1) { index = _archetypeLookup[index]->GetAddArchetypeID<T>(); }
-					else { index = GetAddArchetypeID<T>(); }
+					if (index != -1) { index = _archetypeLookup[index]->GetAddArchetypeID<TArgs>(); }
+					else { index = GetAddArchetypeID<TArgs>(); }
 				}(), ...);
 
 				return _archetypeLookup[index];
@@ -98,7 +98,7 @@ namespace SplitEngine::ECS
 				return _sparseRemoveComponentArchetypes[componentIDToRemove];
 			}
 
-			template<typename... T>
+			template<typename... TArgs>
 			void RemoveComponentsFromEntity(const uint64_t entityID)
 			{
 				Entity& entity = _sparseEntityLookup[entityID];
@@ -108,8 +108,8 @@ namespace SplitEngine::ECS
 				// Recursively search for archetype in tree
 				( [&]
 				{
-					if (entity.moveArchetypeIndex != -1) { entity.moveArchetypeIndex = _archetypeLookup[entity.moveArchetypeIndex]->GetRemoveArchetypeID<T>(); }
-					else { entity.moveArchetypeIndex = GetRemoveArchetypeID<T>(); }
+					if (entity.moveArchetypeIndex != -1) { entity.moveArchetypeIndex = _archetypeLookup[entity.moveArchetypeIndex]->GetRemoveArchetypeID<TArgs>(); }
+					else { entity.moveArchetypeIndex = GetRemoveArchetypeID<TArgs>(); }
 				}(), ...);
 
 				if (oldArchetypeMoveIndex == -1) { _entitiesToMove.push_back(entityID); }
@@ -139,8 +139,8 @@ namespace SplitEngine::ECS
 				}
 			}
 
-			template<typename... T>
-			void AddComponentsToEntity(uint64_t entityID, T&&... newComponentData)
+			template<typename... TArgs>
+			void AddComponentsToEntity(uint64_t entityID, TArgs&&... newComponentData)
 			{
 				Entity& entity = _sparseEntityLookup[entityID];
 
@@ -149,8 +149,8 @@ namespace SplitEngine::ECS
 				// Recursively search for archetype in tree
 				( [&]
 				{
-					if (entity.moveArchetypeIndex != -1) { entity.moveArchetypeIndex = _archetypeLookup[entity.moveArchetypeIndex]->GetAddArchetypeID<T>(); }
-					else { entity.moveArchetypeIndex = GetAddArchetypeID<T>(); }
+					if (entity.moveArchetypeIndex != -1) { entity.moveArchetypeIndex = _archetypeLookup[entity.moveArchetypeIndex]->GetAddArchetypeID<TArgs>(); }
+					else { entity.moveArchetypeIndex = GetAddArchetypeID<TArgs>(); }
 				}(), ...);
 
 
@@ -186,7 +186,7 @@ namespace SplitEngine::ECS
 					oldArchetype->DestroyEntityInAddQueueImmediately(entityID, false);
 				}
 
-				AddComponents(std::forward<T>(newComponentData)...);
+				AddComponents(std::forward<TArgs>(newComponentData)...);
 
 				entity.moveComponentIndex = newArchetype->_entitiesToAdd.size() - 1;
 			}
@@ -217,16 +217,16 @@ namespace SplitEngine::ECS
 			template<typename T>
 			inline std::vector<std::byte>& GetComponentsToAddRaw() { return _componentDataToAdd[TypeIDGenerator<Component>::GetID<T>()]; }
 
-			template<typename... T>
-			inline void AddComponents(T&&... components)
+			template<typename... TArgs>
+			inline void AddComponents(TArgs&&... components)
 			{
 				([&]
 				{
-					std::vector<std::byte>& bytes   = GetComponentsToAddRaw<T>();
+					std::vector<std::byte>& bytes   = GetComponentsToAddRaw<TArgs>();
 					size_t                  oldSize = bytes.size();
 					bytes.resize(oldSize + sizeof(components));
-					T* comp = reinterpret_cast<T*>(bytes.data() + oldSize);
-					*comp   = std::forward<T>(components);
+					TArgs* comp = reinterpret_cast<TArgs*>(bytes.data() + oldSize);
+					*comp   = std::forward<TArgs>(components);
 				}(), ...);
 			}
 
