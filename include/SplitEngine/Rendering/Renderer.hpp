@@ -36,13 +36,13 @@ namespace SplitEngine
 				Vulkan::CommandBuffer _commandBuffer;
 
 				bool _frameBufferResized = false;
-				void StartImGuiFrame() const;
+
 				void BeginRender();
 				void EndRender();
 
 				void HandleEvents(SDL_Event event);
 
-				[[nodiscard]] bool WasSkipped();
+				[[nodiscard]] bool WasSkipped() const;
 		};
 	}
 }

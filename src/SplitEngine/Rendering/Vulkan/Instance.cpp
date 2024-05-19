@@ -3,9 +3,6 @@
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
 
-#include <imgui.h>
-#include <imgui_impl_sdl2.h>
-#include <imgui_impl_vulkan.h>
 #include <SDL_vulkan.h>
 
 #include "SplitEngine/ErrorHandler.hpp"
@@ -59,8 +56,6 @@ namespace SplitEngine::Rendering::Vulkan
 
 		_physicalDevice->GetDevice().CreateSwapchain(_vkSurface, window.GetSize());
 
-		InitializeImGui(window);
-
 		_instance = this;
 	}
 
@@ -74,10 +69,6 @@ namespace SplitEngine::Rendering::Vulkan
 		Pipeline::_globalDescriptorManager.Destroy();
 
 		for (auto& [name, descriptor]: DescriptorSetAllocator::_sharedDescriptors) { descriptor.Buffer.Destroy(); }
-
-		ImGui_ImplVulkan_Shutdown();
-
-		_physicalDevice->GetDevice().GetVkDevice().destroy(_imGuiDescriptorPool);
 
 		_defaultImage.Destroy();
 		_physicalDevice->GetDevice().GetVkDevice().destroy(*_defaultSampler);
@@ -100,49 +91,4 @@ namespace SplitEngine::Rendering::Vulkan
 
 	Allocator& Instance::GetAllocator() const { return *_allocator; }
 
-	void Instance::InitializeImGui(Window& window)
-	{
-		vk::DescriptorPoolSize poolSizes[] = {
-			{ vk::DescriptorType::eSampler, 1000 },
-			{ vk::DescriptorType::eCombinedImageSampler, 1000 },
-			{ vk::DescriptorType::eSampledImage, 1000 },
-			{ vk::DescriptorType::eStorageImage, 1000 },
-			{ vk::DescriptorType::eUniformTexelBuffer, 1000 },
-			{ vk::DescriptorType::eStorageTexelBuffer, 1000 },
-			{ vk::DescriptorType::eUniformBuffer, 1000 },
-			{ vk::DescriptorType::eStorageBuffer, 1000 },
-			{ vk::DescriptorType::eUniformBufferDynamic, 1000 },
-			{ vk::DescriptorType::eStorageBufferDynamic, 1000 },
-			{ vk::DescriptorType::eInputAttachment, 1000 }
-		};
-
-		const vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1000, poolSizes);
-
-		Device& device       = GetPhysicalDevice().GetDevice();
-		_imGuiDescriptorPool = device.GetVkDevice().createDescriptorPool(descriptorPoolCreateInfo);
-
-		ImGui::CreateContext();
-
-		ImGui_ImplSDL2_InitForVulkan(window.GetSDLWindow());
-
-		ImGui_ImplVulkan_InitInfo initInfo = {};
-		initInfo.Instance                  = _vkInstance;
-		initInfo.PhysicalDevice            = _physicalDevice->GetVkPhysicalDevice();
-		initInfo.Device                    = device.GetVkDevice();
-		initInfo.Queue                     = device.GetQueueFamily(QueueType::Graphics).GetVkQueue();
-		initInfo.DescriptorPool            = _imGuiDescriptorPool;
-		initInfo.MinImageCount             = 3;
-		initInfo.ImageCount                = 3;
-		initInfo.MSAASamples               = VK_SAMPLE_COUNT_1_BIT;
-
-		ImGui_ImplVulkan_Init(&initInfo, device.GetRenderPass().GetVkRenderPass());
-
-		const vk::CommandBuffer commandBuffer = device.GetQueueFamily(QueueType::Graphics).BeginOneshotCommands();
-
-		ImGui_ImplVulkan_CreateFontsTexture();
-
-		device.GetQueueFamily(QueueType::Graphics).EndOneshotCommands();
-
-		ImGui_ImplVulkan_DestroyFontsTexture();
-	}
 }

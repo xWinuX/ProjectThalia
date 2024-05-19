@@ -62,7 +62,7 @@ set(SOURCE_FILES
         include/SplitEngine/Contexts.hpp
         src/SplitEngine/Systems.cpp
         include/SplitEngine/Systems.hpp
-        include/SplitEngine/Stage.hpp
+        include/SplitEngine/Stages.hpp
 
 )
 

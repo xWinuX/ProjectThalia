@@ -11,7 +11,7 @@
 #include <utility>
 
 #include "SplitEngine/Contexts.hpp"
-#include "SplitEngine/Stage.hpp"
+#include "SplitEngine/Stages.hpp"
 #include "SplitEngine/Systems.hpp"
 
 
@@ -39,20 +39,17 @@ namespace SplitEngine
 
 
 		LOG("Adding Engine Systems...");
-		_ecsRegistry.AddSystem<StatisticsSystem>(Stage::BeginFrame, Order::BeginFrame_StatisticsSystem);
-		_ecsRegistry.AddSystem<TimeSystem>(Stage::BeginFrame, Order::BeginFrame_TimeSystem);
-		_ecsRegistry.AddSystem<SDLEventSystem>(Stage::BeginFrame, Order::BeginFrame_SDLEventSystem);
-		_ecsRegistry.AddSystem<RenderingSystem>({ { Stage::BeginRendering, Order::BeginRendering_RenderingSystem }, { Stage::EndRendering, Order::EndRendering_RenderingSystem } });
+		_ecsRegistry.AddSystem<StatisticsSystem>(EngineStage::BeginFrame, EngineStageOrder::BeginFrame_StatisticsSystem);
+		_ecsRegistry.AddSystem<TimeSystem>(EngineStage::BeginFrame, EngineStageOrder::BeginFrame_TimeSystem);
+		_ecsRegistry.AddSystem<SDLEventSystem>(EngineStage::BeginFrame, EngineStageOrder::BeginFrame_SDLEventSystem);
+		_ecsRegistry.AddSystem<RenderingSystem>({ { EngineStage::BeginRendering, EngineStageOrder::BeginRendering_RenderingSystem }, { EngineStage::EndRendering, EngineStageOrder::EndRendering_RenderingSystem } });
 	}
 
 	void Application::Run()
 	{
 		// Main Loop
 		LOG("Start Game Loop");
-		while (!_quit)
-		{
-			_ecsRegistry.ExecuteSystems();
-		}
+		while (!_quit) { _ecsRegistry.ExecuteSystems(); }
 
 		LOG("Waiting for frame to finish...");
 		_renderer.GetVulkanInstance().GetPhysicalDevice().GetDevice().WaitForIdle();

@@ -42,9 +42,5 @@ namespace SplitEngine::Rendering::Vulkan
 
 			vk::Instance   _vkInstance{};
 			vk::SurfaceKHR _vkSurface{};
-
-			vk::DescriptorPool _imGuiDescriptorPool{};
-
-			void InitializeImGui(Window& window);
 	};
 }

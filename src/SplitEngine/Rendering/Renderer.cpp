@@ -4,8 +4,6 @@
 #include "SplitEngine/Debug/Performance.hpp"
 
 #include <chrono>
-#include <imgui_impl_sdl2.h>
-#include <imgui_impl_vulkan.h>
 #include <SplitEngine/RenderingSettings.hpp>
 
 #include "SplitEngine/Window.hpp"
@@ -19,8 +17,6 @@ namespace SplitEngine::Rendering
 		_window.OnResize.Add([this](int width, int height) { _frameBufferResized = true; });
 
 		_commandBuffer = _vulkanInstance.GetPhysicalDevice().GetDevice().GetQueueFamily(Vulkan::QueueType::Graphics).AllocateCommandBuffer(Vulkan::QueueType::Graphics);
-
-		StartImGuiFrame();
 	}
 
 	Renderer::~Renderer()
@@ -33,22 +29,12 @@ namespace SplitEngine::Rendering
 
 	Vulkan::CommandBuffer& Renderer::GetCommandBuffer() { return _commandBuffer; }
 
-	void Renderer::StartImGuiFrame() const
-	{
-		ImGui_ImplVulkan_NewFrame();
-		ImGui_ImplSDL2_NewFrame(_window.GetSDLWindow());
-
-		ImGui::NewFrame();
-	}
-
 	void Renderer::HandleEvents(SDL_Event event)
 	{
-		ImGui_ImplSDL2_ProcessEvent(&event);
-
 		_window.HandleEvents(event);
 	}
 
-	bool Renderer::WasSkipped() { return _wasSkipped; }
+	bool Renderer::WasSkipped() const { return _wasSkipped; }
 
 	Vulkan::Instance& Renderer::GetVulkanInstance() { return _vulkanInstance; }
 
@@ -135,9 +121,6 @@ namespace SplitEngine::Rendering
 			return;
 		}
 
-		ImGui::Render();
-		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
-
 		commandBuffer.endRenderPass();
 		commandBuffer.end();
 
@@ -166,7 +149,5 @@ namespace SplitEngine::Rendering
 		}
 
 		device.AdvanceFrame();
-
-		StartImGuiFrame();
 	}
 }

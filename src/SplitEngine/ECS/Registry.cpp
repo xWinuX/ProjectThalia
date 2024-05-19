@@ -14,7 +14,11 @@ namespace SplitEngine::ECS
 	{
 		LOG("Shutting down ECS...");
 
-		for (SystemEntry& system: _systems) { delete system.System; }
+		for (SystemEntry& system: _systems)
+		{
+			system.System->Destroy(_contextProvider);
+			delete system.System;
+		}
 
 		for (const Archetype* archetype: _archetypeLookup) { delete archetype; }
 	}
@@ -41,6 +45,7 @@ namespace SplitEngine::ECS
 		{
 			SystemEntry& systemEntry = _systems[systemsToRemoveID];
 			systemEntry.ID           = -1;
+			systemEntry.System->Destroy(_contextProvider);
 			delete systemEntry.System;
 
 			if (!systemEntry.Added)

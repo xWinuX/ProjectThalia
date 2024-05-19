@@ -3,7 +3,7 @@
 
 namespace SplitEngine
 {
-	enum Stage : uint8_t
+	enum EngineStage : uint8_t
 	{
 		/**
 		 * The Begin Frame Stage executes stuff like delta time calculation and input polling
@@ -21,7 +21,7 @@ namespace SplitEngine
 		EndRendering = 200,
 	};
 
-	enum Order
+	enum EngineStageOrder
 	{
 		BeginFrame_StatisticsSystem    = -11'000,
 		BeginFrame_TimeSystem          = -10'000,

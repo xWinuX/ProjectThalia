@@ -1,22 +1,20 @@
 #include "SplitEngine/Systems.hpp"
 
-#include <SDL_timer.h>
-
 #include "SplitEngine/Contexts.hpp"
 #include "SplitEngine/Input.hpp"
 
 #include "SplitEngine/Application.hpp"
-#include "SplitEngine/Stage.hpp"
-#include "SplitEngine/Rendering/Renderer.hpp"
+#include "SplitEngine/Stages.hpp"
 
+#include <SDL2/SDL_timer.h>
 
 namespace SplitEngine
 {
-	void StatisticsSystem::RunExecute(ECS::ContextProvider& context, uint8_t stage)
+	void StatisticsSystem::RunExecute(ECS::ContextProvider& contextProvider, uint8_t stage)
 	{
-		Statistics& statistics = context.GetContext<EngineContext>()->Statistics;
+		Statistics& statistics = contextProvider.GetContext<EngineContext>()->Statistics;
 
-		float deltaTime = context.GetContext<TimeContext>()->DeltaTime;
+		float deltaTime = contextProvider.GetContext<TimeContext>()->DeltaTime;
 
 		_accumulatedDeltaTime += deltaTime;
 
@@ -31,8 +29,8 @@ namespace SplitEngine
 
 			_accumulatedDeltaTime = 0.0f;
 
-			std::vector<uint8_t>& activeStages           = context.Registry->GetActiveStages();
-			std::vector<float>&   accumulatedStageTimeMs = context.Registry->GetAccumulatedStageTimeMs();
+			std::vector<uint8_t>& activeStages           = contextProvider.Registry->GetActiveStages();
+			std::vector<float>&   accumulatedStageTimeMs = contextProvider.Registry->GetAccumulatedStageTimeMs();
 
 			for (const uint8_t activeStage: activeStages)
 			{
@@ -47,17 +45,17 @@ namespace SplitEngine
 
 	TimeSystem::TimeSystem() { _currentTime = SDL_GetPerformanceCounter(); }
 
-	void TimeSystem::RunExecute(ECS::ContextProvider& context, uint8_t stage)
+	void TimeSystem::RunExecute(ECS::ContextProvider& contextProvider, uint8_t stage)
 	{
 		_previousTime = _currentTime;
 		_currentTime  = SDL_GetPerformanceCounter();
 
 		float deltaTime = (static_cast<float>((_currentTime - _previousTime)) * 1000.0f / static_cast<float>(SDL_GetPerformanceFrequency())) * 0.001f;
 
-		context.GetContext<TimeContext>()->DeltaTime = deltaTime;
+		contextProvider.GetContext<TimeContext>()->DeltaTime = deltaTime;
 	}
 
-	void SDLEventSystem::RunExecute(ECS::ContextProvider& context, uint8_t stage)
+	void SDLEventSystem::RunExecute(ECS::ContextProvider& contextProvider, uint8_t stage)
 	{
 		Input::Reset();
 		while (SDL_PollEvent(&_event))
@@ -72,17 +70,17 @@ namespace SplitEngine
 					Input::Update(_event);
 					break;
 				case SDL_QUIT:
-					context.GetContext<EngineContext>()->Application->Quit();
+					contextProvider.GetContext<EngineContext>()->Application->Quit();
 					break;
 			}
-			context.GetContext<RenderingContext>()->Renderer->HandleEvents(_event);
+			contextProvider.GetContext<RenderingContext>()->Renderer->HandleEvents(_event);
 		}
 	}
 
-	void RenderingSystem::RunExecute(ECS::ContextProvider& context, uint8_t stage)
+	void RenderingSystem::RunExecute(ECS::ContextProvider& contextProvider, uint8_t stage)
 	{
-		if (stage == Stage::BeginRendering) { context.GetContext<RenderingContext>()->Renderer->BeginRender(); }
+		if (stage == EngineStage::BeginRendering) { contextProvider.GetContext<RenderingContext>()->Renderer->BeginRender(); }
 
-		if (stage == Stage::EndRendering) { context.GetContext<RenderingContext>()->Renderer->EndRender(); }
+		if (stage == EngineStage::EndRendering) { contextProvider.GetContext<RenderingContext>()->Renderer->EndRender(); }
 	}
 }

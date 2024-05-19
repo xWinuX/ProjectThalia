@@ -10,6 +10,7 @@ namespace SplitEngine::ECS
 
 		public:
 			virtual      ~SystemBase() = default;
+			virtual void Destroy(ContextProvider& contextProvider) {}
 			virtual void RunExecute(ContextProvider& context, uint8_t stage) = 0;
 
 		protected:
