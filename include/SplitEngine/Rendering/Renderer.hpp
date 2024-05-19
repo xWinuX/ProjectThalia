@@ -25,6 +25,7 @@ namespace SplitEngine
 				[[nodiscard]] Vulkan::CommandBuffer& GetCommandBuffer();
 				[[nodiscard]] Vulkan::Instance&      GetVulkanInstance();
 				[[nodiscard]] Window&                GetWindow();
+				[[nodiscard]] bool                   WasSkipped() const;
 
 			private:
 				Window           _window;
@@ -41,8 +42,6 @@ namespace SplitEngine
 				void EndRender();
 
 				void HandleEvents(SDL_Event event);
-
-				[[nodiscard]] bool WasSkipped() const;
 		};
 	}
 }
