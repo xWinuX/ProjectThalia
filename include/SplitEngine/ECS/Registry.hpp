@@ -1,45 +1,35 @@
 #pragma once
 
+#include <set>
+
 #include "SplitEngine/DataStructures.hpp"
 
 #include "Archetype.hpp"
 #include "Component.hpp"
-#include "Context.hpp"
+#include "ContextProvider.hpp"
 #include "Entity.hpp"
-#include "Stage.hpp"
 #include "SystemBase.hpp"
 
 #include <vector>
-
-#ifndef SE_HEADLESS
-namespace SplitEngine::Rendering::Vulkan
-{
-	class Instance;
-}
-#endif
-
-namespace SplitEngine
-{
-	class AssetDatabase;
-
-	namespace Rendering
-	{
-		class Renderer;
-	}
-}
 
 namespace SplitEngine::ECS
 {
 	class Registry
 	{
 		public:
+			struct StageInfo
+			{
+				uint8_t Stage;
+				int64_t Order;
+			};
+
+		public:
 			Registry();
 
 			~Registry();
 
-			void PrepareForExecution(float deltaTime);
-
-			void ExecuteSystems(Stage stageToExecute);
+			void PrepareForExecution();
+			void ExecuteSystems();
 
 			template<typename... T>
 			uint64_t CreateEntity(T&&... args)
@@ -107,27 +97,31 @@ namespace SplitEngine::ECS
 				_archetypeRoot->Resize();
 			}
 
+			template<typename T>
+			void RegisterContext(T&& context) { _contextProvider.RegisterContext<T>(std::forward<T>(context)); }
+
 			template<typename T, typename... TArgs>
-			uint64_t AddSystem(Stage stage, int64_t order, TArgs&&... args)
+			uint64_t AddSystem(uint8_t stage, int64_t order, TArgs&&... args) { return AddSystem<T, TArgs...>({ { stage, order } }, std::forward<TArgs>(args)...); }
+
+			template<typename T, typename... TArgs>
+			uint64_t AddSystem(std::vector<StageInfo>&& stageInfos, TArgs&&... args)
 			{
-				static_assert(std::is_base_of<SystemBase, T>::value, "an ECS System needs to derive from SplitEngine::ECS::System");
+				static_assert(std::is_base_of_v<SystemBase, T>, "an ECS System needs to derive from SplitEngine::ECS::System");
 
-				uint64_t systemID;
-				if (_systemGraveyard.IsEmpty())
-				{
-					systemID = _systemID++;
-					_sparseSystemLookup.push_back({ stage, _systemsToAdd[static_cast<uint64_t>(stage)].size() });
-				}
-				else
-				{
-					systemID                      = _systemGraveyard.Pop();
-					_sparseSystemLookup[systemID] = { stage, _systemsToAdd[static_cast<uint64_t>(stage)].size() };
-				}
+				std::vector<SystemLocation> locations = std::vector<SystemLocation>(stageInfos.size());
 
-				_systemsToAdd[static_cast<uint64_t>(stage)].push_back({ systemID, new T(std::forward<TArgs>(args)...), order });
+				for (int i = 0; i < stageInfos.size(); ++i) { locations[i] = { stageInfos[i].Stage, stageInfos[i].Order, -1u }; }
+
+				uint64_t systemID = _systemGraveyard.IsEmpty() ? _systems.size() : _systemGraveyard.Pop();
+				if constexpr (std::is_constructible_v<T, TArgs...>) { _systems.push_back({ systemID, new T(std::forward<TArgs>(args)...), std::move(locations), false }); }
+				else { _systems.push_back({ systemID, new T(std::forward<TArgs>(args)..., _contextProvider), std::move(locations), false }); }
 
 				return systemID;
 			}
+
+			std::vector<float>& GetAccumulatedStageTimeMs();
+
+			std::vector<uint8_t>& GetActiveStages();
 
 			void RemoveSystem(uint64_t systemID);
 
@@ -141,15 +135,35 @@ namespace SplitEngine::ECS
 
 			bool IsEntityValid(uint64_t entityID);
 
-			bool IsSystemValid(uint64_t systemID);
+			[[nodiscard]] bool IsSystemValid(uint64_t systemID) const;
 
-			void RegisterApplication(Application* application);
-
-			void RegisterAssetDatabase(AssetDatabase* assetDatabase);
+			void SetEnableStatistics(bool enabled);
 
 			[[nodiscard]] std::vector<Archetype*> GetArchetypesWithSignature(const DynamicBitSet& signature);
 
 		private:
+			struct SystemLocation
+			{
+				uint8_t  Stage      = -1;
+				int64_t  Order      = 0;
+				uint64_t StageIndex = -1;
+			};
+
+			struct SystemEntry
+			{
+				public:
+					uint64_t                    ID     = -1;
+					SystemBase*                 System = nullptr;
+					std::vector<SystemLocation> Locations{};
+					bool                        Added = false;
+			};
+
+			struct SystemExecutionEntry
+			{
+				uint64_t SystemID            = -1;
+				uint64_t SystemLocationIndex = -1;
+			};
+
 			std::vector<Entity>    _sparseEntityLookup{};
 			std::vector<Component> _sparseComponentLookup{};
 
@@ -159,44 +173,28 @@ namespace SplitEngine::ECS
 
 			AvailableStack<uint64_t> _entityGraveyard{};
 
-			struct SystemEntry
-			{
-				public:
-					uint64_t    ID     = -1;
-					SystemBase* System = nullptr;
-					int64_t     Order  = 0;
-			};
-
-			struct SystemLookupEntry
-			{
-				public:
-					Stage    Stage = Stage::MAX_VALUE;
-					uint64_t Index = -1;
-					bool     Added = false;
-			};
-
 			uint64_t _systemID = 0;
 
-			std::vector<SystemLookupEntry> _sparseSystemLookup{};
-			AvailableStack<uint64_t>       _systemGraveyard{};
+			AvailableStack<uint64_t> _systemGraveyard{};
 
-			std::vector<std::vector<SystemEntry>> _systems = std::vector<std::vector<SystemEntry>>(static_cast<uint8_t>(Stage::MAX_VALUE), std::vector<SystemEntry>());
+			std::vector<SystemEntry>                       _systems             = std::vector<SystemEntry>();
+			std::vector<std::vector<SystemExecutionEntry>> _systemExecutionFlow = std::vector<std::vector<SystemExecutionEntry>>(std::numeric_limits<uint8_t>::max());
+			std::vector<uint8_t>                           _activeStages        = std::vector<uint8_t>();
 
-			std::vector<std::vector<SystemEntry>> _systemsToAdd = std::vector<std::vector<SystemEntry>>(static_cast<uint8_t>(Stage::MAX_VALUE), std::vector<SystemEntry>());
+			std::set<uint8_t>    _tmpActiveStages       = std::set<uint8_t>();
+			std::vector<uint8_t> _tmpStagesToDeactivate = std::vector<uint8_t>();
 
 			std::vector<uint64_t> _systemsToRemove{};
 
-			Context _context{};
+			ContextProvider _contextProvider{};
+
+			bool               _collectStatistics      = false;
+			std::vector<float> _accumulatedStageTimeMs = std::vector<float>(std::numeric_limits<uint8_t>::max(), 0);
 
 			void AddQueuedSystems();
+
 			void RemoveQueuedSystems();
 
-#ifndef SE_HEADLESS
-
-		public:
-			void RegisterRenderer(Rendering::Renderer* renderer);
-
-			void RegisterAudioManager(Audio::Manager* audioManager) { _context.AudioManager = audioManager; }
-#endif
+			SystemLocation& GetSystemLocationOfExecutionEntry(const SystemExecutionEntry& executionEntry);
 	};
 }

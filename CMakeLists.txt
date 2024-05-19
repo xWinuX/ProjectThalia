@@ -31,10 +31,9 @@ set(SOURCE_FILES
         include/SplitEngine/Debug/Performance.hpp
         include/SplitEngine/ECS/Archetype.hpp
         include/SplitEngine/ECS/Component.hpp
-        include/SplitEngine/ECS/Context.hpp
+        include/SplitEngine/ECS/ContextProvider.hpp
         include/SplitEngine/ECS/Entity.hpp
         include/SplitEngine/ECS/Registry.hpp
-        include/SplitEngine/ECS/Stage.hpp
         include/SplitEngine/ECS/System.hpp
         include/SplitEngine/ECS/SystemBase.hpp
         include/SplitEngine/ErrorHandler.hpp
@@ -60,6 +59,10 @@ set(SOURCE_FILES
         src/SplitEngine/Utility/String.cpp
         include/SplitEngine/ApplicationInfo.hpp
         include/SplitEngine/Rendering/ShaderType.hpp
+        include/SplitEngine/Contexts.hpp
+        src/SplitEngine/Systems.cpp
+        include/SplitEngine/Systems.hpp
+        include/SplitEngine/Stage.hpp
 
 )
 

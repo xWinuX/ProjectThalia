@@ -15,7 +15,8 @@ namespace SplitEngine
 	{
 		class Renderer
 		{
-			friend Application;
+			friend class SDLEventSystem;
+			friend class RenderingSystem;
 
 			public:
 				explicit Renderer(ApplicationInfo& applicationInfo, RenderingSettings&& renderingSettings);

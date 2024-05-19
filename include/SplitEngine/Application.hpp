@@ -3,9 +3,7 @@
 
 // TODO: Investigate why this is so broken
 // This needs to be here for it to work for some reason
-#ifndef SE_HEADLESS
 #include "SplitEngine/Rendering/Renderer.hpp"
-#endif
 
 #include "ApplicationInfo.hpp"
 #include "RenderingSettings.hpp"
@@ -18,17 +16,6 @@ namespace SplitEngine
 	class Application
 	{
 		public:
-			struct Statistics
-			{
-				uint64_t AverageFPS;
-				float    AverageDeltaTime;
-				float    AverageECSPrepareTime;
-				float    AverageGameplaySystemTime;
-				float    AverageRenderSystemTime;
-				float    AverageRenderBeginTime;
-				float    AverageRenderEndTime;
-			};
-
 			struct CreateInfo
 			{
 				ApplicationInfo   ApplicationInfo{};
@@ -37,9 +24,9 @@ namespace SplitEngine
 
 			explicit Application(CreateInfo createInfo);
 			void     Run();
+			void     Quit();
 
 			[[nodiscard]] Window&     GetWindow();
-			[[nodiscard]] Statistics& GetStatistics();
 
 			AssetDatabase& GetAssetDatabase();
 			ECS::Registry& GetECSRegistry();
@@ -47,14 +34,12 @@ namespace SplitEngine
 		private:
 			ApplicationInfo _applicationInfo{};
 
-			Statistics _statistics{};
-
-#ifndef SE_HEADLESS
 			Rendering::Renderer _renderer;
 			Audio::Manager      _audioManager;
-#endif
-			ECS::Registry _ecsRegistry;
+			ECS::Registry       _ecsRegistry;
 
 			AssetDatabase _assetDatabase;
+
+			bool _quit = false;
 	};
 }

@@ -88,7 +88,6 @@ namespace SplitEngine::Rendering
 
 			return;
 		}
-		//else if (imageIndexResult.result != vk::Result::eSuccess) { ErrorHandler::ThrowRuntimeError("failed to acquire swap chain image!"); }
 
 		device.GetVkDevice().resetFences(device.GetInFlightFence());
 
