@@ -188,10 +188,6 @@ target_link_libraries(SplitEngine PUBLIC spirv-cross-reflect)
 find_package(spirv_cross_util CONFIG REQUIRED)
 target_link_libraries(SplitEngine PUBLIC spirv-cross-util)
 
-# IMGUI
-find_package(imgui CONFIG REQUIRED)
-target_link_libraries(SplitEngine PUBLIC imgui::imgui)
-
 # GLM
 find_package(glm CONFIG REQUIRED)
 target_link_libraries(SplitEngine PUBLIC glm::glm)

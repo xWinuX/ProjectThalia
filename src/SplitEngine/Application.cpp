@@ -14,10 +14,6 @@
 #include "SplitEngine/Stages.hpp"
 #include "SplitEngine/Systems.hpp"
 
-
-#include <imgui.h>
-
-
 namespace SplitEngine
 {
 	Application::Application(CreateInfo createInfo):
