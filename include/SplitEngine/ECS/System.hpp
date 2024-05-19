@@ -16,27 +16,27 @@ namespace SplitEngine::ECS
 				(Signature.SetBit(TypeIDGenerator<Component>::GetID<T>()), ...);
 			}
 
-			void RunExecute(ContextProvider& context, uint8_t stage) final
+			void RunExecute(ContextProvider& contextProvider, uint8_t stage) final
 			{
 				if (!_cachedArchetypes)
 				{
-					_archetypes = context.Registry->GetArchetypesWithSignature(Signature);
+					_archetypes       = contextProvider.Registry->GetArchetypesWithSignature(Signature);
 					_cachedArchetypes = true;
 				}
 
-				ExecuteArchetypes(_archetypes, context);
+				ExecuteArchetypes(_archetypes, contextProvider, stage);
 			}
 
-			virtual void ExecuteArchetypes(std::vector<Archetype*>& archetypes, ContextProvider& context)
+			virtual void ExecuteArchetypes(std::vector<Archetype*>& archetypes, ContextProvider& contextProvider, uint8_t stage)
 			{
 				for (Archetype* archetype: archetypes)
 				{
-					std::apply([this, &archetype, &context](T*... components) { Execute(components..., archetype->Entities, context); },
+					std::apply([this, &archetype, &contextProvider, stage](T*... components) { Execute(components..., archetype->Entities, contextProvider, stage); },
 					           std::make_tuple(reinterpret_cast<T*>(archetype->GetComponentsRaw<T>().data())...));
 				}
 			}
 
-			virtual void Execute(T*..., std::vector<uint64_t>& entities, ContextProvider& context) {}
+			virtual void Execute(T*..., std::vector<uint64_t>& entities, ContextProvider& context, uint8_t stage) {}
 
 		private:
 			std::vector<Archetype*> _archetypes;
