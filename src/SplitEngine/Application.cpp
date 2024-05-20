@@ -29,7 +29,6 @@ namespace SplitEngine
 		LOG("Registering Engine Contexts...");
 		_ecsRegistry.RegisterContext<EngineContext>({ this, &_assetDatabase, {} });
 		_ecsRegistry.RegisterContext<TimeContext>({});
-
 		_ecsRegistry.RegisterContext<RenderingContext>({ &_renderer });
 		_ecsRegistry.RegisterContext<AudioContext>({ &_audioManager });
 
@@ -37,8 +36,10 @@ namespace SplitEngine
 		LOG("Adding Engine Systems...");
 		_ecsRegistry.AddSystem<StatisticsSystem>(EngineStage::BeginFrame, EngineStageOrder::BeginFrame_StatisticsSystem);
 		_ecsRegistry.AddSystem<TimeSystem>(EngineStage::BeginFrame, EngineStageOrder::BeginFrame_TimeSystem);
-		_ecsRegistry.AddSystem<SDLEventSystem>(EngineStage::BeginFrame, EngineStageOrder::BeginFrame_SDLEventSystem);
+		ECS::Registry::SystemHandle<SDLEventSystem> eventSystem = _ecsRegistry.AddSystem<SDLEventSystem>(EngineStage::BeginFrame, EngineStageOrder::BeginFrame_SDLEventSystem);
 		_ecsRegistry.AddSystem<RenderingSystem>({ { EngineStage::BeginRendering, EngineStageOrder::BeginRendering_RenderingSystem }, { EngineStage::EndRendering, EngineStageOrder::EndRendering_RenderingSystem } });
+
+		_ecsRegistry.GetContextProvider().GetContext<EngineContext>()->EventSystem = eventSystem.System;
 	}
 
 	void Application::Run()

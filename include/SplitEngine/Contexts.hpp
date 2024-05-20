@@ -8,7 +8,7 @@ namespace SplitEngine
 	{
 		uint64_t           AverageFPS            = 0;
 		float              AverageDeltaTime      = 0.0f;
-		std::vector<float> AverageECSStageTimeMs = std::vector<float>(std::numeric_limits<uint8_t>::max(), 0);
+		std::vector<float> AverageECSStageTimeMs = std::vector<float>(UINT8_MAX, 0); // numeric_limits not used because soloud overrides the max function by importing some fuckass windows library
 	};
 
 	struct TimeContext
@@ -18,13 +18,14 @@ namespace SplitEngine
 
 	class Application;
 	class AssetDatabase;
+	class SDLEventSystem;
 
 	struct EngineContext
 	{
-		Application*   Application   = nullptr;
-		AssetDatabase* AssetDatabase = nullptr;
-		Statistics     Statistics{};
-		uint64_t       TestNumber = 42069;
+		Application*    Application   = nullptr;
+		AssetDatabase*  AssetDatabase = nullptr;
+		Statistics      Statistics{};
+		SDLEventSystem* EventSystem = nullptr;
 	};
 
 	namespace Rendering

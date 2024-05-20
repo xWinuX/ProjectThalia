@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <SDL_events.h>
 
+#include "Event.hpp"
 #include "ECS/ContextProvider.hpp"
 #include "ECS/SystemBase.hpp"
 
@@ -9,7 +10,7 @@ namespace SplitEngine
 {
 	class StatisticsSystem : public ECS::SystemBase
 	{
-		public:
+		protected:
 			void RunExecute(ECS::ContextProvider& context, uint8_t stage) override;
 
 		private:
@@ -22,6 +23,7 @@ namespace SplitEngine
 		public:
 			TimeSystem();
 
+		protected:
 			void RunExecute(ECS::ContextProvider& context, uint8_t stage) override;
 
 		private:
@@ -32,6 +34,9 @@ namespace SplitEngine
 	class SDLEventSystem : public ECS::SystemBase
 	{
 		public:
+			Event<SDL_Event&> OnPollEvent;
+
+		protected:
 			void RunExecute(ECS::ContextProvider& context, uint8_t stage) override;
 
 		private:
@@ -41,7 +46,7 @@ namespace SplitEngine
 
 	class RenderingSystem : public ECS::SystemBase
 	{
-		public:
+		protected:
 			void RunExecute(ECS::ContextProvider& context, uint8_t stage) override;
 	};
 }
