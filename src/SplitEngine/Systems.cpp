@@ -62,18 +62,14 @@ namespace SplitEngine
 		{
 			switch (_event.type)
 			{
-				case SDL_KEYDOWN:
-				case SDL_KEYUP:
-				case SDL_MOUSEMOTION:
-				case SDL_MOUSEBUTTONDOWN:
-				case SDL_MOUSEBUTTONUP:
-					Input::Update(_event);
-					break;
 				case SDL_QUIT:
 					contextProvider.GetContext<EngineContext>()->Application->Quit();
 					break;
 			}
+
+			Input::Update(_event);
 			contextProvider.GetContext<RenderingContext>()->Renderer->HandleEvents(_event);
+			OnPollEvent.Invoke(_event);
 		}
 	}
 

@@ -12,15 +12,16 @@ namespace SplitEngine::ECS
 		public:
 			System()
 			{
-				Signature.ExtendSizeBy(TypeIDGenerator<Component>::GetCount());
-				(Signature.SetBit(TypeIDGenerator<Component>::GetID<T>()), ...);
+				_signature.ExtendSizeBy(TypeIDGenerator<Component>::GetCount());
+				(_signature.SetBit(TypeIDGenerator<Component>::GetID<T>()), ...);
 			}
 
+		protected:
 			void RunExecute(ContextProvider& contextProvider, uint8_t stage) final
 			{
 				if (!_cachedArchetypes)
 				{
-					_archetypes       = contextProvider.Registry->GetArchetypesWithSignature(Signature);
+					_archetypes       = contextProvider.Registry->GetArchetypesWithSignature(_signature);
 					_cachedArchetypes = true;
 				}
 
@@ -41,6 +42,6 @@ namespace SplitEngine::ECS
 		private:
 			std::vector<Archetype*> _archetypes;
 
-			DynamicBitSet Signature{};
+			DynamicBitSet _signature{};
 	};
 }

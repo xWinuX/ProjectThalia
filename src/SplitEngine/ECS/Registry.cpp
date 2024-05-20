@@ -149,6 +149,8 @@ namespace SplitEngine::ECS
 		return archetypes;
 	}
 
+	ContextProvider& Registry::GetContextProvider() { return _contextProvider; }
+
 	void Registry::DestroyEntity(uint64_t entityID) { _archetypeLookup[_sparseEntityLookup[entityID].archetypeIndex]->DestroyEntity(entityID); }
 
 	bool Registry::IsEntityValid(uint64_t entityID)

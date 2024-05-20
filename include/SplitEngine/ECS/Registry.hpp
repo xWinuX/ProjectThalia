@@ -17,6 +17,13 @@ namespace SplitEngine::ECS
 	class Registry
 	{
 		public:
+			template<typename T>
+			struct SystemHandle
+			{
+				uint64_t ID;
+				T*       System;
+			};
+
 			struct StageInfo
 			{
 				uint8_t Stage;
@@ -101,10 +108,10 @@ namespace SplitEngine::ECS
 			void RegisterContext(T&& context) { _contextProvider.RegisterContext<T>(std::forward<T>(context)); }
 
 			template<typename T, typename... TArgs>
-			uint64_t AddSystem(uint8_t stage, int64_t order, TArgs&&... args) { return AddSystem<T, TArgs...>({ { stage, order } }, std::forward<TArgs>(args)...); }
+			SystemHandle<T> AddSystem(uint8_t stage, int64_t order, TArgs&&... args) { return AddSystem<T, TArgs...>({ { stage, order } }, std::forward<TArgs>(args)...); }
 
 			template<typename T, typename... TArgs>
-			uint64_t AddSystem(std::vector<StageInfo>&& stageInfos, TArgs&&... args)
+			SystemHandle<T> AddSystem(std::vector<StageInfo>&& stageInfos, TArgs&&... args)
 			{
 				static_assert(std::is_base_of_v<SystemBase, T>, "an ECS System needs to derive from SplitEngine::ECS::System");
 
@@ -116,7 +123,7 @@ namespace SplitEngine::ECS
 				if constexpr (std::is_constructible_v<T, TArgs...>) { _systems.push_back({ systemID, new T(std::forward<TArgs>(args)...), std::move(locations), false }); }
 				else { _systems.push_back({ systemID, new T(std::forward<TArgs>(args)..., _contextProvider), std::move(locations), false }); }
 
-				return systemID;
+				return { systemID, reinterpret_cast<T*>(_systems[systemID].System) };
 			}
 
 			std::vector<float>& GetAccumulatedStageTimeMs();
@@ -140,6 +147,8 @@ namespace SplitEngine::ECS
 			void SetEnableStatistics(bool enabled);
 
 			[[nodiscard]] std::vector<Archetype*> GetArchetypesWithSignature(const DynamicBitSet& signature);
+
+			[[nodiscard]] ContextProvider& GetContextProvider();
 
 		private:
 			struct SystemLocation

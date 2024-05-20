@@ -9,11 +9,12 @@ namespace SplitEngine::ECS
 		friend class Registry;
 
 		public:
-			virtual      ~SystemBase() = default;
+			virtual ~SystemBase() = default;
+
+		protected:
 			virtual void Destroy(ContextProvider& contextProvider) {}
 			virtual void RunExecute(ContextProvider& context, uint8_t stage) = 0;
 
-		protected:
 			bool _cachedArchetypes = false;
 	};
 }
