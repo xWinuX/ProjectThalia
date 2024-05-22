@@ -130,8 +130,6 @@ namespace SplitEngine
 			template<typename T>
 			static void RegisterAxis2D(T actionKey, Axis xAxis, Axis yAxis) { _axisActions[static_cast<int>(actionKey)].Axes.push_back({ xAxis, yAxis }); }
 
-			static void ProvideWorldMouseOffset(glm::ivec2 offset);
-
 			static bool GetDown(KeyCode keyCode);
 
 			static bool GetPressed(KeyCode keyCode);
