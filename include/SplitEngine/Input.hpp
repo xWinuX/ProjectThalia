@@ -85,7 +85,7 @@ namespace SplitEngine
 					bool value = false;
 					for (const auto& keyCode: buttonAction.KeyCodes)
 					{
-						if (_keyDownStates[keyCode])
+						if (_keyDownStates[static_cast<int>(keyCode)])
 						{
 							value = true;
 							break;
@@ -108,7 +108,7 @@ namespace SplitEngine
 					bool value = false;
 					for (const auto& keyCode: buttonAction.KeyCodes)
 					{
-						if (_keyPressedStates[keyCode] == PressedState::Pressed)
+						if (_keyPressedStates[static_cast<int>(keyCode)] == PressedState::Pressed)
 						{
 							value = true;
 							break;
@@ -138,8 +138,12 @@ namespace SplitEngine
 
 			static glm::ivec2 GetMousePosition();
 
+			static glm::ivec2 GetMouseDelta();
+
+			static glm::ivec2 GetMouseWheel();
+
 		private:
-			enum PressedState
+			enum class PressedState
 			{
 				Ready,
 				Pressed,
@@ -147,7 +151,8 @@ namespace SplitEngine
 			};
 
 			static glm::ivec2 _mousePosition;
-			static glm::ivec2 _mousePositionWorldOffset;
+			static glm::ivec2 _mouseDelta;
+			static glm::vec2  _mouseWheel;
 
 			static std::unordered_map<int, ButtonAction> _buttonActions;
 			static std::unordered_map<int, AxisAction>   _axisActions;
@@ -173,7 +178,7 @@ namespace SplitEngine
 					{
 						for (int i = 0; i < TNum; ++i)
 						{
-							value[i] += static_cast<float>(_keyDownStates[axisVector[i].PositiveKey]) - static_cast<float>(_keyDownStates[axisVector[i].NegativeKey]);
+							value[i] += static_cast<float>(_keyDownStates[static_cast<int>(axisVector[i].PositiveKey)]) - static_cast<float>(_keyDownStates[static_cast<int>(axisVector[i].NegativeKey)]);
 						}
 					}
 
@@ -201,8 +206,8 @@ namespace SplitEngine
 					{
 						for (int i = 0; i < TNum; ++i)
 						{
-							value[i] += static_cast<int>(_keyPressedStates[axisVector[i].PositiveKey] == PressedState::Pressed) - static_cast<int>(
-								_keyPressedStates[axisVector[i].NegativeKey] == PressedState::Pressed);
+							value[i] += static_cast<int>(_keyPressedStates[static_cast<int>(axisVector[i].PositiveKey)] == PressedState::Pressed) - static_cast<int>(
+								_keyPressedStates[static_cast<int>(axisVector[i].NegativeKey)] == PressedState::Pressed);
 						}
 					}
 
