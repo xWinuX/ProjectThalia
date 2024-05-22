@@ -4,7 +4,7 @@
 
 namespace SplitEngine
 {
-	enum KeyCode
+	enum class KeyCode
 	{
 		UNKNOWN = SDLK_UNKNOWN,
 
@@ -266,8 +266,11 @@ namespace SplitEngine
 		CALL      = SDLK_CALL,
 		ENDCALL   = SDLK_ENDCALL,
 
-		MOUSE_BEGIN,
+		CUSTOM_BEGIN,
 		MOUSE_LEFT,
 		MOUSE_RIGHT,
+		MOUSE_MIDDLE,
+		MOUSE_X1,
+		MOUSE_X2,
 	};
 }
