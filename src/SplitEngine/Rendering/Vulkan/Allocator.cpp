@@ -27,12 +27,17 @@ namespace SplitEngine::Rendering::Vulkan
 
 		VmaAllocationInfo allocationInfo;
 
-		vmaCreateBuffer(_vmaAllocator,
+		VkResult result = vmaCreateBuffer(_vmaAllocator,
 		                reinterpret_cast<const VkBufferCreateInfo*>(&bufferCreateInfo),
 		                &allocationCreateInfo,
 		                reinterpret_cast<VkBuffer*>(&bufferAllocation.Buffer),
 		                &bufferAllocation.VmaAllocation,
 		                &allocationInfo);
+
+		if (result != 0)
+		{
+			exit(1);
+		}
 
 		bufferAllocation.AllocationInfo.MappedData = allocationInfo.pMappedData;
 

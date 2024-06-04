@@ -16,7 +16,8 @@ namespace SplitEngine::Rendering::Vulkan
 
 	void Instance::CreateAllocator() { _allocator = std::make_unique<Allocator>(*this); }
 
-	Instance::Instance(Window& window, ApplicationInfo& applicationInfo, RenderingSettings&& renderingSettings):
+	Instance::Instance(Window& window, ApplicationInfo& applicationInfo, ShaderParserSettings&& shaderParserSettings, RenderingSettings&& renderingSettings):
+		_shaderParserSettings(std::move(shaderParserSettings)),
 		_renderingSettings(std::move(renderingSettings))
 	{
 		uint32_t extensionCount = 0;
@@ -85,10 +86,10 @@ namespace SplitEngine::Rendering::Vulkan
 	const Image&       Instance::GetDefaultImage() const { return _defaultImage; }
 	const vk::Sampler* Instance::GetDefaultSampler() const { return _defaultSampler; }
 
-	const RenderingSettings& Instance::GetRenderingSettings() const { return _renderingSettings; }
+	const RenderingSettings&    Instance::GetRenderingSettings() const { return _renderingSettings; }
+	const ShaderParserSettings& Instance::GetShaderParserSettings() const { return _shaderParserSettings; }
 
 	PhysicalDevice& Instance::GetPhysicalDevice() const { return *_physicalDevice; }
 
 	Allocator& Instance::GetAllocator() const { return *_allocator; }
-
 }

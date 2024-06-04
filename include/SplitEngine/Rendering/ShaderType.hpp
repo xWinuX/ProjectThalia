@@ -5,8 +5,9 @@ namespace SplitEngine::Rendering
 {
 	enum class ShaderType
 	{
-		Vertex   = VK_SHADER_STAGE_VERTEX_BIT,
-		Fragment = VK_SHADER_STAGE_FRAGMENT_BIT,
-		Compute  = VK_SHADER_STAGE_COMPUTE_BIT
+		Vertex   = 0,
+		Fragment = 1,
+		Compute  = 2,
+		MAX_VALUE,
 	};
 }

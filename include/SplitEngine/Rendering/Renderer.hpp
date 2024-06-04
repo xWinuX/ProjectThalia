@@ -19,7 +19,7 @@ namespace SplitEngine
 			friend class RenderingSystem;
 
 			public:
-				explicit Renderer(ApplicationInfo& applicationInfo, RenderingSettings&& renderingSettings);
+				explicit Renderer(ApplicationInfo& applicationInfo, ShaderParserSettings&& shaderParserSettings, RenderingSettings&& renderingSettings);
 				~Renderer();
 
 				[[nodiscard]] Vulkan::CommandBuffer& GetCommandBuffer();

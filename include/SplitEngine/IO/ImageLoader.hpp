@@ -1,5 +1,7 @@
 #pragma once
 
+#include <filesystem>
+
 #include "Image.hpp"
 
 #include <stb_image.h>
@@ -26,6 +28,6 @@ namespace SplitEngine::IO
 				RGB = RGBA,
 			};
 
-			static Image Load(const std::string& filePath, ChannelSetup channelSetup = ChannelSetup::RGBA);
+			static Image Load(const std::filesystem::path& filePath, ChannelSetup channelSetup = ChannelSetup::RGBA);
 	};
 }

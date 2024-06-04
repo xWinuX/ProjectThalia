@@ -18,15 +18,16 @@ namespace SplitEngine
 		public:
 			struct CreateInfo
 			{
-				ApplicationInfo   ApplicationInfo{};
-				RenderingSettings RenderingSettings{};
+				ApplicationInfo      ApplicationInfo{};
+				ShaderParserSettings ShaderParserSettings{};
+				RenderingSettings    RenderingSettings{};
 			};
 
 			explicit Application(CreateInfo createInfo);
 			void     Run();
 			void     Quit();
 
-			[[nodiscard]] Window&     GetWindow();
+			[[nodiscard]] Window& GetWindow();
 
 			AssetDatabase& GetAssetDatabase();
 			ECS::Registry& GetECSRegistry();

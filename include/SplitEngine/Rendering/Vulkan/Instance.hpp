@@ -13,7 +13,7 @@ namespace SplitEngine::Rendering::Vulkan
 	class Instance
 	{
 		public:
-			Instance(Window& window, ApplicationInfo& applicationInfo, RenderingSettings&& renderingSettings);
+			Instance(Window& window, ApplicationInfo& applicationInfo, ShaderParserSettings&& shaderParserSettings, RenderingSettings&& renderingSettings);
 
 			void Destroy();
 
@@ -21,18 +21,20 @@ namespace SplitEngine::Rendering::Vulkan
 
 			[[nodiscard]] static Instance& Get();
 
-			[[nodiscard]] const Image&             GetDefaultImage() const;
-			[[nodiscard]] const vk::Sampler*       GetDefaultSampler() const;
-			[[nodiscard]] const RenderingSettings& GetRenderingSettings() const;
-			[[nodiscard]] PhysicalDevice&          GetPhysicalDevice() const;
-			[[nodiscard]] Allocator&               GetAllocator() const;
-			[[nodiscard]] const vk::Instance&      GetVkInstance() const;
-			[[nodiscard]] const vk::SurfaceKHR&    GetVkSurface() const;
+			[[nodiscard]] const Image&                GetDefaultImage() const;
+			[[nodiscard]] const vk::Sampler*          GetDefaultSampler() const;
+			[[nodiscard]] const RenderingSettings&    GetRenderingSettings() const;
+			[[nodiscard]] const ShaderParserSettings& GetShaderParserSettings() const;
+			[[nodiscard]] PhysicalDevice&             GetPhysicalDevice() const;
+			[[nodiscard]] Allocator&                  GetAllocator() const;
+			[[nodiscard]] const vk::Instance&         GetVkInstance() const;
+			[[nodiscard]] const vk::SurfaceKHR&       GetVkSurface() const;
 
 		private:
 			static Instance* _instance;
 
-			RenderingSettings _renderingSettings;
+			ShaderParserSettings _shaderParserSettings;
+			RenderingSettings    _renderingSettings;
 
 			std::unique_ptr<PhysicalDevice> _physicalDevice;
 			std::unique_ptr<Allocator>      _allocator;

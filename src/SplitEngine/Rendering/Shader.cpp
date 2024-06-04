@@ -35,54 +35,32 @@ namespace SplitEngine::Rendering
 	std::vector<Vulkan::Pipeline::ShaderInfo> Shader::CreateShaderInfos()
 	{
 		std::vector<Vulkan::Pipeline::ShaderInfo> shaderInfos{};
-		RenderingSettings                         renderingSettings = _device->GetPhysicalDevice().GetInstance().GetRenderingSettings();
+		const ShaderParserSettings&               shaderParserSettings = _device->GetPhysicalDevice().GetInstance().GetShaderParserSettings();
 
-		std::vector<std::filesystem::path> files;
-		for (const std::filesystem::directory_entry& entry: std::filesystem::directory_iterator(_shaderPath))
-		{
-			const bool hasSpvExtension = entry.path().extension() == std::format(".{0}", renderingSettings.SpirvFileExtension);
-			if (std::filesystem::is_regular_file(entry.path()) && hasSpvExtension) { files.push_back(entry.path()); }
-		}
-
-		shaderInfos.reserve(files.size());
+		shaderInfos.reserve(_shaderPaths.size());
 
 		// Get shader infos
-		for (const auto& file: files)
+		for (std::filesystem::path& file: _shaderPaths)
 		{
-			const size_t lastDotPosition       = file.string().rfind('.');
-			size_t       secondLastDotPosition = -1;
+			if (!file.has_extension()) { ErrorHandler::ThrowRuntimeError(std::format("Failed to parse shader files! {0}", file.string())); }
 
-			// Find seconds last point
-			for (size_t i = lastDotPosition - 1; i > 0; i--)
-			{
-				if (file.string()[i] == '.')
-				{
-					secondLastDotPosition = i;
-					break;
-				}
-			}
-
-			if (lastDotPosition == std::string::npos || secondLastDotPosition == std::string::npos)
-			{
-				ErrorHandler::ThrowRuntimeError(std::format("Failed to parse shader files! {0}", _shaderPath));
-			}
-
-			std::string shaderTypeString = file.string().substr(secondLastDotPosition + 1, lastDotPosition - secondLastDotPosition - 1);
+			std::string shaderTypeString = file.extension().string();
 			ShaderType  shaderType       = ShaderType::Vertex;
 
+			if (shaderTypeString == shaderParserSettings.VertexShaderFileExtension) { shaderType = ShaderType::Vertex; }
+			if (shaderTypeString == shaderParserSettings.FragmentShaderFileExtension) { shaderType = ShaderType::Fragment; }
+			if (shaderTypeString == shaderParserSettings.ComputeShaderFileExtension) { shaderType = ShaderType::Compute; }
 
-			if (shaderTypeString == renderingSettings.VertexShaderFileExtension) { shaderType = ShaderType::Vertex; }
-			if (shaderTypeString == renderingSettings.FragmentShaderFileExtension) { shaderType = ShaderType::Fragment; }
-			if (shaderTypeString == renderingSettings.ComputeShaderFileExtension) { shaderType = ShaderType::Compute; }
+			file.concat(shaderParserSettings.SpirvFileExtension);
 
-			shaderInfos.push_back({ file.string(), shaderType });
+			shaderInfos.push_back({ file, shaderType });
 		}
 
 		return shaderInfos;
 	}
 
 	Shader::Shader(const CreateInfo& createInfo) :
-		_shaderPath(createInfo.ShaderPath),
+		_shaderPaths(createInfo.ShaderPaths),
 		_device(&Vulkan::Instance::Get().GetPhysicalDevice().GetDevice()),
 		_pipeline(_device, "main", CreateShaderInfos()),
 		_shaderProperties(Properties(this, &_pipeline.GetPerPipelineDescriptorSetAllocation()))
@@ -100,8 +78,9 @@ namespace SplitEngine::Rendering
 
 	void Shader::PushConstant(const vk::CommandBuffer& commandBuffer, ShaderType shaderType, uint32_t index, void* data) const
 	{
-		const Vulkan::Pipeline::PushConstantInfo& pushConstantInfo = _pipeline.GetPushConstantInfo(index);
-		commandBuffer.pushConstants(_pipeline.GetLayout(), static_cast<vk::ShaderStageFlagBits>(shaderType), pushConstantInfo.Offset, pushConstantInfo.Range, data);
+		const Vulkan::Pipeline::PushConstantInfo& pushConstantInfo = _pipeline.GetPushConstantInfo(shaderType, index);
+
+		commandBuffer.pushConstants(_pipeline.GetLayout(), Vulkan::Pipeline::GetShaderStageFromShaderType(shaderType), pushConstantInfo.Offset, pushConstantInfo.Range, data);
 	}
 
 	void Shader::Update() { _shaderProperties.Update(); }
@@ -115,6 +94,7 @@ namespace SplitEngine::Rendering
 	Shader::Properties& Shader::GetProperties() { return _shaderProperties; }
 
 	Shader::Properties& Shader::GetGlobalProperties() { return _globalProperties; }
+
 
 	void Shader::BindGlobal(const vk::CommandBuffer& commandBuffer, uint32_t frameInFlight) const
 	{

@@ -34,11 +34,12 @@ namespace SplitEngine::Rendering
 				{
 					public:
 						std::string Name;
-						bool        SingleInstance = false;
-						bool        DeviceLocal    = false;
-						bool        Cached         = false;
-						bool        Shared         = false;
-						bool        NoAllocation   = false;
+						bool        SingleInstance         = false;
+						bool        DeviceLocal            = false;
+						bool        DeviceLocalHostVisible = false;
+						bool        Cached                 = false;
+						bool        Shared                 = false;
+						bool        NoAllocation           = false;
 				};
 
 				struct CreateInfo

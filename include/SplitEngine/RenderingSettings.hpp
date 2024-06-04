@@ -7,10 +7,16 @@ namespace SplitEngine
 {
 	struct RenderingSettings
 	{
-		std::string VertexShaderFileExtension   = "vert";
-		std::string FragmentShaderFileExtension = "frag";
-		std::string ComputeShaderFileExtension  = "comp";
-		std::string SpirvFileExtension          = "spv";
+		bool UseVulkanValidationLayers = false;
+		uint32_t GPUDeviceID = -1u;
+	};
+
+	struct ShaderParserSettings
+	{
+		std::string VertexShaderFileExtension   = ".vert";
+		std::string FragmentShaderFileExtension = ".frag";
+		std::string ComputeShaderFileExtension  = ".comp";
+		std::string SpirvFileExtension          = ".spv";
 		char        ShaderBufferModDelimiter    = '_';
 
 		/**
@@ -22,6 +28,13 @@ namespace SplitEngine
 		 * This Buffer is only visible to the device and data needs to be explicitly staged
 		 */
 		std::vector<std::string> ShaderBufferDeviceLocalModPrefixes = { "deviceLocal", "dl" };
+
+		/**
+		 * This buffer is on device memory but still visible from cpu. On most dedicated gpus this will allocate it
+		 * on to a rather small heap on the gpu (214MB on a rtx 3070) so use this with caution.
+		 * This buffer is rather slow to read from for obvious reasons.
+		 */
+		std::vector<std::string> ShaderBufferDeviceLocalHostVisibleModPrefixes = { "deviceLocalHostVisisble", "dlhv" };
 
 		/**
 		 * Will host cache the buffer
@@ -38,11 +51,9 @@ namespace SplitEngine
 
 
 		/**
-		 * NoAlloc will still create the property and descriptors like they should with all offsets.
-		 * But no Buffers will actually be created for them and they need to be supplied manually via the OverrideBuffer function
+		 * NoAlloc will still create the property and descriptors like they should with all offsets etc...
+		 * But no Buffers will actually be created for them and they need to be supplied manually via the OverrideBuffer/SetBuffer functions
 		 */
 		std::vector<std::string> ShaderBufferNoAllocModPrefixes = { "noAlloc", "na" };
-
-		bool UseVulkanValidationLayers = false;
 	};
 }

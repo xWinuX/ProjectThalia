@@ -1,5 +1,7 @@
 #pragma once
 
+#include <filesystem>
+
 #include "SplitEngine/AssetDatabase.hpp"
 #include "SplitEngine/Rendering/Vulkan/InFlightResource.hpp"
 #include "SplitEngine/Rendering/Vulkan/Pipeline.hpp"
@@ -16,7 +18,7 @@ namespace SplitEngine::Rendering
 			struct CreateInfo
 			{
 				public:
-					std::string ShaderPath;
+					std::vector<std::filesystem::path> ShaderPaths;
 			};
 
 			class Properties
@@ -117,9 +119,9 @@ namespace SplitEngine::Rendering
 			[[nodiscard]] Vulkan::Pipeline& GetPipeline();
 
 		private:
-			std::string      _shaderPath{};
-			Vulkan::Device*  _device = nullptr;
-			Vulkan::Pipeline _pipeline{};
+			std::vector<std::filesystem::path> _shaderPaths{};
+			Vulkan::Device*                    _device = nullptr;
+			Vulkan::Pipeline                   _pipeline{};
 
 			static Properties _globalProperties;
 			static bool       _globalPropertiesDefined;
