@@ -18,7 +18,7 @@ namespace SplitEngine
 {
 	Application::Application(CreateInfo createInfo):
 		_applicationInfo(std::move(createInfo.ApplicationInfo)),
-		_renderer(Rendering::Renderer(_applicationInfo, std::move(createInfo.RenderingSettings))),
+		_renderer(Rendering::Renderer(_applicationInfo, std::move(createInfo.ShaderParserSettings), std::move(createInfo.RenderingSettings))),
 		_audioManager(Audio::Manager())
 
 	{

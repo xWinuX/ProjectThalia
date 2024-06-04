@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <string>
 #include "SplitEngine/IO/Audio.hpp"
 
@@ -14,8 +15,8 @@ namespace SplitEngine::IO
 				Stream  // Stream audio
 			};
 
-			static Audio Load(const std::string& path, AudioMemoryType memoryType);
-			static Audio LoadBuffer(const std::string& path);
-			static Audio LoadStream(const std::string& path);
+			static Audio Load(const std::filesystem::path& path, AudioMemoryType memoryType);
+			static Audio LoadBuffer(const std::filesystem::path& path);
+			static Audio LoadStream(const std::filesystem::path& path);
 	};
 }

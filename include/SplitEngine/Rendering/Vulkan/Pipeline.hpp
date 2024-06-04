@@ -1,5 +1,7 @@
 #pragma once
 
+#include <filesystem>
+
 #include "DescriptorSetAllocator.hpp"
 #include "DeviceObject.hpp"
 #include "spirv_common.hpp"
@@ -20,15 +22,14 @@ namespace SplitEngine::Rendering::Vulkan
 			struct ShaderInfo
 			{
 				public:
-					std::string path;
-					ShaderType  shaderStage;
+					std::filesystem::path path;
+					ShaderType            shaderStage;
 			};
 
 			struct PushConstantInfo
 			{
-				uint32_t Index  = -1;
-				size_t   Offset = 0;
-				size_t   Range  = 0;
+				size_t Offset = 0;
+				size_t Range  = 0;
 			};
 
 			Pipeline() = default;
@@ -53,16 +54,18 @@ namespace SplitEngine::Rendering::Vulkan
 
 			void Destroy() override;
 
-			[[nodiscard]] const PushConstantInfo&   GetPushConstantInfo(uint32_t index) const;
+			[[nodiscard]] const PushConstantInfo&   GetPushConstantInfo(ShaderType shaderType, const uint32_t index) const;
 			[[nodiscard]] const vk::Pipeline&       GetVkPipeline() const;
 			[[nodiscard]] const vk::PipelineLayout& GetLayout() const;
-
 
 			[[nodiscard]] static DescriptorSetAllocator::Allocation& GetGlobalDescriptorSetAllocation();
 			[[nodiscard]] DescriptorSetAllocator::Allocation&        GetPerPipelineDescriptorSetAllocation();
 
 			[[nodiscard]] DescriptorSetAllocator::Allocation AllocatePerInstanceDescriptorSet();
-			void                                             DeallocatePerInstanceDescriptorSet(DescriptorSetAllocator::Allocation& descriptorSetAllocation);
+
+			static vk::ShaderStageFlagBits GetShaderStageFromShaderType(ShaderType shaderType);
+
+			void DeallocatePerInstanceDescriptorSet(DescriptorSetAllocator::Allocation& descriptorSetAllocation);
 
 		private:
 			vk::Pipeline          _vkPipeline;
@@ -82,7 +85,14 @@ namespace SplitEngine::Rendering::Vulkan
 
 			std::vector<vk::ShaderModule> _shaderModules;
 
-			std::vector<PushConstantInfo> _pushConstantInfos;
+			std::array<std::vector<PushConstantInfo>, static_cast<size_t>(ShaderType::MAX_VALUE)> _pushConstantInfos;
+
+			static constexpr vk::ShaderStageFlagBits _shaderTypeLookup[] = {
+				vk::ShaderStageFlagBits::eVertex,
+				vk::ShaderStageFlagBits::eFragment,
+				vk::ShaderStageFlagBits::eCompute
+			};
+
 
 			[[nodiscard]] static vk::Format GetFormatFromType(const spirv_cross::SPIRType& type);
 	};

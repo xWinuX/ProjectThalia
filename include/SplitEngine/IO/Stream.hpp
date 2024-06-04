@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -16,10 +17,10 @@ namespace SplitEngine::IO
 	class Stream
 	{
 		public:
-			explicit Stream(const std::string& filePath, StreamReadFormat readFormat = StreamReadFormat::Default);
+			explicit Stream(const std::filesystem::path& filePath, StreamReadFormat readFormat = StreamReadFormat::Default);
 
 			template<typename T = char>
-			static std::vector<T> ReadRawAndClose(const std::string& filePath, StreamReadFormat format = StreamReadFormat::Default)
+			static std::vector<T> ReadRawAndClose(const std::filesystem::path& filePath, StreamReadFormat format = StreamReadFormat::Default)
 			{
 				Stream         stream = Stream(filePath, format);
 				std::vector<T> buffer = stream.ReadRaw<T>();

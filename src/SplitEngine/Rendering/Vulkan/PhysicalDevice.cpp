@@ -1,4 +1,7 @@
 #include "SplitEngine/Rendering/Vulkan/PhysicalDevice.hpp"
+
+#include <map>
+
 #include "SplitEngine/ErrorHandler.hpp"
 #include "SplitEngine/Debug/Log.hpp"
 
@@ -26,7 +29,8 @@ namespace SplitEngine::Rendering::Vulkan
 				const vk::QueueFamilyProperties& queueFamily = queueFamilyProperties[i];
 
 				// Graphics queue
-				if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics && _queueFamilyInfos[static_cast<size_t>(QueueType::Graphics)].Index == std::numeric_limits<uint32_t>::max())
+				if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics && _queueFamilyInfos[static_cast<size_t>(QueueType::Graphics)].Index == std::numeric_limits<
+					    uint32_t>::max())
 				{
 					LOG("Graphics Family Index: {0}", i);
 					_queueFamilyInfos[static_cast<size_t>(QueueType::Graphics)].WantedCommandType = QueueType::Graphics;
@@ -36,7 +40,8 @@ namespace SplitEngine::Rendering::Vulkan
 				}
 
 				// Compute queue
-				if (queueFamily.queueFlags & vk::QueueFlagBits::eCompute && _queueFamilyInfos[static_cast<size_t>(QueueType::Compute)].Index == std::numeric_limits<uint32_t>::max())
+				if (queueFamily.queueFlags & vk::QueueFlagBits::eCompute && _queueFamilyInfos[static_cast<size_t>(QueueType::Compute)].Index == std::numeric_limits<
+					    uint32_t>::max())
 				{
 					LOG("Compute Family Index: {0}", i);
 					_queueFamilyInfos[static_cast<size_t>(QueueType::Compute)].WantedCommandType = QueueType::Compute;
@@ -46,7 +51,8 @@ namespace SplitEngine::Rendering::Vulkan
 				}
 
 				// Present queue
-				if (physicalDevice.getSurfaceSupportKHR(i, instance.GetVkSurface()) && _queueFamilyInfos[static_cast<size_t>(QueueType::Present)].Index == std::numeric_limits<uint32_t>::max())
+				if (physicalDevice.getSurfaceSupportKHR(i, instance.GetVkSurface()) && _queueFamilyInfos[static_cast<size_t>(QueueType::Present)].Index == std::numeric_limits<
+					    uint32_t>::max())
 				{
 					LOG("Present Family Index: {0}", i);
 					_queueFamilyInfos[static_cast<size_t>(QueueType::Present)].WantedCommandType = QueueType::Present;
@@ -56,7 +62,8 @@ namespace SplitEngine::Rendering::Vulkan
 				}
 
 				// Transfer
-				if (queueFamily.queueFlags & vk::QueueFlagBits::eTransfer && _queueFamilyInfos[static_cast<size_t>(QueueType::Transfer)].Index == std::numeric_limits<uint32_t>::max())
+				if (queueFamily.queueFlags & vk::QueueFlagBits::eTransfer && _queueFamilyInfos[static_cast<size_t>(QueueType::Transfer)].Index == std::numeric_limits<
+					    uint32_t>::max())
 				{
 					LOG("Transfer Family Index: {0}", i);
 					_queueFamilyInfos[static_cast<size_t>(QueueType::Transfer)].WantedCommandType = QueueType::Transfer;
@@ -76,45 +83,77 @@ namespace SplitEngine::Rendering::Vulkan
 		_validationLayers(std::move(_requiredValidationLayers))
 	{
 		const std::vector<vk::PhysicalDevice> physicalDevices = instance.GetVkInstance().enumeratePhysicalDevices();
-		for (const vk::PhysicalDevice& physicalDevice: physicalDevices)
+
+		LOG("Available Devices");
+		for (vk::PhysicalDevice physicalDevice: physicalDevices)
 		{
-			// Check device type
-			_properties = physicalDevice.getProperties();
-			if (_properties.deviceType != vk::PhysicalDeviceType::eDiscreteGpu) { continue; }
+			vk::PhysicalDeviceProperties properties = physicalDevice.getProperties();
+			LOG("ID {0} - {1}", properties.deviceID, properties.deviceName.data());
+		}
 
-			// Check Extensions
-			std::vector<vk::ExtensionProperties> availableExtensions = physicalDevice.enumerateDeviceExtensionProperties();
+		for (int i = 0; i < 2; i++)
+		{
+			uint32_t gpuDeviceId = i == 0 ? _instance.GetRenderingSettings().GPUDeviceID : -1u;
 
-			std::set<std::string> requiredExtensions = std::set<std::string>(_requiredExtensions.begin(), _requiredExtensions.end());
+			LOG("id {0}", gpuDeviceId);
+			std::map<size_t, vk::PhysicalDevice> physicalDeviceRating = std::map<size_t, vk::PhysicalDevice>();
+			for (const vk::PhysicalDevice& physicalDevice: physicalDevices)
+			{
+				// Check device type
+				_properties = physicalDevice.getProperties();
 
-			for (const auto& extension: availableExtensions) { requiredExtensions.erase(extension.extensionName); }
+				if (gpuDeviceId != -1u && _properties.deviceID != gpuDeviceId) { continue; }
 
-			if (!requiredExtensions.empty()) { continue; }
+				// Check Extensions
+				std::vector<vk::ExtensionProperties> availableExtensions = physicalDevice.enumerateDeviceExtensionProperties();
 
-			// Check queues
-			std::ranges::fill(_queueFamilyInfos, QueueFamilyInfo()); // Reset for each new physical device
+				std::set<std::string> requiredExtensions = std::set<std::string>(_requiredExtensions.begin(), _requiredExtensions.end());
 
-			SearchQueues(instance, physicalDevice);
+				for (const auto& extension: availableExtensions) { requiredExtensions.erase(extension.extensionName); }
 
-			if (!IsQueueFamilyIndicesCompleted()) { continue; }
+				if (!requiredExtensions.empty()) { continue; }
 
-			// Check swap chain support
-			_swapchainSupportDetails = SwapchainSupportDetails();
+				// Check queues
+				std::ranges::fill(_queueFamilyInfos, QueueFamilyInfo()); // Reset for each new physical device
 
-			_swapchainSupportDetails.Capabilities = physicalDevice.getSurfaceCapabilitiesKHR(instance.GetVkSurface());
-			_swapchainSupportDetails.Formats      = physicalDevice.getSurfaceFormatsKHR(instance.GetVkSurface());
-			_swapchainSupportDetails.PresentModes = physicalDevice.getSurfacePresentModesKHR(instance.GetVkSurface());
+				SearchQueues(instance, physicalDevice);
 
-			if (_swapchainSupportDetails.Formats.empty() || _swapchainSupportDetails.PresentModes.empty()) { continue; }
+				if (!IsQueueFamilyIndicesCompleted()) { continue; }
 
-			// Select device
-			_vkPhysicalDevice = physicalDevice;
-			LOG("Selected physical device: {0}", _properties.deviceName.data());
+				// Check swap chain support
+				_swapchainSupportDetails = SwapchainSupportDetails();
+
+				_swapchainSupportDetails.Capabilities = physicalDevice.getSurfaceCapabilitiesKHR(instance.GetVkSurface());
+				_swapchainSupportDetails.Formats      = physicalDevice.getSurfaceFormatsKHR(instance.GetVkSurface());
+				_swapchainSupportDetails.PresentModes = physicalDevice.getSurfacePresentModesKHR(instance.GetVkSurface());
+
+				if (_swapchainSupportDetails.Formats.empty() || _swapchainSupportDetails.PresentModes.empty()) { continue; }
+
+				size_t points = 0;
+				if (_properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) { points += 100; }
+
+				// Select device
+				physicalDeviceRating[points] = physicalDevice;
+			}
+
+			// Check if we found a compatible GPU
+			if (physicalDeviceRating.empty())
+			{
+				if (i > 0) { ErrorHandler::ThrowRuntimeError("This device does not have any gpus meeting the applications requirements"); }
+				else
+				{
+					if (gpuDeviceId != -1u) { LOG_ERROR("Couldn't find GPU with the ID {0}", gpuDeviceId); }
+					continue;
+				}
+			}
+
+			// Select top GPU
+			_vkPhysicalDevice = physicalDeviceRating.rbegin()->second;
+
 			break;
 		}
 
-		// Check if we found a compatible GPU
-		if (_vkPhysicalDevice == VK_NULL_HANDLE) { ErrorHandler::ThrowRuntimeError("This device does not have any gpus meeting the applications requirements"); }
+		LOG("Selected physical device: {0}", _vkPhysicalDevice.getProperties().deviceName.data());
 
 		// Select image format
 		_imageFormat = _swapchainSupportDetails.Formats[0];

@@ -80,6 +80,8 @@ namespace SplitEngine::Rendering::Vulkan
 
 			void Copy(const Buffer& destinationBuffer) const;
 
+			void Copy(const Buffer& destinationBuffer, vk::DeviceSize sourceOffsetInBytes, vk::DeviceSize destinationOffsetInBytes, vk::DeviceSize sizeInBytes) const;
+
 			[[nodiscard]] void* Map() const;
 
 			[[nodiscard]] void* GetMappedData() const;
@@ -119,7 +121,7 @@ namespace SplitEngine::Rendering::Vulkan
 			static const char* EMPTY_DATA[];
 
 		private:
-			Allocator::BufferAllocation _bufferAllocation {};
+			Allocator::BufferAllocation _bufferAllocation{};
 			vk::DeviceSize              _bufferSize = 0;
 
 			std::vector<SubBuffer>                _subBuffers;

@@ -11,7 +11,7 @@
 
 namespace SplitEngine::Tools
 {
-	uint64_t ImagePacker::AddImage(const std::string& imagePath)
+	uint64_t ImagePacker::AddImage(const std::filesystem::path& imagePath)
 	{
 		_images.push_back({ _id++, IO::ImageLoader::Load(imagePath) });
 		return _images.back().ID;

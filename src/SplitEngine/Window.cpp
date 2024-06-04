@@ -61,6 +61,7 @@ namespace SplitEngine
 	void Window::SetSize(uint32_t width, uint32_t height)
 	{
 		SDL_SetWindowSize(_window, static_cast<int>(width), static_cast<int>(height));
+		SDL_SetWindowPosition(_window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 	}
 
 	void Window::SetFullscreen(bool fullscreen)

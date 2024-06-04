@@ -142,9 +142,14 @@ namespace SplitEngine::Rendering::Vulkan
 
 	void Buffer::Copy(const Buffer& destinationBuffer) const
 	{
+		Copy(destinationBuffer, 0, 0, _bufferSize);
+	}
+
+	void Buffer::Copy(const Buffer& destinationBuffer, vk::DeviceSize sourceOffsetInBytes, vk::DeviceSize destinationOffsetInBytes, vk::DeviceSize sizeInBytes) const
+	{
 		const vk::CommandBuffer commandBuffer = GetDevice()->GetQueueFamily(QueueType::Transfer).BeginOneshotCommands();
 
-		const vk::BufferCopy copyRegion = vk::BufferCopy(0, 0, _bufferSize);
+		const vk::BufferCopy copyRegion = vk::BufferCopy(sourceOffsetInBytes, destinationOffsetInBytes, sizeInBytes);
 		commandBuffer.copyBuffer(GetVkBuffer(), destinationBuffer.GetVkBuffer(), 1, &copyRegion);
 
 		GetDevice()->GetQueueFamily(QueueType::Transfer).EndOneshotCommands();

@@ -10,9 +10,9 @@
 
 namespace SplitEngine::Rendering
 {
-	Renderer::Renderer(ApplicationInfo& applicationInfo, RenderingSettings&& renderingSettings):
+	Renderer::Renderer(ApplicationInfo& applicationInfo, ShaderParserSettings&& shaderParserSettings, RenderingSettings&& renderingSettings):
 		_window(Window(applicationInfo.Name, 500, 500)),
-		_vulkanInstance(Vulkan::Instance(_window, applicationInfo, std::move(renderingSettings)))
+		_vulkanInstance(Vulkan::Instance(_window, applicationInfo, std::move(shaderParserSettings), std::move(renderingSettings)))
 	{
 		_window.OnResize.Add([this](int width, int height) { _frameBufferResized = true; });
 
@@ -29,10 +29,7 @@ namespace SplitEngine::Rendering
 
 	Vulkan::CommandBuffer& Renderer::GetCommandBuffer() { return _commandBuffer; }
 
-	void Renderer::HandleEvents(SDL_Event event)
-	{
-		_window.HandleEvents(event);
-	}
+	void Renderer::HandleEvents(SDL_Event event) { _window.HandleEvents(event); }
 
 	bool Renderer::WasSkipped() const { return _wasSkipped; }
 

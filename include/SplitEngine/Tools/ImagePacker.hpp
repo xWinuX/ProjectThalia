@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <string>
 #include <vector>
 #include "ImageSlicer.hpp"
@@ -41,13 +42,12 @@ namespace SplitEngine::Tools
 			};
 
 		public:
-			uint64_t AddImage(const std::string& imagePath);
+			uint64_t AddImage(const std::filesystem::path& imagePath);
 			uint64_t AddImage(IO::Image&& image);
 
 			uint64_t AddRelatedImages(std::vector<IO::Image>& images);
-			uint64_t AddRelatedImages(SplitEngine::Tools::ImageSlicer::SliceData& sliceData);
-			uint64_t AddRelatedImages(SplitEngine::Tools::ImageSlicer::SliceData&& sliceData);
-
+			uint64_t AddRelatedImages(ImageSlicer::SliceData& sliceData);
+			uint64_t AddRelatedImages(ImageSlicer::SliceData&& sliceData);
 
 			PackingData Pack(uint32_t pageSize);
 

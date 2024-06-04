@@ -127,13 +127,26 @@ namespace SplitEngine::Rendering::Vulkan
 						vk::Flags<Allocator::MemoryAllocationCreateFlagBits> flags{};
 						vk::Flags<Allocator::MemoryPropertyFlagBits>         requiredFlags{};
 
-						if (descriptorCreateInfo.Cached) { flags |= Allocator::RandomAccess; }
-						else { flags |= Allocator::WriteSequentially; }
+						// Always try to presistent map
+						if (descriptorCreateInfo.DeviceLocalHostVisible)
+						{
+							requiredFlags |= Allocator::LocalDevice;
+							requiredFlags |= Allocator::HostVisible;
+							flags |= Allocator::PersistentMap;
+							flags |= Allocator::WriteSequentially;
+						}
+						else if (descriptorCreateInfo.DeviceLocal) { requiredFlags |= Allocator::LocalDevice; }
+						else
+						{
+							flags |= Allocator::PersistentMap;
 
-						if (descriptorCreateInfo.DeviceLocal) { requiredFlags |= Allocator::LocalDevice; }
-						else { flags |= Allocator::PersistentMap; }
-
-						if (descriptorCreateInfo.Cached) { requiredFlags |= Allocator::HostCached; }
+							if (descriptorCreateInfo.Cached)
+							{
+								requiredFlags |= Allocator::HostCached;
+								flags |= Allocator::RandomAccess;
+							}
+							else { flags |= Allocator::WriteSequentially; }
+						}
 
 						Allocator::MemoryAllocationCreateInfo allocationCreateInfo = { Allocator::Auto, flags, requiredFlags };
 
@@ -282,10 +295,7 @@ namespace SplitEngine::Rendering::Vulkan
 				}
 			}
 
-			for (auto& descriptor: descriptorSetAllocation._uniqueDescriptors)
-			{
-				if (descriptor.Type == Descriptor::Type::Buffer) { descriptor.Buffer.Destroy(); }
-			}
+			for (auto& descriptor: descriptorSetAllocation._uniqueDescriptors) { if (descriptor.Type == Descriptor::Type::Buffer) { descriptor.Buffer.Destroy(); } }
 		}
 	}
 
