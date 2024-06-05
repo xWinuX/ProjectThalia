@@ -28,16 +28,13 @@ namespace SplitEngine::Rendering::Vulkan
 		VmaAllocationInfo allocationInfo;
 
 		VkResult result = vmaCreateBuffer(_vmaAllocator,
-		                reinterpret_cast<const VkBufferCreateInfo*>(&bufferCreateInfo),
-		                &allocationCreateInfo,
-		                reinterpret_cast<VkBuffer*>(&bufferAllocation.Buffer),
-		                &bufferAllocation.VmaAllocation,
-		                &allocationInfo);
+		                                  reinterpret_cast<const VkBufferCreateInfo*>(&bufferCreateInfo),
+		                                  &allocationCreateInfo,
+		                                  reinterpret_cast<VkBuffer*>(&bufferAllocation.Buffer),
+		                                  &bufferAllocation.VmaAllocation,
+		                                  &allocationInfo);
 
-		if (result != 0)
-		{
-			exit(1);
-		}
+		if (result != 0) { LOG_ERROR("Couldn't create buffer with size {0}! Code: {1}", bufferCreateInfo.size, result); }
 
 		bufferAllocation.AllocationInfo.MappedData = allocationInfo.pMappedData;
 

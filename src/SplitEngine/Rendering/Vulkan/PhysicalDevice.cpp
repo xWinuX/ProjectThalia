@@ -95,7 +95,6 @@ namespace SplitEngine::Rendering::Vulkan
 		{
 			uint32_t gpuDeviceId = i == 0 ? _instance.GetRenderingSettings().GPUDeviceID : -1u;
 
-			LOG("id {0}", gpuDeviceId);
 			std::map<size_t, vk::PhysicalDevice> physicalDeviceRating = std::map<size_t, vk::PhysicalDevice>();
 			for (const vk::PhysicalDevice& physicalDevice: physicalDevices)
 			{

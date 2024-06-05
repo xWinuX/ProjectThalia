@@ -172,7 +172,7 @@ namespace SplitEngine::Rendering::Vulkan
 							if (!descriptorCreateInfo.NoAllocation)
 							{
 								descriptor.BufferInfos[fifIndex].buffer = descriptor.Buffer.GetVkBuffer();
-								descriptor.BufferPtrs[fifIndex]         = descriptor.Buffer.GetMappedData<std::byte>() + offset;
+								if (!descriptorCreateInfo.DeviceLocal) { descriptor.BufferPtrs[fifIndex] = descriptor.Buffer.GetMappedData<std::byte>() + offset; }
 							}
 							else { descriptor.BufferPtrs[fifIndex] = nullptr; }
 
