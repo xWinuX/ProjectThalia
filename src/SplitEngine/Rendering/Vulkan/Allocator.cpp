@@ -34,8 +34,8 @@ namespace SplitEngine::Rendering::Vulkan
 		                                  &bufferAllocation.VmaAllocation,
 		                                  &allocationInfo);
 
-		if (result != 0) { LOG_ERROR("Couldn't create buffer with size {0}! Code: {1}", bufferCreateInfo.size, result); }
-
+		if (result != 0) { LOG_ERROR("Couldn't create buffer with size {0}! Code: {1}", bufferCreateInfo.size, static_cast<int>(result)); }
+		
 		bufferAllocation.AllocationInfo.MappedData = allocationInfo.pMappedData;
 
 		_buffersAllocated++;
