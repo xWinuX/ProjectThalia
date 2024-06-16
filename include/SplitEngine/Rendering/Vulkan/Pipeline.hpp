@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <SplitEngine/RenderingSettings.hpp>
 
 #include "DescriptorSetAllocator.hpp"
 #include "DeviceObject.hpp"
@@ -12,6 +13,7 @@
 
 namespace SplitEngine::Rendering::Vulkan
 {
+	struct PipelineCreateInfo;
 	class Device;
 
 	class Pipeline final : public DeviceObject
@@ -34,7 +36,7 @@ namespace SplitEngine::Rendering::Vulkan
 
 			Pipeline() = default;
 
-			Pipeline(Device* device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos);
+			Pipeline(Device* device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos, const PipelineCreateInfo& createInfo);
 
 			void Bind(const vk::CommandBuffer& commandBuffer) const;
 
