@@ -15,7 +15,7 @@ namespace SplitEngine::Rendering::Vulkan
 	DescriptorSetAllocator::Allocation Pipeline::_globalDescriptorSetAllocation;
 	bool                               Pipeline::_globalDescriptorsProcessed = false;
 
-	Pipeline::Pipeline(Device* device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos) :
+	Pipeline::Pipeline(Device* device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos, const PipelineCreateInfo& createInfo) :
 		DeviceObject(device)
 	{
 		std::vector<vk::PipelineShaderStageCreateInfo> _shaderStages = std::vector<vk::PipelineShaderStageCreateInfo>(shaderInfos.size());
@@ -31,6 +31,7 @@ namespace SplitEngine::Rendering::Vulkan
 		// Push constants
 		std::unordered_map<size_t, vk::PushConstantRange> pushConstantRanges = std::unordered_map<size_t, vk::PushConstantRange>();
 
+		const RenderingSettings&    renderingSettings    = GetDevice()->GetPhysicalDevice().GetInstance().GetRenderingSettings();
 		const ShaderParserSettings& shaderParserSettings = GetDevice()->GetPhysicalDevice().GetInstance().GetShaderParserSettings();
 
 		// Check if input is a compute shader
@@ -293,61 +294,13 @@ namespace SplitEngine::Rendering::Vulkan
 
 			vk::PipelineInputAssemblyStateCreateInfo assemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo({}, vk::PrimitiveTopology::eTriangleList, vk::False);
 
-			const vk::Extent2D& extend   = device->GetSwapchain().GetExtend();
-			vk::Viewport        viewport = vk::Viewport(0, static_cast<float>(extend.height), static_cast<float>(extend.width), -static_cast<float>(extend.height), 0.0f, 1.0f);
+			const vk::Extent2D& extent = device->GetSwapchain().GetExtend();
 
-			vk::Rect2D scissor = vk::Rect2D({ 0, 0 }, extend);
+			vk::Viewport viewport = GetDevice()->GetPhysicalDevice().GetInstance().CreateViewport(extent);
+
+			vk::Rect2D scissor = vk::Rect2D({ 0, 0 }, extent);
 
 			vk::PipelineViewportStateCreateInfo viewportStateCreateInfo = vk::PipelineViewportStateCreateInfo({}, 1, &viewport, 1, &scissor);
-
-			vk::PipelineRasterizationStateCreateInfo rasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo({},
-				vk::False,
-				vk::False,
-				vk::PolygonMode::eFill,
-				vk::CullModeFlagBits::eNone,
-				vk::FrontFace::eClockwise,
-				vk::False,
-				0.0f,
-				0.0f,
-				0.0f,
-				1.0f);
-
-			vk::PipelineMultisampleStateCreateInfo multisampleStateCreateInfo = vk::PipelineMultisampleStateCreateInfo({},
-			                                                                                                           vk::SampleCountFlagBits::e1,
-			                                                                                                           vk::False,
-			                                                                                                           1.0f,
-			                                                                                                           nullptr,
-			                                                                                                           vk::False,
-			                                                                                                           vk::False);
-
-			vk::PipelineColorBlendAttachmentState colorBlendAttachmentState = vk::PipelineColorBlendAttachmentState(vk::True,
-			                                                                                                        vk::BlendFactor::eSrcAlpha,
-			                                                                                                        vk::BlendFactor::eOneMinusSrcAlpha,
-			                                                                                                        vk::BlendOp::eAdd,
-			                                                                                                        vk::BlendFactor::eOne,
-			                                                                                                        vk::BlendFactor::eZero,
-			                                                                                                        vk::BlendOp::eAdd,
-			                                                                                                        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG
-			                                                                                                        | vk::ColorComponentFlagBits::eB |
-			                                                                                                        vk::ColorComponentFlagBits::eA);
-
-			vk::PipelineColorBlendStateCreateInfo colorBlendStateCreateInfo = vk::PipelineColorBlendStateCreateInfo({},
-			                                                                                                        vk::False,
-			                                                                                                        vk::LogicOp::eCopy,
-			                                                                                                        1,
-			                                                                                                        &colorBlendAttachmentState,
-			                                                                                                        { 0.0f, 0.0f, 0.0f, 0.0f });
-
-			vk::PipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo = vk::PipelineDepthStencilStateCreateInfo({},
-				vk::True,
-				vk::True,
-				vk::CompareOp::eLess,
-				vk::False,
-				vk::False,
-				{},
-				{},
-				0.0,
-				1.0f);
 
 			vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo = vk::GraphicsPipelineCreateInfo({},
 			                                                                                           2,
@@ -356,10 +309,10 @@ namespace SplitEngine::Rendering::Vulkan
 			                                                                                           &assemblyStateCreateInfo,
 			                                                                                           nullptr,
 			                                                                                           &viewportStateCreateInfo,
-			                                                                                           &rasterizationStateCreateInfo,
-			                                                                                           &multisampleStateCreateInfo,
-			                                                                                           &depthStencilStateCreateInfo,
-			                                                                                           &colorBlendStateCreateInfo,
+			                                                                                           &createInfo.RasterizationStateCreateInfo,
+			                                                                                           &createInfo.MultisampleStateCreateInfo,
+			                                                                                           &createInfo.DepthStencilStateCreateInfo,
+			                                                                                           &createInfo.ColorBlendStateCreateInfo,
 			                                                                                           &dynamicStateCreateInfo,
 			                                                                                           _layout,
 			                                                                                           device->GetRenderPass().GetVkRenderPass(),

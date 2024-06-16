@@ -18,7 +18,8 @@ namespace SplitEngine::Rendering
 			struct CreateInfo
 			{
 				public:
-					std::vector<std::filesystem::path> ShaderPaths;
+					std::vector<std::filesystem::path>        ShaderPaths;
+					std::optional<Vulkan::PipelineCreateInfo> PipelineCreateInfo;
 			};
 
 			class Properties

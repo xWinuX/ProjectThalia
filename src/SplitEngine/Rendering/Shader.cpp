@@ -62,7 +62,10 @@ namespace SplitEngine::Rendering
 	Shader::Shader(const CreateInfo& createInfo) :
 		_shaderPaths(createInfo.ShaderPaths),
 		_device(&Vulkan::Instance::Get().GetPhysicalDevice().GetDevice()),
-		_pipeline(_device, "main", CreateShaderInfos()),
+		_pipeline(_device,
+		          "main",
+		          CreateShaderInfos(),
+		          createInfo.PipelineCreateInfo.has_value() ? createInfo.PipelineCreateInfo.value() : Vulkan::Instance::Get().GetRenderingSettings().PipelineCreateInfo),
 		_shaderProperties(Properties(this, &_pipeline.GetPerPipelineDescriptorSetAllocation()))
 	{
 		if (!_globalPropertiesDefined)

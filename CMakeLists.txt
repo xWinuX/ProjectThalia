@@ -63,6 +63,8 @@ set(SOURCE_FILES
         src/SplitEngine/Systems.cpp
         include/SplitEngine/Systems.hpp
         include/SplitEngine/Stages.hpp
+        include/SplitEngine/Rendering/Vulkan/PipelineCreateInfo.hpp
+        include/SplitEngine/Rendering/Vulkan/ViewportStyle.hpp
 
 )
 

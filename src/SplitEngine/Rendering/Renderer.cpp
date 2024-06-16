@@ -82,8 +82,11 @@ namespace SplitEngine::Rendering
 
 		commandBuffer.begin(commandBufferBeginInfo);
 
-		constexpr vk::ClearValue clearColor      = vk::ClearValue({ 0.0f, 0.2f, 0.5f, 1.0f });
-		constexpr vk::ClearValue depthClearColor = vk::ClearValue({ 1.0f, 0 });
+		Color color = _vulkanInstance.GetRenderingSettings().ClearColor;
+
+		const vk::ClearValue clearColor = vk::ClearValue(color.ConvertToType<vk::ClearColorValue>());
+
+		const vk::ClearValue depthClearColor = vk::ClearValue({ 1.0f, 0 });
 
 		std::vector<vk::ClearValue> clearValues = { clearColor, depthClearColor };
 
@@ -92,16 +95,12 @@ namespace SplitEngine::Rendering
 		                                                                            { { 0, 0 }, device.GetSwapchain().GetExtend() },
 		                                                                            clearValues);
 
-		const vk::Viewport viewport = vk::Viewport(0,
-		                                           static_cast<float>(device.GetSwapchain().GetExtend().height),
-		                                           static_cast<float>(device.GetSwapchain().GetExtend().width),
-		                                           -static_cast<float>(device.GetSwapchain().GetExtend().height),
-		                                           0.0f,
-		                                           1.0f);
+		vk::Extent2D extent   = device.GetSwapchain().GetExtend();
+		vk::Viewport viewport = _vulkanInstance.CreateViewport(extent);
 
 		commandBuffer.setViewport(0, 1, &viewport);
 
-		const vk::Rect2D scissor = vk::Rect2D({ 0, 0 }, device.GetSwapchain().GetExtend());
+		const vk::Rect2D scissor = vk::Rect2D({ 0, 0 }, extent);
 		commandBuffer.setScissor(0, 1, &scissor);
 
 		commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);

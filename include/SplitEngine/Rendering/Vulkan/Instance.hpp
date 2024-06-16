@@ -29,6 +29,7 @@ namespace SplitEngine::Rendering::Vulkan
 			[[nodiscard]] Allocator&                  GetAllocator() const;
 			[[nodiscard]] const vk::Instance&         GetVkInstance() const;
 			[[nodiscard]] const vk::SurfaceKHR&       GetVkSurface() const;
+			[[nodiscard]] vk::Viewport                CreateViewport(const vk::Extent2D extent) const;
 
 		private:
 			static Instance* _instance;

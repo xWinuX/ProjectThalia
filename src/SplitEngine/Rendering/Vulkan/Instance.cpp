@@ -64,6 +64,21 @@ namespace SplitEngine::Rendering::Vulkan
 
 	const vk::SurfaceKHR& Instance::GetVkSurface() const { return _vkSurface; }
 
+	vk::Viewport Instance::CreateViewport(const vk::Extent2D extent) const
+	{
+		switch (_renderingSettings.ViewportStyle)
+		{
+			case ViewportStyle::Normal:
+				return vk::Viewport(0, 0, static_cast<float>(extent.width), static_cast<float>(extent.height), 0.0f, 1.0f);
+				break;
+			case ViewportStyle::Flipped:
+				return vk::Viewport(0, static_cast<float>(extent.height), static_cast<float>(extent.width), -static_cast<float>(extent.height), 0.0f, 1.0f);
+				break;
+			default:
+				return vk::Viewport();
+		}
+	}
+
 	void Instance::Destroy()
 	{
 		Pipeline::_globalDescriptorManager.DeallocateDescriptorSet(Pipeline::_globalDescriptorSetAllocation);
