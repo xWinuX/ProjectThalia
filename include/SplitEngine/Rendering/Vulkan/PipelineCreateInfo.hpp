@@ -40,7 +40,7 @@ namespace SplitEngine::Rendering::Vulkan
 		                                                                                                        vk::False,
 		                                                                                                        vk::LogicOp::eCopy,
 		                                                                                                        1,
-		                                                                                                        &ColorBlendAttachmentState,
+		                                                                                                        nullptr,
 		                                                                                                        { 0.0f, 0.0f, 0.0f, 0.0f });
 
 		vk::PipelineDepthStencilStateCreateInfo DepthStencilStateCreateInfo = vk::PipelineDepthStencilStateCreateInfo({},

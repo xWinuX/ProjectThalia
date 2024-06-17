@@ -15,7 +15,7 @@ namespace SplitEngine::Rendering::Vulkan
 	DescriptorSetAllocator::Allocation Pipeline::_globalDescriptorSetAllocation;
 	bool                               Pipeline::_globalDescriptorsProcessed = false;
 
-	Pipeline::Pipeline(Device* device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos, const PipelineCreateInfo& createInfo) :
+	Pipeline::Pipeline(Device* device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos, PipelineCreateInfo createInfo) :
 		DeviceObject(device)
 	{
 		std::vector<vk::PipelineShaderStageCreateInfo> _shaderStages = std::vector<vk::PipelineShaderStageCreateInfo>(shaderInfos.size());
@@ -301,6 +301,9 @@ namespace SplitEngine::Rendering::Vulkan
 			vk::Rect2D scissor = vk::Rect2D({ 0, 0 }, extent);
 
 			vk::PipelineViewportStateCreateInfo viewportStateCreateInfo = vk::PipelineViewportStateCreateInfo({}, 1, &viewport, 1, &scissor);
+
+
+			createInfo.ColorBlendStateCreateInfo.pAttachments = &createInfo.ColorBlendAttachmentState;
 
 			vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo = vk::GraphicsPipelineCreateInfo({},
 			                                                                                           2,
