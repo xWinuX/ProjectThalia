@@ -36,7 +36,7 @@ namespace SplitEngine::Rendering::Vulkan
 
 			Pipeline() = default;
 
-			Pipeline(Device* device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos, const PipelineCreateInfo& createInfo);
+			Pipeline(Device* device, const std::string& name, const std::vector<ShaderInfo>& shaderInfos, PipelineCreateInfo createInfo);
 
 			void Bind(const vk::CommandBuffer& commandBuffer) const;
 
