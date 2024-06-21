@@ -6,6 +6,8 @@ namespace SplitEngine::Rendering::Vulkan
 {
 	struct PipelineCreateInfo
 	{
+		vk::PipelineInputAssemblyStateCreateInfo AssemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo({}, vk::PrimitiveTopology::eTriangleList, vk::False);
+
 		vk::PipelineRasterizationStateCreateInfo RasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo({},
 			vk::False,
 			vk::False,
