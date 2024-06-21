@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.26)
 
-option(HEADLESS "Builds engine without rendering and audio features" OFF)
 option(SKIP_AUTOMATE_VCPKG "When ON, you will need to built the packages required on your own or supply your own vcpkg toolchain.")
 
 set(CMAKE_CXX_STANDARD 23)
@@ -13,11 +12,7 @@ include(CMakePackageConfigHelpers)
 
 add_compile_definitions(SE_DEBUG_LOG)
 
-if (HEADLESS)
-    add_compile_definitions(SE_HEADLESS)
-endif ()
-
-project(SplitEngine VERSION 1.0.0)
+project(SplitEngine VERSION 1.5.0)
 
 set(SOLOUD_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/submodules/soloud/src)
 set(SOLOUD_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/submodules/soloud/include)
@@ -65,90 +60,83 @@ set(SOURCE_FILES
         include/SplitEngine/Stages.hpp
         include/SplitEngine/Rendering/Vulkan/PipelineCreateInfo.hpp
         include/SplitEngine/Rendering/Vulkan/ViewportStyle.hpp
-
+        include/SplitEngine/ECSSettings.hpp
+        include/SplitEngine/ShaderParserSettings.hpp
+        include/SplitEngine/Audio/Manager.hpp
+        include/SplitEngine/Audio/SoundEffect.hpp
+        include/SplitEngine/IO/Audio.hpp
+        include/SplitEngine/IO/AudioLoader.hpp
+        include/SplitEngine/Rendering/Material.hpp
+        include/SplitEngine/Rendering/Model.hpp
+        include/SplitEngine/Rendering/Renderer.hpp
+        include/SplitEngine/Rendering/Shader.hpp
+        include/SplitEngine/Rendering/Texture2D.hpp
+        include/SplitEngine/Rendering/TextureSettings.hpp
+        include/SplitEngine/Rendering/Vulkan/Allocator.hpp
+        include/SplitEngine/Rendering/Vulkan/Buffer.hpp
+        include/SplitEngine/Rendering/Vulkan/BufferFactory.hpp
+        include/SplitEngine/Rendering/Vulkan/DescriptorSetAllocator.hpp
+        include/SplitEngine/Rendering/Vulkan/Device.hpp
+        include/SplitEngine/Rendering/Vulkan/DeviceObject.hpp
+        include/SplitEngine/Rendering/Vulkan/Image.hpp
+        include/SplitEngine/Rendering/Vulkan/InFlightResource.hpp
+        include/SplitEngine/Rendering/Vulkan/Instance.hpp
+        include/SplitEngine/Rendering/Vulkan/PhysicalDevice.hpp
+        include/SplitEngine/Rendering/Vulkan/Pipeline.hpp
+        include/SplitEngine/Rendering/Vulkan/RenderPass.hpp
+        include/SplitEngine/Rendering/Vulkan/Swapchain.hpp
+        include/SplitEngine/Rendering/Vulkan/Utility.hpp
+        include/SplitEngine/Rendering/Vulkan/QueueFamily.hpp
+        include/SplitEngine/Window.hpp
+        src/SplitEngine/Audio/Manager.cpp
+        src/SplitEngine/Audio/SoundEffect.cpp
+        src/SplitEngine/IO/AudioLoader.cpp
+        src/SplitEngine/Rendering/Material.cpp
+        src/SplitEngine/Rendering/Material.cpp
+        src/SplitEngine/Rendering/Model.cpp
+        src/SplitEngine/Rendering/Renderer.cpp
+        src/SplitEngine/Rendering/Shader.cpp
+        src/SplitEngine/Rendering/Texture2D.cpp
+        src/SplitEngine/Rendering/Texture2D.cpp
+        src/SplitEngine/Rendering/Vulkan/Allocator.cpp
+        src/SplitEngine/Rendering/Vulkan/Buffer.cpp
+        src/SplitEngine/Rendering/Vulkan/DescriptorSetAllocator.cpp
+        src/SplitEngine/Rendering/Vulkan/DescriptorSetAllocator.cpp
+        src/SplitEngine/Rendering/Vulkan/Device.cpp
+        src/SplitEngine/Rendering/Vulkan/DeviceObject.cpp
+        src/SplitEngine/Rendering/Vulkan/Image.cpp
+        src/SplitEngine/Rendering/Vulkan/Instance.cpp
+        src/SplitEngine/Rendering/Vulkan/PhysicalDevice.cpp
+        src/SplitEngine/Rendering/Vulkan/Pipeline.cpp
+        src/SplitEngine/Rendering/Vulkan/RenderPass.cpp
+        src/SplitEngine/Rendering/Vulkan/Swapchain.cpp
+        src/SplitEngine/Rendering/Vulkan/QueueFamily.cpp
+        src/SplitEngine/Window.cpp
+        include/SplitEngine/Rendering/Vulkan/Descriptor.hpp
+        src/SplitEngine/Rendering/Vulkan/CommandBuffer.cpp
+        include/SplitEngine/Rendering/Vulkan/CommandBuffer.hpp
+        include/SplitEngine/Rendering/Vulkan/QueueType.hpp
 )
 
-if (NOT HEADLESS)
-    set(NON_HEADLESS_FILES
-            include/SplitEngine/Audio/Manager.hpp
-            include/SplitEngine/Audio/SoundEffect.hpp
-            include/SplitEngine/IO/Audio.hpp
-            include/SplitEngine/IO/AudioLoader.hpp
-            include/SplitEngine/Rendering/Material.hpp
-            include/SplitEngine/Rendering/Model.hpp
-            include/SplitEngine/Rendering/Renderer.hpp
-            include/SplitEngine/Rendering/Shader.hpp
-            include/SplitEngine/Rendering/Texture2D.hpp
-            include/SplitEngine/Rendering/TextureSettings.hpp
-            include/SplitEngine/Rendering/Vulkan/Allocator.hpp
-            include/SplitEngine/Rendering/Vulkan/Buffer.hpp
-            include/SplitEngine/Rendering/Vulkan/BufferFactory.hpp
-            include/SplitEngine/Rendering/Vulkan/DescriptorSetAllocator.hpp
-            include/SplitEngine/Rendering/Vulkan/Device.hpp
-            include/SplitEngine/Rendering/Vulkan/DeviceObject.hpp
-            include/SplitEngine/Rendering/Vulkan/Image.hpp
-            include/SplitEngine/Rendering/Vulkan/InFlightResource.hpp
-            include/SplitEngine/Rendering/Vulkan/Instance.hpp
-            include/SplitEngine/Rendering/Vulkan/PhysicalDevice.hpp
-            include/SplitEngine/Rendering/Vulkan/Pipeline.hpp
-            include/SplitEngine/Rendering/Vulkan/RenderPass.hpp
-            include/SplitEngine/Rendering/Vulkan/Swapchain.hpp
-            include/SplitEngine/Rendering/Vulkan/Utility.hpp
-            include/SplitEngine/Rendering/Vulkan/QueueFamily.hpp
-            include/SplitEngine/Window.hpp
-            src/SplitEngine/Audio/Manager.cpp
-            src/SplitEngine/Audio/SoundEffect.cpp
-            src/SplitEngine/IO/AudioLoader.cpp
-            src/SplitEngine/Rendering/Material.cpp
-            src/SplitEngine/Rendering/Material.cpp
-            src/SplitEngine/Rendering/Model.cpp
-            src/SplitEngine/Rendering/Renderer.cpp
-            src/SplitEngine/Rendering/Shader.cpp
-            src/SplitEngine/Rendering/Texture2D.cpp
-            src/SplitEngine/Rendering/Texture2D.cpp
-            src/SplitEngine/Rendering/Vulkan/Allocator.cpp
-            src/SplitEngine/Rendering/Vulkan/Buffer.cpp
-            src/SplitEngine/Rendering/Vulkan/DescriptorSetAllocator.cpp
-            src/SplitEngine/Rendering/Vulkan/DescriptorSetAllocator.cpp
-            src/SplitEngine/Rendering/Vulkan/Device.cpp
-            src/SplitEngine/Rendering/Vulkan/DeviceObject.cpp
-            src/SplitEngine/Rendering/Vulkan/Image.cpp
-            src/SplitEngine/Rendering/Vulkan/Instance.cpp
-            src/SplitEngine/Rendering/Vulkan/PhysicalDevice.cpp
-            src/SplitEngine/Rendering/Vulkan/Pipeline.cpp
-            src/SplitEngine/Rendering/Vulkan/RenderPass.cpp
-            src/SplitEngine/Rendering/Vulkan/Swapchain.cpp
-            src/SplitEngine/Rendering/Vulkan/QueueFamily.cpp
-            src/SplitEngine/Window.cpp
-            include/SplitEngine/Rendering/Vulkan/Descriptor.hpp
-            src/SplitEngine/Rendering/Vulkan/CommandBuffer.cpp
-            include/SplitEngine/Rendering/Vulkan/CommandBuffer.hpp
-            include/SplitEngine/Rendering/Vulkan/QueueType.hpp
-    )
+# SOLOUD
+add_compile_definitions(WITH_SDL2)
 
-    # SOLOUD
-    add_compile_definitions(WITH_SDL2)
+file(GLOB_RECURSE
+        SOLOUD_SOURCE
+        ${SOLOUD_SOURCE_DIR}/backend/sdl/soloud_sdl2_dll.c
+        ${SOLOUD_SOURCE_DIR}/backend/sdl/soloud_sdl2.cpp
+        ${SOLOUD_SOURCE_DIR}/core/*.cpp
+        ${SOLOUD_SOURCE_DIR}/core/*.c
+        ${SOLOUD_SOURCE_DIR}/filter/*.cpp
+        ${SOLOUD_SOURCE_DIR}/filter/*.c
+        ${SOLOUD_SOURCE_DIR}/audiosource/wav/*.c
+        ${SOLOUD_SOURCE_DIR}/audiosource/wav/*.cpp
+)
 
-    file(GLOB_RECURSE
-            SOLOUD_SOURCE
-            ${SOLOUD_SOURCE_DIR}/backend/sdl/soloud_sdl2_dll.c
-            ${SOLOUD_SOURCE_DIR}/backend/sdl/soloud_sdl2.cpp
-            ${SOLOUD_SOURCE_DIR}/core/*.cpp
-            ${SOLOUD_SOURCE_DIR}/core/*.c
-            ${SOLOUD_SOURCE_DIR}/filter/*.cpp
-            ${SOLOUD_SOURCE_DIR}/filter/*.c
-            ${SOLOUD_SOURCE_DIR}/audiosource/wav/*.c
-            ${SOLOUD_SOURCE_DIR}/audiosource/wav/*.cpp
-    )
-    file(GLOB_RECURSE SOLOUD_INCLUDES ${SOLOUD_INCLUDE_DIR}/*.h ${SOLOUD_INCLUDE_DIR}/*.hpp)
+file(GLOB_RECURSE SOLOUD_INCLUDES ${SOLOUD_INCLUDE_DIR}/*.h ${SOLOUD_INCLUDE_DIR}/*.hpp)
 
-    # Append SOLOUD files to non headless files
-    list(APPEND NON_HEADLESS_FILES ${SOLOUD_SOURCE})
-    list(APPEND NON_HEADLESS_FILES ${SOLOUD_INCLUDES})
-
-    # Append non headless files to source files
-    list(APPEND SOURCE_FILES ${NON_HEADLESS_FILES})
-endif ()
+list(APPEND SOURCE_FILES ${SOLOUD_SOURCE})
+list(APPEND SOURCE_FILES ${SOLOUD_INCLUDES})
 
 #add_executable(SplitEngine ${SOURCE_FILES} main.cpp)
 add_library(SplitEngine ${SOURCE_FILES})

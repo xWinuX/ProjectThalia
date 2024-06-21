@@ -30,13 +30,22 @@ namespace SplitEngine::ECS
 				int64_t Order;
 			};
 
+			enum class ListBehaviour
+			{
+				Exclusion,
+				Inclusion,
+			};
+
 		public:
 			Registry();
 
 			~Registry();
 
-			void PrepareForExecution();
-			void ExecuteSystems();
+			void ExeutePendingOperations();
+			void ExecuteSystems(bool executePendingOperations);
+
+			// NOTE: the stages will be sorted before execution so the order of stages does not matter
+			void ExecuteSystems(bool executePendingOperations, ListBehaviour listBehaviour, std::vector<uint8_t>& stages);
 
 			template<typename... T>
 			uint64_t CreateEntity(T&&... args)
@@ -173,6 +182,9 @@ namespace SplitEngine::ECS
 				uint64_t SystemLocationIndex = -1;
 			};
 
+		private:
+			std::vector<uint8_t> _emptyStageVector = std::vector<uint8_t>();
+
 			std::vector<Entity>    _sparseEntityLookup{};
 			std::vector<Component> _sparseComponentLookup{};
 
@@ -199,6 +211,10 @@ namespace SplitEngine::ECS
 
 			bool               _collectStatistics      = false;
 			std::vector<float> _accumulatedStageTimeMs = std::vector<float>(std::numeric_limits<uint8_t>::max(), 0);
+
+			bool _hasPendingEntityMoves     = false;
+			bool _hasPendingEntityAdds      = false;
+			bool _hasPendingEntityDeletions = false;
 
 			void AddQueuedSystems();
 

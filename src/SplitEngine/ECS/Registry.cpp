@@ -23,7 +23,7 @@ namespace SplitEngine::ECS
 		for (const Archetype* archetype: _archetypeLookup) { delete archetype; }
 	}
 
-	void Registry::PrepareForExecution()
+	void Registry::ExeutePendingOperations()
 	{
 		for (const auto& archetype: _archetypeLookup) { archetype->MoveQueuedEntities(); }
 
@@ -167,15 +167,32 @@ namespace SplitEngine::ECS
 
 	void Registry::SetEnableStatistics(const bool enabled) { _collectStatistics = enabled; }
 
-	void Registry::ExecuteSystems()
+	void Registry::ExecuteSystems(bool executePendingOperations) { ExecuteSystems(executePendingOperations, ListBehaviour::Exclusion, _emptyStageVector); }
+
+	void Registry::ExecuteSystems(bool executePendingOperations, ListBehaviour listBehaviour, std::vector<uint8_t>& stages)
 	{
-		PrepareForExecution();
+		if (!stages.empty()) { std::ranges::sort(stages); }
+
+		if (executePendingOperations) { ExeutePendingOperations(); }
 
 		// Run all active stages
 		uint64_t stageStartTime = 0;
 		uint64_t stageEndTime   = 0;
-		for (const uint8_t stage: _activeStages)
+		size_t   stageCursor    = 0;
+
+		const std::vector<uint8_t>& stagesToLoop = listBehaviour == ListBehaviour::Exclusion ? _activeStages : stages;
+		for (const uint8_t stage: stagesToLoop)
 		{
+			// Exclude stages
+			if (listBehaviour == ListBehaviour::Exclusion && stageCursor != stages.size())
+			{
+				if (stage == stages[stageCursor])
+				{
+					stageCursor++;
+					continue;
+				}
+			}
+
 			std::vector<SystemExecutionEntry>& systemExecutionEntries = _systemExecutionFlow[stage];
 
 			if (_collectStatistics) { stageStartTime = SDL_GetPerformanceCounter(); }
@@ -189,6 +206,7 @@ namespace SplitEngine::ECS
 			}
 		}
 	}
+
 
 	void Registry::RemoveSystem(uint64_t systemID) { _systemsToRemove.push_back(systemID); }
 }
