@@ -8,6 +8,8 @@
 #include "ApplicationInfo.hpp"
 #include "RenderingSettings.hpp"
 #include "AssetDatabase.hpp"
+#include "ECSSettings.hpp"
+#include "ShaderParserSettings.hpp"
 #include "ECS/Registry.hpp"
 #include "SplitEngine/Audio/Manager.hpp"
 
@@ -19,6 +21,7 @@ namespace SplitEngine
 			struct CreateInfo
 			{
 				ApplicationInfo      ApplicationInfo{};
+				ECSSettings          ECSSettings{};
 				ShaderParserSettings ShaderParserSettings{};
 				RenderingSettings    RenderingSettings{};
 			};
@@ -34,6 +37,7 @@ namespace SplitEngine
 
 		private:
 			ApplicationInfo _applicationInfo{};
+			ECSSettings     _ecsSettings{};
 
 			Rendering::Renderer _renderer;
 			Audio::Manager      _audioManager;

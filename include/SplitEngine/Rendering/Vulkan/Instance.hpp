@@ -1,12 +1,14 @@
 #pragma once
 
-#include "SplitEngine/RenderingSettings.hpp"
 #include "SplitEngine/ApplicationInfo.hpp"
+#include "SplitEngine/RenderingSettings.hpp"
+#include "SplitEngine/ShaderParserSettings.hpp"
 #include "SplitEngine/Window.hpp"
-#include "SplitEngine/Rendering/Vulkan/PhysicalDevice.hpp"
 #include "SplitEngine/Rendering/Vulkan/Device.hpp"
+#include "SplitEngine/Rendering/Vulkan/PhysicalDevice.hpp"
 
 #include <vulkan/vulkan.hpp>
+
 
 namespace SplitEngine::Rendering::Vulkan
 {
