@@ -292,8 +292,6 @@ namespace SplitEngine::Rendering::Vulkan
 
 			vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo = vk::PipelineDynamicStateCreateInfo({}, dynamicStates);
 
-			vk::PipelineInputAssemblyStateCreateInfo assemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo({}, vk::PrimitiveTopology::eTriangleList, vk::False);
-
 			const vk::Extent2D& extent = device->GetSwapchain().GetExtend();
 
 			vk::Viewport viewport = GetDevice()->GetPhysicalDevice().GetInstance().CreateViewport(extent);
@@ -302,14 +300,13 @@ namespace SplitEngine::Rendering::Vulkan
 
 			vk::PipelineViewportStateCreateInfo viewportStateCreateInfo = vk::PipelineViewportStateCreateInfo({}, 1, &viewport, 1, &scissor);
 
-
 			createInfo.ColorBlendStateCreateInfo.pAttachments = &createInfo.ColorBlendAttachmentState;
 
 			vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo = vk::GraphicsPipelineCreateInfo({},
 			                                                                                           2,
 			                                                                                           _shaderStages.data(),
 			                                                                                           &vertexInputStateCreateInfo,
-			                                                                                           &assemblyStateCreateInfo,
+			                                                                                           &createInfo.AssemblyStateCreateInfo,
 			                                                                                           nullptr,
 			                                                                                           &viewportStateCreateInfo,
 			                                                                                           &createInfo.RasterizationStateCreateInfo,
