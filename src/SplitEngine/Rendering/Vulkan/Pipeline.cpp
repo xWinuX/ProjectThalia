@@ -142,6 +142,12 @@ namespace SplitEngine::Rendering::Vulkan
 							descriptorCreateInfo.NoAllocation = std::ranges::find(shaderParserSettings.ShaderBufferNoAllocModPrefixes, split) != shaderParserSettings.
 							                                    ShaderBufferNoAllocModPrefixes.end();
 						}
+
+						if (!descriptorCreateInfo.NoCoherant)
+						{
+							descriptorCreateInfo.NoCoherant = std::ranges::find(shaderParserSettings.ShaderBufferNoCoherantModPrefixes, split) != shaderParserSettings.
+																ShaderBufferNoCoherantModPrefixes.end();
+						}
 					}
 
 					// Create binding

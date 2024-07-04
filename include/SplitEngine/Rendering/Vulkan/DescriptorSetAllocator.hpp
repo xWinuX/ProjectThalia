@@ -40,6 +40,7 @@ namespace SplitEngine::Rendering
 						bool        Cached                 = false;
 						bool        Shared                 = false;
 						bool        NoAllocation           = false;
+						bool        NoCoherant             = false;
 				};
 
 				struct CreateInfo

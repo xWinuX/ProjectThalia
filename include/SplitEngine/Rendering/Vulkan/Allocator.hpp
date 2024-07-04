@@ -38,9 +38,10 @@ namespace SplitEngine::Rendering::Vulkan
 
 			enum MemoryPropertyFlagBits : uint32_t
 			{
-				LocalDevice = VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-				HostCached  = VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-				HostVisible = VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+				LocalDevice  = VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+				HostCached   = VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+				HostVisible  = VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+				HostCoherant = VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
 			};
 
 			struct MemoryAllocationInfo
@@ -84,9 +85,9 @@ namespace SplitEngine::Rendering::Vulkan
 
 			[[nodiscard]] ImageAllocation CreateImage(const vk::ImageCreateInfo& imageCreateInfo, const MemoryAllocationCreateInfo& memoryAllocationCreateInfo);
 
-			void InvalidateBuffer(const BufferAllocation& bufferAllocation) const;
+			void InvalidateBuffer(const BufferAllocation& bufferAllocation, size_t offsetInBytes, size_t sizeInBytes) const;
 
-			void FlushBuffer(const BufferAllocation& bufferAllocation) const;
+			void FlushBuffer(const BufferAllocation& bufferAllocation, size_t offsetInBytes, size_t sizeInBytes) const;
 
 			void DestroyBuffer(const BufferAllocation& bufferAllocation);
 

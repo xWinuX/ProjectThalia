@@ -127,19 +127,22 @@ namespace SplitEngine::Rendering::Vulkan
 						vk::Flags<Allocator::MemoryAllocationCreateFlagBits> flags{};
 						vk::Flags<Allocator::MemoryPropertyFlagBits>         requiredFlags{};
 
-						// Always try to presistent map
+						// Always try to presistent map and be coherant
+						if (!descriptorCreateInfo.DeviceLocal)
+						{
+							flags |= Allocator::PersistentMap;
+							if (!descriptorCreateInfo.NoCoherant) { requiredFlags |= Allocator::HostCoherant; }
+						}
+
 						if (descriptorCreateInfo.DeviceLocalHostVisible)
 						{
 							requiredFlags |= Allocator::LocalDevice;
 							requiredFlags |= Allocator::HostVisible;
-							flags |= Allocator::PersistentMap;
 							flags |= Allocator::WriteSequentially;
 						}
 						else if (descriptorCreateInfo.DeviceLocal) { requiredFlags |= Allocator::LocalDevice; }
 						else
 						{
-							flags |= Allocator::PersistentMap;
-
 							if (descriptorCreateInfo.Cached)
 							{
 								requiredFlags |= Allocator::HostCached;
