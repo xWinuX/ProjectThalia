@@ -35,7 +35,7 @@ namespace SplitEngine::Rendering::Vulkan
 		                                  &allocationInfo);
 
 		if (result != 0) { LOG_ERROR("Couldn't create buffer with size {0}! Code: {1}", bufferCreateInfo.size, static_cast<int>(result)); }
-		
+
 		bufferAllocation.AllocationInfo.MappedData = allocationInfo.pMappedData;
 
 		_buffersAllocated++;
@@ -132,10 +132,13 @@ namespace SplitEngine::Rendering::Vulkan
 		return &_samplers.back().Sampler;
 	}
 
-	void Allocator::InvalidateBuffer(const Allocator::BufferAllocation& bufferAllocation) const
+	void Allocator::InvalidateBuffer(const Allocator::BufferAllocation& bufferAllocation, size_t offsetInBytes, size_t sizeInBytes) const
 	{
-		vmaInvalidateAllocation(_vmaAllocator, bufferAllocation.VmaAllocation, 0, VK_WHOLE_SIZE);
+		vmaInvalidateAllocation(_vmaAllocator, bufferAllocation.VmaAllocation, offsetInBytes, sizeInBytes);
 	}
 
-	void Allocator::FlushBuffer(const Allocator::BufferAllocation& bufferAllocation) const { vmaFlushAllocation(_vmaAllocator, bufferAllocation.VmaAllocation, 0, VK_WHOLE_SIZE); }
+	void Allocator::FlushBuffer(const Allocator::BufferAllocation& bufferAllocation, size_t offsetInBytes, size_t sizeInBytes) const
+	{
+		vmaFlushAllocation(_vmaAllocator, bufferAllocation.VmaAllocation, offsetInBytes, sizeInBytes);
+	}
 }

@@ -140,10 +140,7 @@ namespace SplitEngine::Rendering::Vulkan
 
 	const vk::Buffer& Buffer::GetVkBuffer() const { return _bufferAllocation.Buffer; }
 
-	void Buffer::Copy(const Buffer& destinationBuffer) const
-	{
-		Copy(destinationBuffer, 0, 0, _bufferSize);
-	}
+	void Buffer::Copy(const Buffer& destinationBuffer) const { Copy(destinationBuffer, 0, 0, _bufferSize); }
 
 	void Buffer::Copy(const Buffer& destinationBuffer, vk::DeviceSize sourceOffsetInBytes, vk::DeviceSize destinationOffsetInBytes, vk::DeviceSize sizeInBytes) const
 	{
@@ -179,7 +176,17 @@ namespace SplitEngine::Rendering::Vulkan
 
 	void* Buffer::GetMappedData() const { return _bufferAllocation.AllocationInfo.MappedData; }
 
-	void Buffer::Invalidate() const { GetDevice()->GetPhysicalDevice().GetInstance().GetAllocator().InvalidateBuffer(_bufferAllocation); }
+	void Buffer::Invalidate(size_t subBufferIndex) const { Invalidate(_subBuffers[subBufferIndex].OffsetInBytes, _subBuffers[subBufferIndex].SizeInBytes); }
 
-	void Buffer::Flush() const { GetDevice()->GetPhysicalDevice().GetInstance().GetAllocator().FlushBuffer(_bufferAllocation); }
+	void Buffer::Flush(size_t subBufferIndex) const { Flush(_subBuffers[subBufferIndex].OffsetInBytes, _subBuffers[subBufferIndex].SizeInBytes); }
+
+	void Buffer::Invalidate(size_t offsetInBytes, size_t sizeInBytes) const
+	{
+		GetDevice()->GetPhysicalDevice().GetInstance().GetAllocator().InvalidateBuffer(_bufferAllocation, offsetInBytes, sizeInBytes);
+	}
+
+	void Buffer::Flush(size_t offsetInBytes, size_t sizeInBytes) const
+	{
+		GetDevice()->GetPhysicalDevice().GetInstance().GetAllocator().FlushBuffer(_bufferAllocation, offsetInBytes, sizeInBytes);
+	}
 }

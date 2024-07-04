@@ -90,9 +90,13 @@ namespace SplitEngine::Rendering::Vulkan
 
 			void Stage(const char** data) const;
 
-			void Invalidate() const;
+			void Invalidate(size_t subBufferIndex = 0) const;
 
-			void Flush() const;
+			void Flush(size_t subBufferIndex = 0) const;
+
+			void Invalidate(size_t offsetInBytes, size_t sizeInBytes) const;
+
+			void Flush(size_t offsetInBytes, size_t sizeInBytes) const;
 
 			[[nodiscard]] const vk::Buffer& GetVkBuffer() const;
 

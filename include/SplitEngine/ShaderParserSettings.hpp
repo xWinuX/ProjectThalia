@@ -49,5 +49,10 @@ namespace SplitEngine
 		 * But no Buffers will actually be created for them and they need to be supplied manually via the OverrideBuffer/SetBuffer functions
 		 */
 		std::vector<std::string> ShaderBufferNoAllocModPrefixes = { "noAlloc", "na" };
+
+		/**
+		 * NoCoherant will explicity not make the generated buffer coherant like it usually does
+		 */
+		std::vector<std::string> ShaderBufferNoCoherantModPrefixes = { "noCoherant", "nc" };
 	};
 }
