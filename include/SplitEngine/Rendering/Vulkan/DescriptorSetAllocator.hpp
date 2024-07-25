@@ -41,6 +41,8 @@ namespace SplitEngine::Rendering
 						bool        Shared                 = false;
 						bool        NoAllocation           = false;
 						bool        NoCoherant             = false;
+						bool        TransferSrc            = false;
+						bool        TransferDst            = false;
 				};
 
 				struct CreateInfo
