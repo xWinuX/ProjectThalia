@@ -146,7 +146,19 @@ namespace SplitEngine::Rendering::Vulkan
 						if (!descriptorCreateInfo.NoCoherant)
 						{
 							descriptorCreateInfo.NoCoherant = std::ranges::find(shaderParserSettings.ShaderBufferNoCoherantModPrefixes, split) != shaderParserSettings.
-																ShaderBufferNoCoherantModPrefixes.end();
+							                                  ShaderBufferNoCoherantModPrefixes.end();
+						}
+
+						if (!descriptorCreateInfo.TransferSrc)
+						{
+							descriptorCreateInfo.TransferSrc = std::ranges::find(shaderParserSettings.ShaderBufferTransferSrcModPrefixes, split) != shaderParserSettings.
+							                                   ShaderBufferTransferSrcModPrefixes.end();
+						}
+
+						if (!descriptorCreateInfo.TransferDst)
+						{
+							descriptorCreateInfo.TransferDst = std::ranges::find(shaderParserSettings.ShaderBufferTransferDstModPrefixes, split) != shaderParserSettings.
+							                                   ShaderBufferTransferDstModPrefixes.end();
 						}
 					}
 

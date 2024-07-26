@@ -123,6 +123,10 @@ namespace SplitEngine::Rendering::Vulkan
 							                                           ? vk::BufferUsageFlagBits::eUniformBuffer
 							                                           : vk::BufferUsageFlagBits::eStorageBuffer;
 
+						if (descriptorCreateInfo.TransferSrc) { usage |= vk::BufferUsageFlagBits::eTransferSrc; }
+
+						if (descriptorCreateInfo.TransferDst) { usage |= vk::BufferUsageFlagBits::eTransferDst; }
+
 						uint32_t                                             numSubBuffers = descriptorCreateInfo.SingleInstance ? 1 : Device::MAX_FRAMES_IN_FLIGHT;
 						vk::Flags<Allocator::MemoryAllocationCreateFlagBits> flags{};
 						vk::Flags<Allocator::MemoryPropertyFlagBits>         requiredFlags{};
@@ -131,6 +135,7 @@ namespace SplitEngine::Rendering::Vulkan
 						if (!descriptorCreateInfo.DeviceLocal)
 						{
 							flags |= Allocator::PersistentMap;
+							requiredFlags |= Allocator::HostVisible;
 							if (!descriptorCreateInfo.NoCoherant) { requiredFlags |= Allocator::HostCoherant; }
 						}
 

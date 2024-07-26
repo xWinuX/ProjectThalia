@@ -54,5 +54,15 @@ namespace SplitEngine
 		 * NoCoherant will explicity not make the generated buffer coherant like it usually does
 		 */
 		std::vector<std::string> ShaderBufferNoCoherantModPrefixes = { "noCoherant", "nc" };
+
+		/**
+		 * Will add the transfer src bit
+		 */
+		std::vector<std::string> ShaderBufferTransferSrcModPrefixes = { "transferSrc", "ts" };
+
+		/**
+		 * Will add the transfer dst bit
+		 */
+		std::vector<std::string> ShaderBufferTransferDstModPrefixes = { "transferDst", "td" };
 	};
 }
