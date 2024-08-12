@@ -62,7 +62,7 @@ namespace SplitEngine::ECS
 		Entity& lastEntity = _sparseEntityLookup[_entitiesToAdd[lastIndex]];
 		if (lastIndex != indexToRemove)
 		{
-			if (lastEntity.moveComponentIndex == -1) { lastEntity.componentIndex = indexToRemove; }
+			if (lastEntity.moveComponentIndex == -1ull) { lastEntity.componentIndex = indexToRemove; }
 			else { lastEntity.moveComponentIndex = indexToRemove; }
 
 			std::swap(_entitiesToAdd[indexToRemove], _entitiesToAdd[lastIndex]);
@@ -127,19 +127,19 @@ namespace SplitEngine::ECS
 					std::vector<std::byte>& bytes         = archetype->_componentDataToAdd[componentID];
 					const size_t&           componentSize = _sparseComponentLookup[componentID].Size;
 					std::byte*              it            = componentData.data() + (entity.componentIndex * componentSize);
-					if (entity.moveComponentIndex == -1) { bytes.insert(bytes.end(), std::make_move_iterator(it), std::make_move_iterator(it + componentSize)); }
+					if (entity.moveComponentIndex == -1ull) { bytes.insert(bytes.end(), std::make_move_iterator(it), std::make_move_iterator(it + componentSize)); }
 					else { std::move(std::make_move_iterator(it), std::make_move_iterator(it + componentSize), bytes.begin() + (entity.moveComponentIndex * componentSize)); }
 				}
 			}
 
-			if (entity.moveComponentIndex == -1)
+			if (entity.moveComponentIndex == -1ull)
 			{
 				archetype->_entitiesToAdd.push_back(entityID);
 				entity.moveComponentIndex = (archetype->Entities.size() + archetype->_entitiesToAdd.size()) - 1;
 			}
 
 			// Destroy the remains of the moved entity
-			if (entity.componentIndex != -1) { DestroyEntityImmediately(entityID, false); }
+			if (entity.componentIndex != -1ull) { DestroyEntityImmediately(entityID, false); }
 		}
 
 		_entitiesToMove.clear();

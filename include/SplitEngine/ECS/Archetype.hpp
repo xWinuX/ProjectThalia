@@ -37,7 +37,7 @@ namespace SplitEngine::ECS
 			T* GetMoveComponents() { return reinterpret_cast<T*>(_componentDataToAdd[TypeIDGenerator<Component>::GetID<T>()].data()); }
 
 			template<typename T>
-			T& GetComponent(const Entity& entity) { return entity.componentIndex == -1u ? GetMoveComponents<T>()[entity.moveComponentIndex] : GetComponents<T>()[entity.componentIndex]; }
+			T& GetComponent(const Entity& entity) { return entity.componentIndex == -1ull ? GetMoveComponents<T>()[entity.moveComponentIndex] : GetComponents<T>()[entity.componentIndex]; }
 
 			template<typename... TArgs>
 			uint64_t AddEntity(uint64_t entityID, TArgs&&... components)
@@ -71,7 +71,7 @@ namespace SplitEngine::ECS
 			{
 				const uint64_t componentIDToAdd = TypeIDGenerator<Component>::GetID<T>();
 
-				if (_sparseAddComponentArchetypes[componentIDToAdd] == -1)
+				if (_sparseAddComponentArchetypes[componentIDToAdd] == -1ull)
 				{
 					std::vector<uint64_t> componentIds = std::vector<uint64_t>(ComponentIDs);
 					componentIds.push_back(componentIDToAdd);
@@ -86,7 +86,7 @@ namespace SplitEngine::ECS
 			uint64_t GetRemoveArchetypeID()
 			{
 				const uint64_t componentIDToRemove = TypeIDGenerator<Component>::GetID<T>();
-				if (_sparseRemoveComponentArchetypes[componentIDToRemove] == -1)
+				if (_sparseRemoveComponentArchetypes[componentIDToRemove] == -1ull)
 				{
 					std::vector<uint64_t> componentIds;
 					componentIds.reserve(ComponentIDs.size() - 1);
@@ -111,12 +111,12 @@ namespace SplitEngine::ECS
 				// Recursively search for archetype in tree
 				( [&]
 				{
-					if (entity.moveArchetypeIndex != -1) { entity.moveArchetypeIndex = _archetypeLookup[entity.moveArchetypeIndex]->GetRemoveArchetypeID<TArgs>(); }
+					if (entity.moveArchetypeIndex != -1ull) { entity.moveArchetypeIndex = _archetypeLookup[entity.moveArchetypeIndex]->GetRemoveArchetypeID<TArgs>(); }
 					else { entity.moveArchetypeIndex = GetRemoveArchetypeID<TArgs>(); }
 				}(), ...);
 
-				if (oldArchetypeMoveIndex == -1) { _entitiesToMove.push_back(entityID); }
-				else if (entity.moveComponentIndex != -1)
+				if (oldArchetypeMoveIndex == -1ull) { _entitiesToMove.push_back(entityID); }
+				else if (entity.moveComponentIndex != -1ull)
 				{
 					Archetype* newArchetype = _archetypeLookup[entity.moveArchetypeIndex];
 					Archetype* oldArchetype = _archetypeLookup[oldArchetypeMoveIndex];
@@ -159,9 +159,9 @@ namespace SplitEngine::ECS
 
 				Archetype* newArchetype = _archetypeLookup[entity.moveArchetypeIndex];
 
-				if (oldArchetypeMoveIndex == -1) { _entitiesToMove.push_back(entityID); }
+				if (oldArchetypeMoveIndex == -1ull) { _entitiesToMove.push_back(entityID); }
 
-				else if (entity.archetypeIndex == -1)
+				else if (entity.archetypeIndex == -1ull)
 				{
 					_entitiesToMove.push_back(entityID);
 					entity.archetypeIndex = ID;
@@ -171,7 +171,7 @@ namespace SplitEngine::ECS
 
 				newArchetype->ResizeAddComponentsForNewEntity();
 
-				if (entity.moveComponentIndex != -1)
+				if (entity.moveComponentIndex != -1ull)
 				{
 					Archetype* oldArchetype = _archetypeLookup[oldArchetypeMoveIndex];
 
