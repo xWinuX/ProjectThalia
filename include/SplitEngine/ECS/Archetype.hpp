@@ -33,8 +33,11 @@ namespace SplitEngine::ECS
 			template<class T>
 			T* GetComponents() { return reinterpret_cast<T*>(ComponentData[TypeIDGenerator<Component>::GetID<T>()].data()); }
 
+			template<class T>
+			T* GetMoveComponents() { return reinterpret_cast<T*>(_componentDataToAdd[TypeIDGenerator<Component>::GetID<T>()].data()); }
+
 			template<typename T>
-			T& GetComponent(uint64_t entityComponentIndex) { return GetComponents<T>()[entityComponentIndex]; }
+			T& GetComponent(const Entity& entity) { return entity.componentIndex == -1u ? GetMoveComponents<T>()[entity.moveComponentIndex] : GetComponents<T>()[entity.componentIndex]; }
 
 			template<typename... TArgs>
 			uint64_t AddEntity(uint64_t entityID, TArgs&&... components)

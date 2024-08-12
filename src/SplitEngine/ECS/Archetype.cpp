@@ -71,7 +71,7 @@ namespace SplitEngine::ECS
 		_entitiesToAdd.pop_back();
 		for (const uint64_t& ComponentID: ComponentIDs)
 		{
-			std::vector<std::byte>& bytes                   = ComponentData[ComponentID];
+			std::vector<std::byte>& bytes                   = _componentDataToAdd[ComponentID];
 			Component&              component               = _sparseComponentLookup[ComponentID];
 			const size_t&           componentSize           = component.Size;
 			const size_t            indexToRemoveWithOffset = indexToRemove * componentSize;
