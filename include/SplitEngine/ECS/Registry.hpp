@@ -47,35 +47,45 @@ namespace SplitEngine::ECS
 			// NOTE: the stages will be sorted before execution so the order of stages does not matter
 			void ExecuteSystems(bool executePendingOperations, ListBehaviour listBehaviour, std::vector<uint8_t>& stages);
 
-			template<typename... T>
-			uint64_t CreateEntity(T&&... args)
+			template<typename... TArgs>
+			uint64_t CreateEntity(uint8_t group, TArgs&&... args)
 			{
-				Archetype* archetype = GetArchetype<T...>();
+				Archetype* archetype = GetArchetype<TArgs...>();
+
+				uint64_t groupIndex = _groups[group].size();
 
 				uint64_t entityID = 0;
 				if (!_entityGraveyard.IsEmpty())
 				{
-					entityID                                         = _entityGraveyard.Pop();
-					const uint64_t componentIndex                    = archetype->AddEntity(entityID, std::forward<T>(args)...);
-					_sparseEntityLookup[entityID].moveArchetypeIndex = archetype->ID;
-					_sparseEntityLookup[entityID].moveComponentIndex = componentIndex;
+					entityID                      = _entityGraveyard.Pop();
+					const uint64_t componentIndex = archetype->AddEntity(entityID, std::forward<TArgs>(args)...);
+					Entity&        entity         = _sparseEntityLookup[entityID];
+					entity.moveArchetypeIndex     = archetype->ID;
+					entity.moveComponentIndex     = componentIndex;
+					entity.group                  = group;
+					entity.groupIndex             = groupIndex;
 				}
 				else
 				{
 					entityID                = _sparseEntityLookup.size();
-					uint64_t componentIndex = archetype->AddEntity(entityID, std::forward<T>(args)...);
-					_sparseEntityLookup.emplace_back(-1, -1, archetype->ID, componentIndex);
+					uint64_t componentIndex = archetype->AddEntity(entityID, std::forward<TArgs>(args)...);
+					_sparseEntityLookup.emplace_back(-1, -1, archetype->ID, componentIndex, group, groupIndex);
 				}
+
+				_groups[group].push_back(entityID);
 
 				return entityID;
 			}
+
+			template<typename... TArgs>
+			uint64_t CreateEntity(TArgs&&... args) { return CreateEntity<TArgs...>(_primaryGroup, std::forward<TArgs>(args)...); }
 
 			template<typename T>
 			T& GetComponent(uint64_t entityID)
 			{
 				const Entity& entity = _sparseEntityLookup[entityID];
 
-				return _archetypeLookup[entity.GetArchetypeIndex()]->GetComponent<T>(entity.GetComponentIndex());
+				return _archetypeLookup[entity.GetArchetypeIndex()]->GetComponent<T>(entity);
 			}
 
 			template<typename... T>
@@ -95,6 +105,8 @@ namespace SplitEngine::ECS
 			}
 
 			void DestroyEntity(uint64_t entityID);
+
+			void DestroyGroup(uint8_t group);
 
 			template<typename T>
 			void RegisterComponent()
@@ -138,6 +150,10 @@ namespace SplitEngine::ECS
 			std::vector<float>& GetAccumulatedStageTimeMs();
 
 			std::vector<uint8_t>& GetActiveStages();
+
+			[[nodiscard]] uint8_t GetPrimaryGroup() const;
+
+			void SetPrimaryGroup(uint8_t group);
 
 			void RemoveSystem(uint64_t systemID);
 
@@ -197,6 +213,9 @@ namespace SplitEngine::ECS
 			uint64_t _systemID = 0;
 
 			AvailableStack<uint64_t> _systemGraveyard{};
+
+			uint8_t                            _primaryGroup = 0;
+			std::vector<std::vector<uint64_t>> _groups       = std::vector<std::vector<uint64_t>>(std::numeric_limits<uint8_t>::max());
 
 			std::vector<SystemEntry>                       _systems             = std::vector<SystemEntry>();
 			std::vector<std::vector<SystemExecutionEntry>> _systemExecutionFlow = std::vector<std::vector<SystemExecutionEntry>>(std::numeric_limits<uint8_t>::max());

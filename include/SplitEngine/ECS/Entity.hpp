@@ -10,6 +10,8 @@ namespace SplitEngine::ECS
 			uint64_t componentIndex     = -1;
 			uint64_t moveArchetypeIndex = -1;
 			uint64_t moveComponentIndex = -1;
+			uint8_t  group              = -1;
+			uint64_t groupIndex         = -1;
 
 			[[nodiscard]] uint64_t GetArchetypeIndex() const { return archetypeIndex != -1 ? archetypeIndex : moveArchetypeIndex; }
 

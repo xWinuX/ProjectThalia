@@ -78,8 +78,13 @@ namespace SplitEngine::ECS
 		return _systems[executionEntry.SystemID].Locations[executionEntry.SystemLocationIndex];
 	}
 
-	std::vector<float>&   Registry::GetAccumulatedStageTimeMs() { return _accumulatedStageTimeMs; }
+	std::vector<float>& Registry::GetAccumulatedStageTimeMs() { return _accumulatedStageTimeMs; }
+
 	std::vector<uint8_t>& Registry::GetActiveStages() { return _activeStages; }
+
+	uint8_t Registry::GetPrimaryGroup() const { return _primaryGroup; }
+
+	void Registry::SetPrimaryGroup(uint8_t group) { _primaryGroup = group; }
 
 	void Registry::AddQueuedSystems()
 	{
@@ -151,7 +156,36 @@ namespace SplitEngine::ECS
 
 	ContextProvider& Registry::GetContextProvider() { return _contextProvider; }
 
-	void Registry::DestroyEntity(uint64_t entityID) { _archetypeLookup[_sparseEntityLookup[entityID].archetypeIndex]->DestroyEntity(entityID); }
+	void Registry::DestroyEntity(uint64_t entityID)
+	{
+		Entity& entity = _sparseEntityLookup[entityID];
+		_archetypeLookup[entity.GetArchetypeIndex()]->DestroyEntity(entityID);
+
+		std::vector<uint64_t>& group = _groups[entity.group];
+
+		const size_t indexToRemove = entity.groupIndex;
+		const size_t lastIndex     = group.size() - 1;
+
+		Entity& lastEntity = _sparseEntityLookup[group[lastIndex]];
+
+		if (lastIndex != indexToRemove)
+		{
+			lastEntity.groupIndex = indexToRemove;
+
+			group[indexToRemove] = group[lastIndex];
+		}
+
+		group.pop_back();
+	}
+
+	void Registry::DestroyGroup(uint8_t group)
+	{
+		for (uint64_t entityId: _groups[group])
+		{
+			LOG("destroy entity {0}", entityId);
+			DestroyEntity(entityId);
+		}
+	}
 
 	bool Registry::IsEntityValid(uint64_t entityID)
 	{
