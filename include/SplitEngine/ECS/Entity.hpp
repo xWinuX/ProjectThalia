@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <limits>
 
 namespace SplitEngine::ECS
 {
@@ -10,7 +11,7 @@ namespace SplitEngine::ECS
 			uint64_t componentIndex     = -1ull;
 			uint64_t moveArchetypeIndex = -1ull;
 			uint64_t moveComponentIndex = -1ull;
-			uint8_t  group              = -1u;
+			uint8_t  group              = std::numeric_limits<uint8_t>::max();
 			uint64_t groupIndex         = -1ull;
 
 			[[nodiscard]] uint64_t GetArchetypeIndex() const { return archetypeIndex != -1ull ? archetypeIndex : moveArchetypeIndex; }
