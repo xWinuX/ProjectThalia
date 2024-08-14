@@ -150,6 +150,7 @@ namespace SplitEngine::ECS
 		for (const uint64_t entityID: _entitiesToDestroy)
 		{
 			DestroyEntityImmediately(entityID, true);
+			_sparseEntityLookup[entityID] = {};
 			_entityGraveyard.Push(entityID);
 		}
 
