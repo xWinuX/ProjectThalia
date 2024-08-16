@@ -12,7 +12,7 @@ include(CMakePackageConfigHelpers)
 
 add_compile_definitions(SE_DEBUG_LOG)
 
-project(SplitEngine VERSION 1.7.3)
+project(SplitEngine VERSION 1.7.4)
 
 set(SOLOUD_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/submodules/soloud/src)
 set(SOLOUD_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/submodules/soloud/include)

@@ -37,7 +37,10 @@ namespace SplitEngine::ECS
 			T* GetMoveComponents() { return reinterpret_cast<T*>(_componentDataToAdd[TypeIDGenerator<Component>::GetID<T>()].data()); }
 
 			template<typename T>
-			T& GetComponent(const Entity& entity) { return entity.componentIndex == -1ull ? GetMoveComponents<T>()[entity.moveComponentIndex] : GetComponents<T>()[entity.componentIndex]; }
+			T& GetComponent(const Entity& entity)
+			{
+				return entity.componentIndex == -1ull ? GetMoveComponents<T>()[entity.moveComponentIndex] : GetComponents<T>()[entity.componentIndex];
+			}
 
 			template<typename... TArgs>
 			uint64_t AddEntity(uint64_t entityID, TArgs&&... components)
@@ -189,7 +192,13 @@ namespace SplitEngine::ECS
 					oldArchetype->DestroyEntityInAddQueueImmediately(entityID, false);
 				}
 
-				AddComponents(std::forward<TArgs>(newComponentData)...);
+				// Add new components to new archetype
+				([&]
+				{
+					std::vector<std::byte>& bytes = newArchetype->GetComponentsToAddRaw<TArgs>();
+					TArgs*                  comp  = reinterpret_cast<TArgs*>(bytes.data() + (bytes.size() - sizeof(newComponentData)));
+					*comp                         = std::forward<TArgs>(newComponentData);
+				}(), ...);
 
 				entity.moveComponentIndex = newArchetype->_entitiesToAdd.size() - 1;
 			}
@@ -229,7 +238,7 @@ namespace SplitEngine::ECS
 					size_t                  oldSize = bytes.size();
 					bytes.resize(oldSize + sizeof(components));
 					TArgs* comp = reinterpret_cast<TArgs*>(bytes.data() + oldSize);
-					*comp   = std::forward<TArgs>(components);
+					*comp       = std::forward<TArgs>(components);
 				}(), ...);
 			}
 
