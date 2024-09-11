@@ -1,15 +1,15 @@
-# This Project is still W.I.P
+> This project is W.I.P stuff will be missing or not work
 # Split Engine
 
 Vulkan & SDL based Engine 
 
 ## VCPKG
-This project uses vcpkg to manage its dependencies. \
-CMake will install a vcpkg instance inside the build folder and download the packages specified inside vcpkg.json. \
-If you do not want that you can set the CMake option "SKIP_AUTOMATE_VCPKG" to true, but this also means you have to build all needed dependencies yourself.
+This project uses vcpkg to manage its dependencies.
 
 ## How to build
 
-`cmake -G "Visual Studio 17 2022" -S . -B build -DCMAKE_BUILD_TYPE=<config>`
+### Generate project files
+`cmake.exe -G "Visual Studio 17 2022" -DCMAKE_TOOLCHAIN_FILE=<PathToVCPKGInstance>\scripts\buildsystems\vcpkg.cmake -S <SourcePath> -B <BuildPath>`
 
-`cmake --build build --target SplitEngine --config <config>`
+### Build Project
+`cmake.exe --build <BuildPath> --target ALL_BUILD --config <Debug/Release/RelWithDebInfo>`
